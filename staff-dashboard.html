@@ -5,59 +5,80 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bregu — Paneli i stafit</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
 :root{
-  --ink:#12302E; --sea:#0E3A3D; --sand:#F3ECDC; --sand-dim:#E7DEC8;
-  --aqua-dark:#186D66; --gold:#CE9A42; --coral:#C1592E; --line:rgba(18,48,46,0.14); --white:#FFFDF8;
+  --ink:#0F1B2D; --sea:#2451D6; --sea-deep:#16326E; --sand:#F4F8FF; --sand-dim:#EAF1FF;
+  --aqua-dark:#0EA5C7; --gold:#4F8CFF; --coral:#E14F4F; --line:rgba(15,27,45,0.10); --white:#FFFFFF;
+  --shadow:0 1px 2px rgba(16,35,80,0.04), 0 8px 24px -12px rgba(16,35,80,0.18);
 }
 *{box-sizing:border-box;}
-body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); color:var(--ink); }
-.topbar{ background:var(--sea); color:var(--sand); padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
-.topbar h1{ font-family:'Fraunces',serif; font-size:20px; font-weight:500; margin:0; }
-.conn{ font-family:'IBM Plex Mono',monospace; font-size:11px; padding:4px 10px; border-radius:5px; background:rgba(243,236,220,0.12); }
-.conn.on{ background:var(--aqua-dark); }
+body{
+  margin:0; font-family:'Inter',sans-serif; color:var(--ink);
+  background:radial-gradient(1100px 600px at 15% -10%, #E7F0FF 0%, transparent 60%),
+             radial-gradient(900px 500px at 100% 0%, #EAF6FF 0%, transparent 55%),
+             #F5F8FE;
+}
+.topbar{
+  background:linear-gradient(135deg, var(--sea-deep), var(--sea));
+  color:var(--sand); padding:18px 26px; display:flex; justify-content:space-between;
+  align-items:center; flex-wrap:wrap; gap:10px; box-shadow:0 6px 20px -8px rgba(22,50,110,0.5);
+}
+.topbar h1{ font-family:'Sora',sans-serif; font-size:19px; font-weight:600; margin:0; letter-spacing:-0.01em; }
+.conn{ font-family:'JetBrains Mono',monospace; font-size:11px; padding:5px 11px; border-radius:20px; background:rgba(244,248,255,0.14); }
+.conn.on{ background:#22C55E; color:#052e13; font-weight:600; }
 .config-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-.config-row input{ font-family:'IBM Plex Mono',monospace; font-size:11px; border:0.5px solid rgba(243,236,220,0.4); background:rgba(243,236,220,0.08); color:var(--sand); border-radius:5px; padding:5px 8px; width:180px; }
-.config-row button{ font-size:11px; border:none; background:var(--gold); color:var(--ink); border-radius:5px; padding:5px 10px; cursor:pointer; font-weight:500; }
+.config-row input{ font-family:'JetBrains Mono',monospace; font-size:11px; border:1px solid rgba(244,248,255,0.28); background:rgba(244,248,255,0.10); color:var(--sand); border-radius:8px; padding:6px 9px; width:180px; }
+.config-row input::placeholder{ color:rgba(244,248,255,0.55); }
+.config-row button{ font-size:11.5px; border:none; background:var(--gold); color:#fff; border-radius:8px; padding:6px 12px; cursor:pointer; font-weight:600; transition:filter .15s, transform .15s; }
+.config-row button:hover{ filter:brightness(1.08); transform:translateY(-1px); }
+#logout-btn{ background:rgba(244,248,255,0.14); color:var(--sand); }
+#logout-btn:hover{ filter:brightness(1.2); }
 
-.locked{ text-align:center; padding:80px 20px; }
-.locked input{ font-family:'IBM Plex Mono',monospace; padding:10px 14px; border-radius:8px; border:0.5px solid var(--line); font-size:14px; width:220px; }
-.locked button{ border:none; background:var(--sea); color:var(--sand); border-radius:8px; padding:10px 18px; font-size:13px; font-weight:500; cursor:pointer; margin-left:8px; }
+.locked{ text-align:center; padding:100px 20px; }
+.locked input{ font-family:'JetBrains Mono',monospace; padding:11px 15px; border-radius:10px; border:1px solid var(--line); font-size:14px; width:230px; background:var(--white); box-shadow:var(--shadow); }
+.locked button{ border:none; background:linear-gradient(135deg, var(--sea), var(--sea-deep)); color:#fff; border-radius:10px; padding:11px 20px; font-size:13px; font-weight:600; cursor:pointer; margin-left:8px; box-shadow:0 6px 16px -6px rgba(36,81,214,0.55); transition:transform .15s, filter .15s; }
+.locked button:hover{ transform:translateY(-1px); filter:brightness(1.05); }
 
-.stats-row{ display:flex; gap:12px; padding:16px 20px 0; max-width:1200px; margin:0 auto; flex-wrap:wrap; }
-.stat-card{ background:var(--white); border:0.5px solid var(--line); border-radius:12px; padding:12px 18px; flex:1; min-width:120px; }
-.stat-num{ font-family:'Fraunces',serif; font-size:22px; font-weight:500; }
-.stat-label{ font-size:11px; opacity:0.55; text-transform:uppercase; letter-spacing:0.04em; }
+.stats-row{ display:flex; gap:14px; padding:20px 22px 0; max-width:1200px; margin:0 auto; flex-wrap:wrap; }
+.stat-card{ background:var(--white); border:1px solid var(--line); border-radius:14px; padding:14px 20px; flex:1; min-width:130px; box-shadow:var(--shadow); }
+.stat-num{ font-family:'Sora',sans-serif; font-size:24px; font-weight:700; color:var(--sea-deep); }
+.stat-label{ font-size:11px; opacity:0.55; text-transform:uppercase; letter-spacing:0.05em; margin-top:2px; }
 
-.board{ display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; padding:20px; max-width:1400px; margin:0 auto; }
+.board{ display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; padding:20px 22px; max-width:1400px; margin:0 auto; }
 @media (max-width:1100px){ .board{ grid-template-columns:1fr 1fr; } }
 @media (max-width:640px){ .board{ grid-template-columns:1fr; } }
-.col{ background:var(--white); border:0.5px solid var(--line); border-radius:12px; padding:14px 16px; min-height:200px; }
-.col h2{ font-size:13px; text-transform:uppercase; letter-spacing:0.06em; opacity:0.6; margin:0 0 12px; display:flex; justify-content:space-between; align-items:center; }
-.badge{ background:var(--sand-dim); color:var(--sea); border-radius:10px; padding:1px 8px; font-size:11px; }
-.export-link{ font-size:10.5px; color:var(--aqua-dark); text-decoration:none; cursor:pointer; }
+.col{ background:var(--white); border:1px solid var(--line); border-radius:16px; padding:16px 18px; min-height:200px; box-shadow:var(--shadow); }
+.col h2{ font-family:'Sora',sans-serif; font-size:12.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--sea-deep); opacity:0.85; margin:0 0 14px; display:flex; justify-content:space-between; align-items:center; font-weight:600; }
+.badge{ background:var(--sand-dim); color:var(--sea-deep); border-radius:20px; padding:2px 9px; font-size:11px; font-weight:600; }
+.export-link{ font-size:10.5px; color:var(--aqua-dark); text-decoration:none; cursor:pointer; font-weight:500; }
+.export-link:hover{ text-decoration:underline; }
 
-.card{ border:0.5px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px; font-size:13px; }
+.card{ border:1px solid var(--line); background:var(--sand); border-radius:12px; padding:11px 13px; margin-bottom:9px; font-size:13px; transition:box-shadow .15s; }
+.card:hover{ box-shadow:0 2px 10px -4px rgba(16,35,80,0.15); }
 .card-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
-.card-room{ font-family:'IBM Plex Mono',monospace; font-weight:500; color:var(--aqua-dark); }
+.card-room{ font-family:'JetBrains Mono',monospace; font-weight:600; color:var(--sea); }
 .card-time{ font-size:10.5px; opacity:0.45; }
 .card-body{ opacity:0.85; line-height:1.5; }
-.card-btns{ display:flex; gap:6px; margin-top:8px; }
-.card-btn{ border:none; background:var(--sea); color:var(--sand); font-size:11.5px; padding:5px 10px; border-radius:6px; cursor:pointer; }
-.card-btn.secondary{ background:var(--sand-dim); color:var(--ink); }
+.card-btns{ display:flex; gap:6px; margin-top:9px; }
+.card-btn{ border:none; background:var(--sea); color:#fff; font-size:11.5px; padding:6px 11px; border-radius:7px; cursor:pointer; font-weight:500; transition:filter .15s; }
+.card-btn:hover{ filter:brightness(1.1); }
+.card-btn.secondary{ background:#fff; color:var(--sea-deep); border:1px solid var(--line); }
 .empty{ font-size:12.5px; opacity:0.4; padding:10px 0; }
 
 .chat-col{ grid-column:1 / -1; }
-.chat-room-list{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
-.room-pill{ border:0.5px solid var(--line); background:var(--sand-dim); border-radius:14px; padding:5px 12px; font-size:12px; cursor:pointer; font-family:'IBM Plex Mono',monospace; }
-.room-pill.on{ background:var(--sea); color:var(--sand); }
-.chat-thread{ max-height:280px; overflow-y:auto; border:0.5px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px; }
-.msg{ max-width:70%; margin-bottom:8px; font-size:13px; padding:8px 12px; border-radius:10px; line-height:1.5; }
-.msg.guest{ background:var(--sand-dim); }
-.msg.staff{ background:var(--sea); color:var(--sand); margin-left:auto; }
+.chat-room-list{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.room-pill{ border:1px solid var(--line); background:var(--sand-dim); color:var(--sea-deep); border-radius:20px; padding:6px 14px; font-size:12px; cursor:pointer; font-family:'JetBrains Mono',monospace; font-weight:500; transition:background .15s, color .15s; }
+.room-pill:hover{ background:#DCE9FF; }
+.room-pill.on{ background:var(--sea); color:#fff; border-color:var(--sea); }
+.chat-thread{ max-height:280px; overflow-y:auto; border:1px solid var(--line); background:var(--sand); border-radius:12px; padding:12px; margin-bottom:10px; }
+.msg{ max-width:70%; margin-bottom:8px; font-size:13px; padding:9px 13px; border-radius:14px; line-height:1.5; }
+.msg.guest{ background:#fff; border:1px solid var(--line); }
+.msg.staff{ background:linear-gradient(135deg, var(--sea), var(--sea-deep)); color:#fff; margin-left:auto; }
 .reply-row{ display:flex; gap:8px; }
-.reply-row input{ flex:1; border:0.5px solid var(--line); border-radius:8px; padding:9px 12px; font-family:inherit; font-size:13px; }
-.reply-row button{ border:none; background:var(--sea); color:var(--sand); border-radius:8px; padding:9px 16px; cursor:pointer; font-size:13px; }
+.reply-row input{ flex:1; border:1px solid var(--line); border-radius:10px; padding:10px 13px; font-family:inherit; font-size:13px; }
+.reply-row input:focus{ outline:none; border-color:var(--sea); box-shadow:0 0 0 3px rgba(36,81,214,0.12); }
+.reply-row button{ border:none; background:linear-gradient(135deg, var(--sea), var(--sea-deep)); color:#fff; border-radius:10px; padding:10px 18px; cursor:pointer; font-size:13px; font-weight:600; transition:transform .15s; }
+.reply-row button:hover{ transform:translateY(-1px); }
 </style>
 </head>
 <body>
@@ -67,13 +88,14 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
   <div class="config-row">
     <span class="conn" id="conn-status">● jo i lidhur</span>
     <button onclick="toggleSound()" id="sound-btn">🔊 Tinguj: ON</button>
+    <button onclick="logout()" id="logout-btn">⎋ Dil</button>
   </div>
 </div>
 
 <div id="locked-view">
   <div class="locked">
     <p style="margin-bottom:14px; opacity:0.7;">Vendos URL-në e backend-it, slug-un e hotelit, dhe fjalëkalimin e stafit</p>
-    <input id="backend-url" placeholder="https://bregu-package.onrender.com" value="https://bregu-package.onrender.com" style="display:block; margin:0 auto 10px;">
+    <input id="backend-url" placeholder="https://hotelsystem-lzlm.onrender.com" value="https://hotelsystem-lzlm.onrender.com" style="display:block; margin:0 auto 10px;">
     <input id="hotel-slug" placeholder="Hoteli (p.sh. bregu)" style="display:block; margin:0 auto 10px;">
     <input type="password" id="staff-password" placeholder="Fjalëkalimi i stafit">
     <button onclick="connect()">Lidhu</button>
@@ -125,13 +147,14 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
 let socket = null;
-let apiBase = 'https://bregu-package.onrender.com';
+let apiBase = 'https://hotelsystem-lzlm.onrender.com';
 let staffPassword = '';
 let currentHotel = '';
 let activeRoom = null;
 let knownRooms = new Set();
 let allMessages = [];
 let soundOn = true;
+const STAFF_CREDS_KEY = 'bregu_staff_creds';
 
 function authHeaders(){
   return { 'Content-Type': 'application/json', 'x-staff-password': staffPassword };
@@ -223,6 +246,10 @@ async function connect(){
 
   document.getElementById('locked-view').style.display = 'none';
   document.getElementById('main-view').style.display = 'block';
+
+  try{
+    localStorage.setItem(STAFF_CREDS_KEY, JSON.stringify({ apiBase, hotel: currentHotel, password: staffPassword }));
+  }catch(e){}
 
   if(socket) socket.disconnect();
   socket = io(apiBase, { transports: ['websocket', 'polling'] });
@@ -395,6 +422,21 @@ async function sendReply(){
   await fetch(apiUrl('/api/messages'), { method:'POST', headers: authHeaders(), body: JSON.stringify({room_number: activeRoom, sender:'staff', text}) });
   input.value = '';
 }
+
+function restoreSavedLogin(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(STAFF_CREDS_KEY) || 'null'); }catch(e){}
+  if(!saved || !saved.apiBase || !saved.hotel || !saved.password) return;
+  document.getElementById('backend-url').value = saved.apiBase;
+  document.getElementById('hotel-slug').value = saved.hotel;
+  document.getElementById('staff-password').value = saved.password;
+  connect();
+}
+function logout(){
+  try{ localStorage.removeItem(STAFF_CREDS_KEY); }catch(e){}
+  location.reload();
+}
+window.addEventListener('DOMContentLoaded', restoreSavedLogin);
 </script>
 </body>
 </html>
