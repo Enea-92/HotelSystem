@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bregu — Admin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+:root{
+  --ink:#12302E; --sea:#0E3A3D; --sand:#F3ECDC; --sand-dim:#E7DEC8;
+  --aqua-dark:#186D66; --gold:#CE9A42; --coral:#C1592E; --line:rgba(18,48,46,0.14); --white:#FFFDF8;
+}
+*{box-sizing:border-box;}
+body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); color:var(--ink); }
+.topbar{ background:var(--sea); color:var(--sand); padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+.topbar h1{ font-family:'Fraunces',serif; font-size:20px; font-weight:500; margin:0; }
+.config-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.config-row input{ font-family:'IBM Plex Mono',monospace; font-size:11px; border:0.5px solid rgba(243,236,220,0.4); background:rgba(243,236,220,0.08); color:var(--sand); border-radius:5px; padding:6px 8px; }
+.config-row button{ font-size:11px; border:none; background:var(--gold); color:var(--ink); border-radius:5px; padding:6px 12px; cursor:pointer; font-weight:500; }
+.status{ font-family:'IBM Plex Mono',monospace; font-size:11px; padding:4px 10px; border-radius:5px; background:rgba(243,236,220,0.12); }
+.status.ok{ background:var(--aqua-dark); }
+.status.err{ background:var(--coral); }
+
+.wrap{ max-width:900px; margin:0 auto; padding:20px; }
+.card{ background:var(--white); border:0.5px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:18px; }
+.card h2{ font-family:'Fraunces',serif; font-size:17px; font-weight:500; margin:0 0 4px; }
+.card p.hint{ font-size:12px; opacity:0.55; margin:0 0 14px; }
+
+.field-row{ display:grid; grid-template-columns:130px 1fr; gap:10px; align-items:center; margin-bottom:10px; }
+.field-row label{ font-size:12.5px; font-weight:500; }
+.field-row input, .field-row textarea{
+  border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; font-family:inherit; font-size:13px; width:100%;
+}
+.lang-tabs{ display:flex; gap:6px; margin-bottom:8px; }
+.lang-tab{ border:0.5px solid var(--line); background:var(--sand-dim); border-radius:6px; padding:3px 10px; font-size:11px; cursor:pointer; font-family:'IBM Plex Mono',monospace; }
+.lang-tab.on{ background:var(--sea); color:var(--sand); }
+
+.item-block{ border:0.5px solid var(--line); border-radius:10px; padding:14px; margin-bottom:12px; position:relative; }
+.item-block .del-btn{ position:absolute; top:10px; right:10px; border:none; background:none; color:var(--coral); font-size:12px; cursor:pointer; font-weight:500; }
+.add-btn{ border:0.5px dashed var(--aqua-dark); color:var(--aqua-dark); background:none; border-radius:8px; padding:8px 14px; font-size:12.5px; cursor:pointer; width:100%; font-family:inherit; }
+.save-btn{ border:none; background:var(--sea); color:var(--sand); border-radius:8px; padding:9px 18px; font-size:13px; font-weight:500; cursor:pointer; margin-top:6px; }
+select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; font-family:inherit; font-size:13px; }
+.checkbox-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; margin-bottom:10px; }
+.toast{
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+  background:var(--ink); color:var(--sand); font-size:13px; padding:10px 20px;
+  border-radius:20px; opacity:0; pointer-events:none; transition:opacity 0.25s; z-index:99;
+}
+.toast.show{ opacity:1; }
+.locked{ text-align:center; padding:60px 20px; }
+.locked input{ font-family:'IBM Plex Mono',monospace; padding:10px 14px; border-radius:8px; border:0.5px solid var(--line); font-size:14px; width:220px; }
+.locked button{ border:none; background:var(--sea); color:var(--sand); border-radius:8px; padding:10px 18px; font-size:13px; font-weight:500; cursor:pointer; margin-left:8px; }
+.qr-card{ text-align:center; }
+.qr-card img{ width:100%; max-width:150px; border-radius:8px; border:0.5px solid var(--line); }
+.qr-card p{ font-family:'IBM Plex Mono',monospace; font-size:12px; margin:6px 0 2px; font-weight:500; }
+.qr-card a{ font-size:11px; color:var(--aqua-dark); text-decoration:none; }
+
+@media print{
+  body *{ visibility:hidden; }
+  .printable-card, .printable-card *{ visibility:visible; }
+  .printable-card{ position:absolute; top:0; left:0; width:100%; border:none; box-shadow:none; padding:0; }
+  .printable-card > h2, .printable-card > p.hint, .printable-card .field-row,
+  .printable-card .add-btn, .printable-card .save-btn, #qr-queue { display:none !important; }
+  #qr-grid{ display:grid !important; }
+  body{ background:#fff; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Bregu — Admin</h1>
+  <div class="config-row">
+    <span class="status" id="conn-status">● jo i lidhur</span>
+    <input id="backend-url" placeholder="https://bregu-package.onrender.com" value="https://bregu-package.onrender.com">
+  </div>
+</div>
+
+<div class="wrap" id="locked-view">
+  <div class="locked">
+    <p style="margin-bottom:14px; opacity:0.7;">Vendos slug-un e hotelit dhe fjalëkalimin e adminit</p>
+    <input id="hotel-slug" placeholder="Hoteli (p.sh. bregu)" style="display:block; margin:0 auto 10px;">
+    <input type="password" id="admin-password" placeholder="Fjalëkalimi">
+    <button onclick="unlock()">Hyr</button>
+  </div>
+</div>
+
+<div class="wrap" id="main-view" style="display:none;">
+
+  <div class="card printable-card" id="qr-card">
+    <h2>Gjenero kode QR për dhoma</h2>
+    <p class="hint">Çdo dhomë ka nevojë vetëm për 1 kod QR — hap app-in me numrin e dhomës të para-plotësuar. Mund të krijosh një dhomë të vetme ose një grup me interval (p.sh. 101–110).</p>
+    <div class="field-row"><label>URL e app-it</label><input id="qr-app-url" placeholder="https://bregu-package-staff.onrender.com/hotel-bregu-guest-app.html" value="https://bregu-package-staff.onrender.com/hotel-bregu-guest-app.html"></div>
+
+    <p class="hint" style="margin:14px 0 8px; font-weight:500; opacity:0.8;">Shto dhoma në listë</p>
+    <div class="field-row"><label>Dhoma nga</label><input id="qr-room-from" placeholder="101" style="width:100px;"></div>
+    <div class="field-row"><label>Dhoma deri (opsionale)</label><input id="qr-room-to" placeholder="110 (lëre bosh për 1 dhomë)" style="width:100px;"></div>
+    <div class="field-row"><label>Kati</label><input id="qr-floor" placeholder="1" style="width:100px;"></div>
+    <p class="hint" style="margin:2px 0 10px;">Kodet QR nuk skadojnë — mund t'i printosh dhe vendosësh një herë përgjithmonë. Vetëm mesazhet e chat-it fshihen automatikisht çdo ditë në orën 11:00.</p>
+    <button class="add-btn" onclick="addQrGroup()">+ Shto në listë</button>
+
+    <div id="qr-queue" style="margin:12px 0; display:flex; flex-wrap:wrap; gap:6px;"></div>
+
+    <button class="save-btn" onclick="generateQrBatch()">Gjenero të gjitha kodet QR</button>
+    <button class="save-btn" style="background:var(--gold); color:var(--ink); margin-left:8px; display:none;" id="qr-download-zip" onclick="downloadQrZip()">⬇ Shkarko të gjitha (ZIP)</button>
+    <button class="save-btn" style="background:var(--sand-dim); color:var(--ink); margin-left:8px; display:none;" id="qr-print-btn" onclick="window.print()">🖨 Printo faqen</button>
+
+    <div id="qr-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px; margin-top:16px;"></div>
+  </div>
+
+  <div class="card">
+    <h2>Vendndodhja e hotelit (për hartën)</h2>
+    <p class="hint">Koordinatat përdoren për të qendërzuar hartën reale te app-i i mysafirit.</p>
+    <div class="field-row"><label>Gjerësia (lat)</label><input id="loc-lat" type="number" step="0.0001"></div>
+    <div class="field-row"><label>Gjatësia (lng)</label><input id="loc-lng" type="number" step="0.0001"></div>
+  </div>
+
+  <div class="card">
+    <h2>Wifi</h2>
+    <div class="field-row"><label>Emri i rrjetit</label><input id="wifi-ssid"></div>
+    <div class="field-row"><label>Fjalëkalimi</label><input id="wifi-pass"></div>
+  </div>
+
+  <div class="card">
+    <h2>Pajisjet e dhomës</h2>
+    <p class="hint">Klima, kasaforta, minibar, etj.</p>
+    <div id="amenities-list"></div>
+    <button class="add-btn" onclick="addAmenity()">+ Shto pajisje</button>
+  </div>
+
+  <div class="card">
+    <h2>Ku ndodhet (drejtime brenda hotelit)</h2>
+    <div id="locations-list"></div>
+    <button class="add-btn" onclick="addLocationItem()">+ Shto drejtim</button>
+  </div>
+
+  <div class="card">
+    <h2>Shërbimi në dhomë (menu)</h2>
+    <div id="roomservice-list"></div>
+    <button class="add-btn" onclick="addRoomServiceItem()">+ Shto artikull</button>
+  </div>
+
+  <button class="save-btn" onclick="saveContent()">Ruaj gjithçka lart</button>
+
+  <div class="card" style="margin-top:24px;">
+    <h2>Rekomandime (restorante / bare / plazhe)</h2>
+    <p class="hint">Secili me koordinata reale, shfaqet si pin në hartë te app-i i mysafirit.</p>
+    <div id="recs-list"></div>
+    <button class="add-btn" onclick="addRecommendation()">+ Shto rekomandim</button>
+  </div>
+
+  <div class="card" style="margin-top:24px;">
+    <h2>Shënime për dhoma specifike</h2>
+    <p class="hint">Vendos të njëjtin shënim për një ose disa dhoma njëkohësisht (p.sh. "kjo dhomë ka xhakuzi", "dhomë e qetë, pa ballkon"). Shfaqet te Kryesorja e mysafirit vetëm nëse ka shënim.</p>
+    <div class="field-row"><label>Dhoma nga</label><input id="note-room-from" placeholder="101" style="width:100px;"></div>
+    <div class="field-row"><label>Dhoma deri (opsionale)</label><input id="note-room-to" placeholder="110 (lëre bosh për 1 dhomë)" style="width:100px;"></div>
+    <div class="item-block">
+      <div class="lang-tabs">
+        <button type="button" class="lang-tab on" onclick="switchNoteLangTab(this,'sq')">SQ</button>
+        <button type="button" class="lang-tab" onclick="switchNoteLangTab(this,'en')">EN</button>
+        <button type="button" class="lang-tab" onclick="switchNoteLangTab(this,'it')">IT</button>
+        <button type="button" class="lang-tab" onclick="switchNoteLangTab(this,'de')">DE</button>
+      </div>
+      <div class="field-row"><label>Shënimi</label><div style="flex:1;">
+        <textarea data-lang="sq" data-field="note" style="display:block;" rows="2" placeholder="Shkruaj shënimin në shqip..."></textarea>
+        <textarea data-lang="en" data-field="note" style="display:none;" rows="2" placeholder="Write the note in English..."></textarea>
+        <textarea data-lang="it" data-field="note" style="display:none;" rows="2" placeholder="Scrivi la nota in italiano..."></textarea>
+        <textarea data-lang="de" data-field="note" style="display:none;" rows="2" placeholder="Notiz auf Deutsch schreiben..."></textarea>
+      </div></div>
+    </div>
+    <button class="save-btn" onclick="saveRoomNoteBulk()">Ruaj shënimin për dhomat e listuara</button>
+
+    <p class="hint" style="margin:18px 0 8px; font-weight:500; opacity:0.8;">Shënime aktuale</p>
+    <div id="room-notes-list"><p class="rs-cart-empty">Duke ngarkuar...</p></div>
+  </div>
+
+  <div class="card" style="margin-top:24px;">
+    <h2>Ndrysho fjalëkalimin</h2>
+    <p class="hint">Ruhet i koduar (hash) në bazën e të dhënash — ndryshimi ka efekt menjëherë, pa pasur nevojë të prekësh Render.</p>
+    <div class="field-row"><label>Roli</label>
+      <select id="pw-role">
+        <option value="admin">Admin</option>
+        <option value="staff">Staf</option>
+      </select>
+    </div>
+    <div class="field-row"><label>Fjalëkalimi i ri</label><input type="password" id="pw-new" placeholder="Min. 4 karaktere"></div>
+    <button class="save-btn" onclick="changePassword()">Ndrysho fjalëkalimin</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+let apiBase = 'https://bregu-package.onrender.com';
+let currentHotel = '';
+let adminPassword = '';
+let content = null;
+let recommendations = [];
+
+function apiUrl(path){
+  const sep = path.includes('?') ? '&' : '?';
+  return apiBase + path + sep + 'hotel=' + encodeURIComponent(currentHotel);
+}
+
+function showToast(text, isError){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.style.background = isError ? '#C1592E' : '#12302E';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+let qrQueue = []; // { fromRoom, toRoom, floor }
+let qrRooms = [];  // expanded individual { room, floor } after generation
+
+function addQrGroup(){
+  const from = document.getElementById('qr-room-from').value.trim();
+  const to = document.getElementById('qr-room-to').value.trim();
+  const floor = document.getElementById('qr-floor').value.trim() || '1';
+  if(!from){ showToast('Vendos të paktën numrin e dhomës "nga".', true); return; }
+  qrQueue.push({ from, to: to || from, floor });
+  document.getElementById('qr-room-from').value = '';
+  document.getElementById('qr-room-to').value = '';
+  renderQrQueue();
+}
+
+function removeQrGroup(idx){
+  qrQueue.splice(idx, 1);
+  renderQrQueue();
+}
+
+function renderQrQueue(){
+  const box = document.getElementById('qr-queue');
+  box.innerHTML = qrQueue.map((g, idx) => {
+    const label = g.from === g.to ? `Dhoma ${g.from}` : `Dhoma ${g.from}–${g.to}`;
+    return `<span class="lang-tab on" style="display:inline-flex; align-items:center; gap:6px;">${label} · Kati ${g.floor} <button onclick="removeQrGroup(${idx})" style="background:none;border:none;color:inherit;cursor:pointer;font-weight:700;">×</button></span>`;
+  }).join('');
+}
+
+function expandQrQueue(){
+  const rooms = [];
+  qrQueue.forEach(g => {
+    const fromNum = parseInt(g.from, 10);
+    const toNum = parseInt(g.to, 10);
+    if(!isNaN(fromNum) && !isNaN(toNum) && toNum >= fromNum && (toNum - fromNum) < 500){
+      for(let n = fromNum; n <= toNum; n++) rooms.push({ room: String(n), floor: g.floor });
+    } else {
+      rooms.push({ room: g.from, floor: g.floor });
+    }
+  });
+  return rooms;
+}
+
+function generateQrBatch(){
+  if(qrQueue.length === 0){ showToast('Shto të paktën një dhomë ose grup dhomash në listë.', true); return; }
+  const appUrl = document.getElementById('qr-app-url').value.trim().replace(/\/$/, '');
+  qrRooms = expandQrQueue();
+
+  const grid = document.getElementById('qr-grid');
+  grid.innerHTML = qrRooms.map(r => {
+    const fullUrl = appUrl + '?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(r.room) + '&floor=' + encodeURIComponent(r.floor);
+    const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(fullUrl);
+    return `<div class="qr-card">
+      <img src="${qrSrc}" alt="QR dhoma ${r.room}">
+      <p>Dhoma ${r.room}</p>
+      <a href="${qrSrc}" download="dhoma-${r.room}-qr.png">⬇ PNG</a>
+    </div>`;
+  }).join('');
+
+  document.getElementById('qr-download-zip').style.display = qrRooms.length > 1 ? 'inline-block' : 'none';
+  document.getElementById('qr-print-btn').style.display = 'inline-block';
+  showToast(`U gjeneruan ${qrRooms.length} kode QR, pa afat skadimi.`);
+}
+
+async function downloadQrZip(){
+  if(qrRooms.length === 0) return;
+  showToast('Duke përgatitur ZIP-in...');
+  try{
+    const appUrl = document.getElementById('qr-app-url').value.trim().replace(/\/$/, '');
+    const zip = new JSZip();
+    await Promise.all(qrRooms.map(async r => {
+      const fullUrl = appUrl + '?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(r.room) + '&floor=' + encodeURIComponent(r.floor);
+      const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(fullUrl);
+      const res = await fetch(qrSrc);
+      const blob = await res.blob();
+      zip.file('dhoma-' + r.room + '-qr.png', blob);
+    }));
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'kodet-qr-dhomat.zip';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(e){ showToast('ZIP-i dështoi — provo shkarkimin individual (PNG) për secilën dhomë.', true); }
+}
+
+async function unlock(){
+  apiBase = document.getElementById('backend-url').value.trim().replace(/\/$/, '');
+  currentHotel = document.getElementById('hotel-slug').value.trim().toLowerCase();
+  adminPassword = document.getElementById('admin-password').value;
+  if(!currentHotel){
+    showToast('Vendos slug-un e hotelit.', true);
+    return;
+  }
+  try {
+    // Use a genuinely admin-protected endpoint to verify the password —
+    // /api/content is public, so it never actually checked the password before.
+    const authRes = await fetch(apiUrl('/api/content'), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({})
+    });
+    if(authRes.status === 401) throw new Error('wrong password');
+    if(!authRes.ok) throw new Error('bad response');
+    content = await authRes.json();
+
+    const recRes = await fetch(apiUrl('/api/recommendations'));
+    recommendations = await recRes.json();
+
+    document.getElementById('conn-status').textContent = '● i lidhur';
+    document.getElementById('conn-status').classList.add('ok');
+    document.getElementById('locked-view').style.display = 'none';
+    document.getElementById('main-view').style.display = 'block';
+    renderAll();
+    loadRoomNotesList();
+  } catch(e) {
+    if(e.message === 'wrong password'){
+      showToast('Fjalëkalim i gabuar.', true);
+    } else {
+      showToast('S\'u lidh dot me backend-in. Kontrollo URL-në.', true);
+    }
+  }
+}
+
+function renderAll(){
+  document.getElementById('loc-lat').value = content.location?.lat ?? '';
+  document.getElementById('loc-lng').value = content.location?.lng ?? '';
+  document.getElementById('wifi-ssid').value = content.wifi?.ssid ?? '';
+  document.getElementById('wifi-pass').value = content.wifi?.password ?? '';
+  renderLangItems('amenities-list', content.amenities, ['name','note'], removeAmenity);
+  renderLangItems('locations-list', content.locations, ['name','desc','time'], removeLocationItem);
+  renderRoomService();
+  renderRecommendations();
+}
+
+function langTabsHtml(prefix){
+  return `<div class="lang-tabs">
+    ${['sq','en','it','de'].map((l,i)=>`<button type="button" class="lang-tab ${i===0?'on':''}" onclick="switchLangTab(this,'${prefix}','${l}')">${l.toUpperCase()}</button>`).join('')}
+  </div>`;
+}
+
+function switchLangTab(btn, prefix, lang){
+  const block = btn.closest('.item-block');
+  block.querySelectorAll('.lang-tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  block.querySelectorAll('[data-lang]').forEach(el=>{
+    el.style.display = el.getAttribute('data-lang') === lang ? '' : 'none';
+  });
+}
+
+function renderLangItems(containerId, items, fields, onDelete){
+  const box = document.getElementById(containerId);
+  box.innerHTML = (items || []).map((item, idx) => `
+    <div class="item-block" data-idx="${idx}">
+      <button class="del-btn" onclick="${onDelete.name}(${idx})">Fshi</button>
+      ${langTabsHtml(containerId+idx)}
+      ${fields.map(f => `
+        <div class="field-row">
+          <label>${f}</label>
+          <div style="flex:1;">
+            ${['sq','en','it','de'].map(l => `<input data-lang="${l}" data-field="${f}" style="display:${l==='sq'?'':'none'};" value="${(item[f]?.[l]||'').replace(/"/g,'&quot;')}">`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function addAmenity(){
+  content.amenities = content.amenities || [];
+  content.amenities.push({ name:{sq:'',en:'',it:'',de:''}, note:{sq:'',en:'',it:'',de:''} });
+  renderLangItems('amenities-list', content.amenities, ['name','note'], removeAmenity);
+}
+function removeAmenity(idx){ content.amenities.splice(idx,1); renderLangItems('amenities-list', content.amenities, ['name','note'], removeAmenity); }
+
+function addLocationItem(){
+  content.locations = content.locations || [];
+  content.locations.push({ name:{sq:'',en:'',it:'',de:''}, desc:{sq:'',en:'',it:'',de:''}, time:{sq:'',en:'',it:'',de:''} });
+  renderLangItems('locations-list', content.locations, ['name','desc','time'], removeLocationItem);
+}
+function removeLocationItem(idx){ content.locations.splice(idx,1); renderLangItems('locations-list', content.locations, ['name','desc','time'], removeLocationItem); }
+
+function renderRoomService(){
+  const box = document.getElementById('roomservice-list');
+  box.innerHTML = (content.room_service || []).map((item, idx) => `
+    <div class="item-block" data-idx="${idx}">
+      <button class="del-btn" onclick="removeRoomServiceItem(${idx})">Fshi</button>
+      ${langTabsHtml('rs'+idx)}
+      <div class="field-row"><label>Emri</label><div style="flex:1;">
+        ${['sq','en','it','de'].map(l => `<input data-lang="${l}" data-field="name" style="display:${l==='sq'?'':'none'};" value="${(item.name?.[l]||'').replace(/"/g,'&quot;')}">`).join('')}
+      </div></div>
+      <div class="field-row"><label>Çmimi (Lekë)</label><input type="number" data-field="price" value="${item.price||0}"></div>
+    </div>`).join('');
+}
+function addRoomServiceItem(){
+  content.room_service = content.room_service || [];
+  content.room_service.push({ name:{sq:'',en:'',it:'',de:''}, price:0 });
+  renderRoomService();
+}
+function removeRoomServiceItem(idx){ content.room_service.splice(idx,1); renderRoomService(); }
+
+function renderRecommendations(){
+  const box = document.getElementById('recs-list');
+  box.innerHTML = recommendations.map((rec, idx) => `
+    <div class="item-block" data-idx="${idx}" data-rec-id="${rec.id}">
+      <button class="del-btn" onclick="deleteRecommendation(${idx})">Fshi</button>
+      <div class="field-row"><label>Emri</label><input data-field="name" value="${(rec.name||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field-row"><label>Kategoria</label>
+        <select data-field="category">
+          <option value="restorante" ${rec.category==='restorante'?'selected':''}>Restorante</option>
+          <option value="bare" ${rec.category==='bare'?'selected':''}>Bare</option>
+          <option value="plazhe" ${rec.category==='plazhe'?'selected':''}>Plazhe</option>
+        </select>
+      </div>
+      <div class="field-row"><label>Çmimi</label>
+        <select data-field="price_type">
+          <option value="free" ${rec.price_type==='free'?'selected':''}>Falas</option>
+          <option value="mid" ${rec.price_type==='mid'?'selected':''}>$$</option>
+          <option value="high" ${rec.price_type==='high'?'selected':''}>$$$</option>
+        </select>
+      </div>
+      <div class="checkbox-row"><input type="checkbox" data-field="staff_pick" ${rec.staff_pick?'checked':''}> Zgjedhja e stafit</div>
+      <div class="field-row"><label>Lat</label><input type="number" step="0.0001" data-field="lat" value="${rec.lat||''}"></div>
+      <div class="field-row"><label>Lng</label><input type="number" step="0.0001" data-field="lng" value="${rec.lng||''}"></div>
+      <div class="field-row"><label>URL foto</label><input data-field="image_url" placeholder="https://..." value="${(rec.image_url||'').replace(/"/g,'&quot;')}"></div>
+      ${langTabsHtml('rec'+idx)}
+      <div class="field-row"><label>Përshkrim (meta)</label><div style="flex:1;">
+        ${['sq','en','it','de'].map(l => `<input data-lang="${l}" data-field="meta" style="display:${l==='sq'?'':'none'};" value="${(rec.meta?.[l]||'').replace(/"/g,'&quot;')}">`).join('')}
+      </div></div>
+      <div class="field-row"><label>Këshillë (tip)</label><div style="flex:1;">
+        ${['sq','en','it','de'].map(l => `<textarea data-lang="${l}" data-field="tip" style="display:${l==='sq'?'':'none'};">${(rec.tip?.[l]||'')}</textarea>`).join('')}
+      </div></div>
+      <button class="save-btn" style="margin-top:10px;" onclick="saveRecommendation(${idx})">Ruaj këtë rekomandim</button>
+    </div>`).join('');
+}
+
+function addRecommendation(){
+  recommendations.push({ id:null, category:'restorante', name:'', price_type:'mid', staff_pick:false, lat:content.location?.lat, lng:content.location?.lng, meta:{sq:'',en:'',it:'',de:''}, tip:{sq:'',en:'',it:'',de:''} });
+  renderRecommendations();
+}
+
+function collectLangItemsFromBlock(block, fields){
+  const result = {};
+  fields.forEach(f => { result[f] = {}; });
+  block.querySelectorAll('[data-lang]').forEach(el => {
+    const lang = el.getAttribute('data-lang');
+    const field = el.getAttribute('data-field');
+    if(fields.includes(field)) result[field][lang] = el.value;
+  });
+  return result;
+}
+
+function collectContentFromForm(){
+  content.location = { lat: parseFloat(document.getElementById('loc-lat').value)||0, lng: parseFloat(document.getElementById('loc-lng').value)||0 };
+  content.wifi = { ssid: document.getElementById('wifi-ssid').value, password: document.getElementById('wifi-pass').value };
+
+  content.amenities = [...document.querySelectorAll('#amenities-list .item-block')].map(block => collectLangItemsFromBlock(block, ['name','note']));
+  content.locations = [...document.querySelectorAll('#locations-list .item-block')].map(block => collectLangItemsFromBlock(block, ['name','desc','time']));
+  content.room_service = [...document.querySelectorAll('#roomservice-list .item-block')].map(block => {
+    const nameObj = {};
+    block.querySelectorAll('[data-lang][data-field="name"]').forEach(el => nameObj[el.getAttribute('data-lang')] = el.value);
+    return { name: nameObj, price: parseFloat(block.querySelector('[data-field="price"]').value) || 0 };
+  });
+}
+
+async function saveContent(){
+  collectContentFromForm();
+  try{
+    const res = await fetch(apiUrl('/api/content'), {
+      method:'PUT',
+      headers:{ 'Content-Type':'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify(content)
+    });
+    if(!res.ok) throw new Error(await res.text());
+    showToast('U ruajt me sukses.');
+  }catch(e){ showToast('Gabim: fjalëkalim i pasaktë ose lidhje e humbur.', true); }
+}
+
+async function saveRecommendation(idx){
+  const block = document.querySelectorAll('#recs-list .item-block')[idx];
+  const rec = recommendations[idx];
+  rec.name = block.querySelector('[data-field="name"]').value;
+  rec.category = block.querySelector('[data-field="category"]').value;
+  rec.price_type = block.querySelector('[data-field="price_type"]').value;
+  rec.staff_pick = block.querySelector('[data-field="staff_pick"]').checked;
+  rec.lat = parseFloat(block.querySelector('[data-field="lat"]').value) || 0;
+  rec.lng = parseFloat(block.querySelector('[data-field="lng"]').value) || 0;
+  rec.image_url = block.querySelector('[data-field="image_url"]').value;
+  rec.meta = {}; rec.tip = {};
+  block.querySelectorAll('[data-lang][data-field="meta"]').forEach(el => rec.meta[el.getAttribute('data-lang')] = el.value);
+  block.querySelectorAll('[data-lang][data-field="tip"]').forEach(el => rec.tip[el.getAttribute('data-lang')] = el.value);
+
+  try{
+    const method = rec.id ? 'PUT' : 'POST';
+    const url = rec.id ? apiUrl('/api/recommendations/' + rec.id) : apiUrl('/api/recommendations');
+    const res = await fetch(url, {
+      method,
+      headers:{ 'Content-Type':'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify(rec)
+    });
+    if(!res.ok) throw new Error(await res.text());
+    const saved = await res.json();
+    recommendations[idx] = saved;
+    renderRecommendations();
+    showToast('Rekomandimi u ruajt.');
+  }catch(e){ showToast('Gabim duke ruajtur rekomandimin.', true); }
+}
+
+async function deleteRecommendation(idx){
+  const rec = recommendations[idx];
+  if(rec.id){
+    try{
+      await fetch(apiUrl('/api/recommendations/' + rec.id), { method:'DELETE', headers:{ 'x-admin-password': adminPassword } });
+    }catch(e){ showToast('Gabim duke fshirë.', true); return; }
+  }
+  recommendations.splice(idx,1);
+  renderRecommendations();
+  showToast('U fshi.');
+}
+
+function switchNoteLangTab(btn, lang){
+  const card = btn.closest('.card');
+  card.querySelectorAll('.lang-tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  card.querySelectorAll('textarea[data-field="note"]').forEach(el=>{
+    el.style.display = el.getAttribute('data-lang') === lang ? 'block' : 'none';
+  });
+}
+
+function expandRoomRange(fromStr, toStr){
+  const from = parseInt(fromStr, 10);
+  const to = toStr ? parseInt(toStr, 10) : from;
+  if(isNaN(from)) return [];
+  const rooms = [];
+  const start = Math.min(from, isNaN(to) ? from : to);
+  const end = Math.max(from, isNaN(to) ? from : to);
+  for(let r = start; r <= end; r++) rooms.push(String(r));
+  return rooms;
+}
+
+async function saveRoomNoteBulk(){
+  const fromVal = document.getElementById('note-room-from').value.trim();
+  const toVal = document.getElementById('note-room-to').value.trim();
+  const rooms = expandRoomRange(fromVal, toVal);
+  if(rooms.length === 0){ showToast('Vendos të paktën një numër dhome.', true); return; }
+
+  const note = {};
+  document.querySelectorAll('textarea[data-field="note"]').forEach(el => {
+    note[el.getAttribute('data-lang')] = el.value;
+  });
+  if(!note.sq && !note.en && !note.it && !note.de){ showToast('Shkruaj tekstin e shënimit.', true); return; }
+
+  try{
+    const res = await fetch(apiUrl('/api/room-notes/bulk'), {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ rooms, note })
+    });
+    if(!res.ok) throw new Error(await res.text());
+    showToast(`Shënimi u ruajt për ${rooms.length} dhoma.`);
+    loadRoomNotesList();
+  }catch(e){ showToast('Gabim duke ruajtur shënimin.', true); }
+}
+
+async function loadRoomNotesList(){
+  try{
+    const res = await fetch(apiUrl('/api/room-notes'), { headers:{ 'x-admin-password': adminPassword } });
+    const notes = await res.json();
+    const box = document.getElementById('room-notes-list');
+    box.innerHTML = notes.length === 0 ? '<p class="rs-cart-empty">Ende pa shënime.</p>' : notes.map(n => `
+      <div class="rs-item">
+        <p class="rs-name">Dhoma ${n.room_number} — <span style="opacity:0.6; font-weight:400;">${(n.note?.sq || n.note?.en || '').slice(0,60)}</span></p>
+        <button class="rs-add" onclick="deleteRoomNote('${n.room_number}')">Fshi</button>
+      </div>`).join('');
+  }catch(e){}
+}
+
+async function deleteRoomNote(room){
+  try{
+    await fetch(apiUrl('/api/room-notes/' + encodeURIComponent(room)), { method:'DELETE', headers:{ 'x-admin-password': adminPassword } });
+    showToast('Shënimi u fshi.');
+    loadRoomNotesList();
+  }catch(e){ showToast('Gabim duke fshirë.', true); }
+}
+
+async function changePassword(){
+  const role = document.getElementById('pw-role').value;
+  const newPassword = document.getElementById('pw-new').value;
+  if(!newPassword || newPassword.length < 4){
+    showToast('Fjalëkalimi duhet të ketë të paktën 4 karaktere.', true);
+    return;
+  }
+  try{
+    const res = await fetch(apiUrl('/api/auth/password'), {
+      method:'PUT',
+      headers:{ 'Content-Type':'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ role, newPassword })
+    });
+    if(!res.ok) throw new Error(await res.text());
+    document.getElementById('pw-new').value = '';
+    if(role === 'admin'){
+      adminPassword = newPassword;
+      showToast('Fjalëkalimi admin u ndryshua. E vendosa automatikisht për sesionin aktual.');
+    } else {
+      showToast('Fjalëkalimi i stafit u ndryshua.');
+    }
+  }catch(e){ showToast('Gabim duke ndryshuar fjalëkalimin.', true); }
+}
+</script>
+</body>
+</html>

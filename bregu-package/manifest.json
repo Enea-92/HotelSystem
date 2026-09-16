@@ -1,0 +1,13 @@
+{
+  "name": "Hotel Bregu — Udhërrëfyesi i mysafirit",
+  "short_name": "Hotel Bregu",
+  "description": "Wifi, pajisjet e dhomës, rekomandime lokale, dhe chat me recepsionin.",
+  "start_url": "hotel-bregu-guest-app.html",
+  "display": "standalone",
+  "background_color": "#E7DEC8",
+  "theme_color": "#0E3A3D",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

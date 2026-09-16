@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Admin — Platforma e Hoteleve</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+:root{
+  --ink:#12302E; --sea:#0E3A3D; --sand:#F3ECDC; --sand-dim:#E7DEC8;
+  --aqua-dark:#186D66; --gold:#CE9A42; --coral:#C1592E; --line:rgba(18,48,46,0.14); --white:#FFFDF8;
+}
+*{box-sizing:border-box;}
+body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); color:var(--ink); }
+.topbar{ background:var(--sea); color:var(--sand); padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+.topbar h1{ font-family:'Fraunces',serif; font-size:20px; font-weight:500; margin:0; }
+.config-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.config-row input{ font-family:'IBM Plex Mono',monospace; font-size:11px; border:0.5px solid rgba(243,236,220,0.4); background:rgba(243,236,220,0.08); color:var(--sand); border-radius:5px; padding:5px 8px; }
+.status{ font-family:'IBM Plex Mono',monospace; font-size:11px; padding:4px 10px; border-radius:5px; background:rgba(243,236,220,0.12); }
+.status.ok{ background:var(--aqua-dark); }
+
+.wrap{ max-width:800px; margin:0 auto; padding:20px; }
+.card{ background:var(--white); border:0.5px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:18px; }
+.card h2{ font-family:'Fraunces',serif; font-size:17px; font-weight:500; margin:0 0 4px; }
+.card p.hint{ font-size:12px; opacity:0.55; margin:0 0 14px; }
+.field-row{ display:grid; grid-template-columns:140px 1fr; gap:10px; align-items:center; margin-bottom:10px; }
+.field-row label{ font-size:12.5px; font-weight:500; }
+.field-row input{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; font-family:inherit; font-size:13px; width:100%; }
+.save-btn{ border:none; background:var(--sea); color:var(--sand); border-radius:8px; padding:9px 18px; font-size:13px; font-weight:500; cursor:pointer; margin-top:6px; }
+.locked{ text-align:center; padding:80px 20px; }
+.locked input{ font-family:'IBM Plex Mono',monospace; padding:10px 14px; border-radius:8px; border:0.5px solid var(--line); font-size:14px; width:240px; }
+.locked button{ border:none; background:var(--sea); color:var(--sand); border-radius:8px; padding:10px 18px; font-size:13px; font-weight:500; cursor:pointer; margin-left:8px; }
+.hotel-row{ border:0.5px solid var(--line); border-radius:10px; padding:12px 16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+.hotel-name{ font-weight:500; font-size:14px; }
+.hotel-slug{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; opacity:0.6; }
+.hotel-urls{ font-size:11px; opacity:0.5; margin-top:4px; }
+.del-link{ color:var(--coral); font-size:12px; cursor:pointer; background:none; border:none; font-family:inherit; }
+.toast{
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+  background:var(--ink); color:var(--sand); font-size:13px; padding:10px 20px;
+  border-radius:20px; opacity:0; pointer-events:none; transition:opacity 0.25s; z-index:99;
+}
+.toast.show{ opacity:1; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Super Admin — Platforma e Hoteleve</h1>
+  <div class="config-row">
+    <span class="status" id="conn-status">● jo i lidhur</span>
+  </div>
+</div>
+
+<div class="wrap" id="locked-view">
+  <div class="locked">
+    <p style="margin-bottom:14px; opacity:0.7;">Vendos URL-në e backend-it dhe fjalëkalimin super-admin</p>
+    <input id="backend-url" placeholder="https://bregu-package.onrender.com" value="https://bregu-package.onrender.com" style="display:block; margin:0 auto 10px;">
+    <input type="password" id="super-password" placeholder="Fjalëkalimi super-admin" style="display:block; margin:0 auto 10px;">
+    <button onclick="unlock()">Hyr</button>
+  </div>
+</div>
+
+<div class="wrap" id="main-view" style="display:none;">
+
+  <div class="card">
+    <h2>Krijo hotel të ri</h2>
+    <p class="hint">Çdo hotel merr URL-në e vet: e njëjta faqe app-i, thjesht me ?hotel=slug në fund.</p>
+    <div class="field-row"><label>Slug (URL)</label><input id="new-slug" placeholder="p.sh. bregu, seaview, kaltra"></div>
+    <div class="field-row"><label>Emri i hotelit</label><input id="new-name" placeholder="p.sh. Hotel Bregu"></div>
+    <div class="field-row"><label>Fjalëkalim admin</label><input id="new-admin-pass" placeholder="Min. 4 karaktere"></div>
+    <div class="field-row"><label>Fjalëkalim stafi</label><input id="new-staff-pass" placeholder="Min. 4 karaktere"></div>
+    <button class="save-btn" onclick="createHotel()">Krijo hotelin</button>
+  </div>
+
+  <div class="card">
+    <h2>Hotelet ekzistuese</h2>
+    <div id="hotels-list"><p style="opacity:0.5; font-size:13px;">Duke ngarkuar...</p></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let apiBase = 'https://bregu-package.onrender.com';
+let superPassword = '';
+
+function showToast(text, isError){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.style.background = isError ? '#C1592E' : '#12302E';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+async function unlock(){
+  apiBase = document.getElementById('backend-url').value.trim().replace(/\/$/, '');
+  superPassword = document.getElementById('super-password').value;
+  try{
+    const res = await fetch(apiBase + '/api/super-admin/hotels', { headers: { 'x-super-admin-password': superPassword } });
+    if(res.status === 401) throw new Error('wrong password');
+    if(!res.ok) throw new Error('bad response');
+    document.getElementById('conn-status').textContent = '● i lidhur';
+    document.getElementById('conn-status').classList.add('ok');
+    document.getElementById('locked-view').style.display = 'none';
+    document.getElementById('main-view').style.display = 'block';
+    loadHotels();
+  }catch(e){
+    showToast(e.message === 'wrong password' ? 'Fjalëkalim i gabuar.' : "S'u lidh dot me backend-in.", true);
+  }
+}
+
+async function loadHotels(){
+  try{
+    const res = await fetch(apiBase + '/api/super-admin/hotels', { headers: { 'x-super-admin-password': superPassword } });
+    const hotels = await res.json();
+    const box = document.getElementById('hotels-list');
+    if(hotels.length === 0){ box.innerHTML = '<p style="opacity:0.5; font-size:13px;">Ende pa hotele.</p>'; return; }
+    box.innerHTML = hotels.map(h => `
+      <div class="hotel-row">
+        <div>
+          <div class="hotel-name">${h.name} <span class="hotel-slug">(${h.slug})</span></div>
+          <div class="hotel-urls">App: hotel-bregu-guest-app.html?hotel=${h.slug} · Admin: admin.html?hotel=${h.slug} · Staf: staff-dashboard.html?hotel=${h.slug}</div>
+        </div>
+        <button class="del-link" onclick="deleteHotel('${h.slug}')">Fshi</button>
+      </div>`).join('');
+  }catch(e){ showToast('Gabim duke ngarkuar hotelet.', true); }
+}
+
+async function createHotel(){
+  const slug = document.getElementById('new-slug').value.trim().toLowerCase();
+  const name = document.getElementById('new-name').value.trim();
+  const adminPass = document.getElementById('new-admin-pass').value;
+  const staffPass = document.getElementById('new-staff-pass').value;
+  if(!slug || !name || !adminPass || !staffPass){
+    showToast('Plotëso të gjitha fushat.', true);
+    return;
+  }
+  try{
+    const res = await fetch(apiBase + '/api/super-admin/hotels', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-super-admin-password': superPassword },
+      body: JSON.stringify({ slug, name, admin_password: adminPass, staff_password: staffPass })
+    });
+    if(!res.ok){
+      const err = await res.json();
+      throw new Error(err.error || 'Gabim');
+    }
+    showToast(`Hoteli "${name}" u krijua!`);
+    document.getElementById('new-slug').value = '';
+    document.getElementById('new-name').value = '';
+    document.getElementById('new-admin-pass').value = '';
+    document.getElementById('new-staff-pass').value = '';
+    loadHotels();
+  }catch(e){ showToast(e.message, true); }
+}
+
+async function deleteHotel(slug){
+  if(!confirm(`Fshi hotelin "${slug}" dhe TË GJITHË të dhënat e tij? Kjo s'kthehet mbrapa.`)) return;
+  try{
+    await fetch(apiBase + '/api/super-admin/hotels/' + slug, { method:'DELETE', headers: { 'x-super-admin-password': superPassword } });
+    showToast('Hoteli u fshi.');
+    loadHotels();
+  }catch(e){ showToast('Gabim duke fshirë.', true); }
+}
+</script>
+</body>
+</html>

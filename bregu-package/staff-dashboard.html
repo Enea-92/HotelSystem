@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bregu — Paneli i stafit</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+:root{
+  --ink:#12302E; --sea:#0E3A3D; --sand:#F3ECDC; --sand-dim:#E7DEC8;
+  --aqua-dark:#186D66; --gold:#CE9A42; --coral:#C1592E; --line:rgba(18,48,46,0.14); --white:#FFFDF8;
+}
+*{box-sizing:border-box;}
+body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); color:var(--ink); }
+.topbar{ background:var(--sea); color:var(--sand); padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+.topbar h1{ font-family:'Fraunces',serif; font-size:20px; font-weight:500; margin:0; }
+.conn{ font-family:'IBM Plex Mono',monospace; font-size:11px; padding:4px 10px; border-radius:5px; background:rgba(243,236,220,0.12); }
+.conn.on{ background:var(--aqua-dark); }
+.config-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.config-row input{ font-family:'IBM Plex Mono',monospace; font-size:11px; border:0.5px solid rgba(243,236,220,0.4); background:rgba(243,236,220,0.08); color:var(--sand); border-radius:5px; padding:5px 8px; width:180px; }
+.config-row button{ font-size:11px; border:none; background:var(--gold); color:var(--ink); border-radius:5px; padding:5px 10px; cursor:pointer; font-weight:500; }
+
+.locked{ text-align:center; padding:80px 20px; }
+.locked input{ font-family:'IBM Plex Mono',monospace; padding:10px 14px; border-radius:8px; border:0.5px solid var(--line); font-size:14px; width:220px; }
+.locked button{ border:none; background:var(--sea); color:var(--sand); border-radius:8px; padding:10px 18px; font-size:13px; font-weight:500; cursor:pointer; margin-left:8px; }
+
+.stats-row{ display:flex; gap:12px; padding:16px 20px 0; max-width:1200px; margin:0 auto; flex-wrap:wrap; }
+.stat-card{ background:var(--white); border:0.5px solid var(--line); border-radius:12px; padding:12px 18px; flex:1; min-width:120px; }
+.stat-num{ font-family:'Fraunces',serif; font-size:22px; font-weight:500; }
+.stat-label{ font-size:11px; opacity:0.55; text-transform:uppercase; letter-spacing:0.04em; }
+
+.board{ display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; padding:20px; max-width:1400px; margin:0 auto; }
+@media (max-width:1100px){ .board{ grid-template-columns:1fr 1fr; } }
+@media (max-width:640px){ .board{ grid-template-columns:1fr; } }
+.col{ background:var(--white); border:0.5px solid var(--line); border-radius:12px; padding:14px 16px; min-height:200px; }
+.col h2{ font-size:13px; text-transform:uppercase; letter-spacing:0.06em; opacity:0.6; margin:0 0 12px; display:flex; justify-content:space-between; align-items:center; }
+.badge{ background:var(--sand-dim); color:var(--sea); border-radius:10px; padding:1px 8px; font-size:11px; }
+.export-link{ font-size:10.5px; color:var(--aqua-dark); text-decoration:none; cursor:pointer; }
+
+.card{ border:0.5px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px; font-size:13px; }
+.card-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+.card-room{ font-family:'IBM Plex Mono',monospace; font-weight:500; color:var(--aqua-dark); }
+.card-time{ font-size:10.5px; opacity:0.45; }
+.card-body{ opacity:0.85; line-height:1.5; }
+.card-btns{ display:flex; gap:6px; margin-top:8px; }
+.card-btn{ border:none; background:var(--sea); color:var(--sand); font-size:11.5px; padding:5px 10px; border-radius:6px; cursor:pointer; }
+.card-btn.secondary{ background:var(--sand-dim); color:var(--ink); }
+.empty{ font-size:12.5px; opacity:0.4; padding:10px 0; }
+
+.chat-col{ grid-column:1 / -1; }
+.chat-room-list{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.room-pill{ border:0.5px solid var(--line); background:var(--sand-dim); border-radius:14px; padding:5px 12px; font-size:12px; cursor:pointer; font-family:'IBM Plex Mono',monospace; }
+.room-pill.on{ background:var(--sea); color:var(--sand); }
+.chat-thread{ max-height:280px; overflow-y:auto; border:0.5px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px; }
+.msg{ max-width:70%; margin-bottom:8px; font-size:13px; padding:8px 12px; border-radius:10px; line-height:1.5; }
+.msg.guest{ background:var(--sand-dim); }
+.msg.staff{ background:var(--sea); color:var(--sand); margin-left:auto; }
+.reply-row{ display:flex; gap:8px; }
+.reply-row input{ flex:1; border:0.5px solid var(--line); border-radius:8px; padding:9px 12px; font-family:inherit; font-size:13px; }
+.reply-row button{ border:none; background:var(--sea); color:var(--sand); border-radius:8px; padding:9px 16px; cursor:pointer; font-size:13px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Bregu — Paneli i stafit</h1>
+  <div class="config-row">
+    <span class="conn" id="conn-status">● jo i lidhur</span>
+    <button onclick="toggleSound()" id="sound-btn">🔊 Tinguj: ON</button>
+  </div>
+</div>
+
+<div id="locked-view">
+  <div class="locked">
+    <p style="margin-bottom:14px; opacity:0.7;">Vendos URL-në e backend-it, slug-un e hotelit, dhe fjalëkalimin e stafit</p>
+    <input id="backend-url" placeholder="https://bregu-package.onrender.com" value="https://bregu-package.onrender.com" style="display:block; margin:0 auto 10px;">
+    <input id="hotel-slug" placeholder="Hoteli (p.sh. bregu)" style="display:block; margin:0 auto 10px;">
+    <input type="password" id="staff-password" placeholder="Fjalëkalimi i stafit">
+    <button onclick="connect()">Lidhu</button>
+  </div>
+</div>
+
+<div id="main-view" style="display:none;">
+  <div class="stats-row" id="stats-row"></div>
+
+  <div class="board">
+    <div class="col">
+      <h2>Kërkesa të shpejta <span class="badge" id="req-count">0</span></h2>
+      <div id="requests-list"><p class="empty">Asnjë kërkesë pezull.</p></div>
+    </div>
+
+    <div class="col">
+      <h2>Probleme teknike <span class="badge" id="issue-count">0</span></h2>
+      <div id="issues-list"><p class="empty">Asnjë problem i raportuar.</p></div>
+    </div>
+
+    <div class="col">
+      <h2>
+        <span>Porosi room-service <span class="badge" id="order-count">0</span></span>
+        <a class="export-link" onclick="exportCsv('orders')">Eksporto CSV</a>
+      </h2>
+      <div id="orders-list"><p class="empty">Asnjë porosi pezull.</p></div>
+    </div>
+
+    <div class="col">
+      <h2>
+        <span>Vlerësime të fundit</span>
+        <a class="export-link" onclick="exportCsv('feedback')">Eksporto CSV</a>
+      </h2>
+      <div id="feedback-list"><p class="empty">Ende pa vlerësime.</p></div>
+    </div>
+
+    <div class="col chat-col">
+      <h2>Chat me dhomat</h2>
+      <div class="chat-room-list" id="room-list"></div>
+      <div class="chat-thread" id="chat-thread"><p class="empty">Zgjidhni një dhomë për të parë bisedën.</p></div>
+      <div class="reply-row">
+        <input id="reply-input" placeholder="Përgjigju mysafirit..." onkeydown="if(event.key==='Enter')sendReply()">
+        <button onclick="sendReply()">Dërgo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+let socket = null;
+let apiBase = 'https://bregu-package.onrender.com';
+let staffPassword = '';
+let currentHotel = '';
+let activeRoom = null;
+let knownRooms = new Set();
+let allMessages = [];
+let soundOn = true;
+
+function authHeaders(){
+  return { 'Content-Type': 'application/json', 'x-staff-password': staffPassword };
+}
+
+function apiUrl(path){
+  const sep = path.includes('?') ? '&' : '?';
+  return apiBase + path + sep + 'hotel=' + encodeURIComponent(currentHotel);
+}
+
+// Repeating chime via Web Audio API — runs about 5 seconds so it's hard to miss,
+// even with the tab in the background. No external sound file needed.
+function playBeep(){
+  if(!soundOn) return;
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+
+    function tone(freq, startOffset, duration, peakGain){
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(gain); gain.connect(ctx.destination);
+      const t0 = now + startOffset;
+      const t1 = t0 + duration;
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(peakGain, t0 + 0.02);
+      gain.gain.setValueAtTime(peakGain, t1 - 0.05);
+      gain.gain.linearRampToValueAtTime(0, t1);
+      osc.start(t0);
+      osc.stop(t1 + 0.02);
+    }
+
+    const pulses = 7; // ~5 seconds total at 0.75s spacing
+    for(let i = 0; i < pulses; i++){
+      const freq = i % 2 === 0 ? 880 : 1175;
+      tone(freq, i * 0.75, 0.5, 0.5);
+    }
+
+    setTimeout(()=>ctx.close(), 5300);
+  }catch(e){}
+}
+
+// Browser notification — shows a system-level popup even while this tab is
+// open and focused, not just when the page is in the background.
+let notificationsReady = false;
+
+function ensureNotificationPermission(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'default'){
+    Notification.requestPermission().then(p => { notificationsReady = (p === 'granted'); });
+  } else {
+    notificationsReady = (Notification.permission === 'granted');
+  }
+}
+
+function showBrowserNotification(title, body){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  try{
+    new Notification(title, { body, icon: 'icon-192.png', tag: 'bregu-' + Date.now() });
+  }catch(e){}
+}
+
+function toggleSound(){
+  soundOn = !soundOn;
+  document.getElementById('sound-btn').textContent = soundOn ? '🔊 Tinguj: ON' : '🔇 Tinguj: OFF';
+}
+
+async function connect(){
+  apiBase = document.getElementById('backend-url').value.trim().replace(/\/$/, '');
+  currentHotel = document.getElementById('hotel-slug').value.trim().toLowerCase();
+  staffPassword = document.getElementById('staff-password').value;
+  ensureNotificationPermission();
+
+  if(!currentHotel){
+    document.getElementById('conn-status').textContent = '● vendos hotelin';
+    return;
+  }
+
+  try{
+    const testRes = await fetch(apiUrl('/api/quick-requests'), { headers: authHeaders() });
+    if(testRes.status === 401) throw new Error('unauthorized');
+    if(!testRes.ok) throw new Error('bad response');
+  }catch(e){
+    document.getElementById('conn-status').textContent = '● fjalëkalim/URL i gabuar';
+    return;
+  }
+
+  document.getElementById('locked-view').style.display = 'none';
+  document.getElementById('main-view').style.display = 'block';
+
+  if(socket) socket.disconnect();
+  socket = io(apiBase, { transports: ['websocket', 'polling'] });
+
+  socket.on('connect', () => {
+    document.getElementById('conn-status').textContent = '● i lidhur';
+    document.getElementById('conn-status').classList.add('on');
+    socket.emit('join_staff', currentHotel);
+    loadAll();
+  });
+  socket.on('disconnect', () => {
+    document.getElementById('conn-status').textContent = '● shkëputur';
+    document.getElementById('conn-status').classList.remove('on');
+  });
+  socket.on('new_request', (item) => {
+    loadRequests(); loadStats(); playBeep();
+    const title = item.category === 'issue' ? '🔧 Problem teknik — Dhoma ' + item.room_number : 'Kërkesë e re — Dhoma ' + item.room_number;
+    showBrowserNotification(title, item.request_type);
+  });
+  socket.on('request_updated', () => loadRequests());
+  socket.on('new_order', (order) => {
+    loadOrders(); loadStats(); playBeep();
+    showBrowserNotification('Porosi e re — Dhoma ' + order.room_number, order.items.map(i=>i.name).join(', '));
+  });
+  socket.on('order_updated', () => loadOrders());
+  socket.on('chat_cleared', () => {
+    allMessages = [];
+    knownRooms = new Set();
+    activeRoom = null;
+    renderRoomList();
+    document.getElementById('chat-thread').innerHTML = '<p class="empty">Zgjidhni një dhomë për të parë bisedën.</p>';
+  });
+  socket.on('new_message', (msg) => {
+    knownRooms.add(msg.room_number);
+    renderRoomList();
+    if(msg.room_number === activeRoom){
+      allMessages.push(msg);
+      renderThread();
+    }
+    if(msg.sender === 'guest'){
+      playBeep();
+      showBrowserNotification('Mesazh i ri — Dhoma ' + msg.room_number, msg.text);
+    }
+  });
+}
+
+async function loadAll(){
+  loadRequests();
+  loadOrders();
+  loadFeedback();
+  loadStats();
+  const res = await fetch(apiUrl('/api/messages'), { headers: authHeaders() });
+  const msgs = await res.json();
+  msgs.forEach(m => knownRooms.add(m.room_number));
+  renderRoomList();
+}
+
+async function loadStats(){
+  try{
+    const res = await fetch(apiUrl('/api/stats'), { headers: authHeaders() });
+    const s = await res.json();
+    const box = document.getElementById('stats-row');
+    box.innerHTML = `
+      <div class="stat-card"><div class="stat-num">${s.requests_today}</div><div class="stat-label">Kërkesa sot</div></div>
+      <div class="stat-card"><div class="stat-num">${s.orders_today}</div><div class="stat-label">Porosi sot</div></div>
+      <div class="stat-card"><div class="stat-num">${s.avg_rating ?? '—'}</div><div class="stat-label">Vlerësim mesatar</div></div>
+      <div class="stat-card"><div class="stat-num">${s.busiest_hour !== null ? s.busiest_hour+':00' : '—'}</div><div class="stat-label">Ora më e ngarkuar</div></div>
+    `;
+  }catch(e){}
+}
+
+async function loadRequests(){
+  const res = await fetch(apiUrl('/api/quick-requests'), { headers: authHeaders() });
+  const items = await res.json();
+  const requests = items.filter(r => r.category !== 'issue');
+  const issues = items.filter(r => r.category === 'issue');
+
+  document.getElementById('req-count').textContent = requests.length;
+  const box = document.getElementById('requests-list');
+  box.innerHTML = requests.length === 0 ? '<p class="empty">Asnjë kërkesë pezull.</p>' : requests.map(r => `
+    <div class="card">
+      <div class="card-top"><span class="card-room">Dhoma ${r.room_number}</span><span class="card-time">${r.created_at}</span></div>
+      <div class="card-body">${r.request_type}</div>
+      <div class="card-btns"><button class="card-btn" onclick="markRequestDone('${r.id}')">Shëno si kryer</button></div>
+    </div>`).join('');
+
+  document.getElementById('issue-count').textContent = issues.length;
+  const issueBox = document.getElementById('issues-list');
+  issueBox.innerHTML = issues.length === 0 ? '<p class="empty">Asnjë problem i raportuar.</p>' : issues.map(r => `
+    <div class="card" style="border-color:rgba(193,89,46,0.35);">
+      <div class="card-top"><span class="card-room">Dhoma ${r.room_number}</span><span class="card-time">${r.created_at}</span></div>
+      <div class="card-body">🔧 ${r.request_type}</div>
+      <div class="card-btns"><button class="card-btn" onclick="markRequestDone('${r.id}')">Shëno si zgjidhur</button></div>
+    </div>`).join('');
+}
+
+async function markRequestDone(id){
+  await fetch(apiUrl('/api/quick-requests/' + id), { method:'PATCH', headers: authHeaders(), body: JSON.stringify({status:'done'}) });
+  loadRequests();
+}
+
+async function loadOrders(){
+  const res = await fetch(apiUrl('/api/room-service'), { headers: authHeaders() });
+  const orders = await res.json();
+  document.getElementById('order-count').textContent = orders.length;
+  const box = document.getElementById('orders-list');
+  box.innerHTML = orders.length === 0 ? '<p class="empty">Asnjë porosi pezull.</p>' : orders.map(o => `
+    <div class="card">
+      <div class="card-top"><span class="card-room">Dhoma ${o.room_number}</span><span class="card-time">${o.total} L</span></div>
+      <div class="card-body">${o.items.map(i=>i.name).join(', ')} <span class="badge">${o.status}</span></div>
+      <div class="card-btns">
+        ${o.status === 'pending' ? `<button class="card-btn secondary" onclick="updateOrderStatus('${o.id}','preparing')">Po përgatitet</button>` : ''}
+        <button class="card-btn" onclick="updateOrderStatus('${o.id}','delivered')">Shëno si dorëzuar</button>
+      </div>
+    </div>`).join('');
+}
+
+async function updateOrderStatus(id, status){
+  await fetch(apiUrl('/api/room-service/' + id), { method:'PATCH', headers: authHeaders(), body: JSON.stringify({status}) });
+  loadOrders();
+}
+
+async function loadFeedback(){
+  const res = await fetch(apiUrl('/api/feedback'), { headers: authHeaders() });
+  const items = await res.json();
+  const box = document.getElementById('feedback-list');
+  box.innerHTML = items.length === 0 ? '<p class="empty">Ende pa vlerësime.</p>' : items.slice(0,10).map(f => `
+    <div class="card">
+      <div class="card-top"><span class="card-room">Dhoma ${f.room_number}</span><span class="card-time">${'★'.repeat(f.rating)}</span></div>
+      <div class="card-body">${f.comment || ''}</div>
+    </div>`).join('');
+}
+
+async function exportCsv(type){
+  try{
+    const res = await fetch(apiUrl('/api/export/' + type + '.csv'), { headers: authHeaders() });
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = type + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(e){ alert('Eksportimi dështoi.'); }
+}
+
+function renderRoomList(){
+  const box = document.getElementById('room-list');
+  box.innerHTML = [...knownRooms].sort().map(r => `<button class="room-pill ${r===activeRoom?'on':''}" onclick="openRoom('${r}')">Dhoma ${r}</button>`).join('');
+}
+
+async function openRoom(room){
+  activeRoom = room;
+  renderRoomList();
+  socket.emit('join_room', { hotel: currentHotel, room });
+  const res = await fetch(apiUrl('/api/messages/' + room));
+  allMessages = await res.json();
+  renderThread();
+}
+
+function renderThread(){
+  const box = document.getElementById('chat-thread');
+  box.innerHTML = allMessages.map(m => `<div class="msg ${m.sender}">${m.text}</div>`).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendReply(){
+  const input = document.getElementById('reply-input');
+  const text = input.value.trim();
+  if(!text || !activeRoom) return;
+  await fetch(apiUrl('/api/messages'), { method:'POST', headers: authHeaders(), body: JSON.stringify({room_number: activeRoom, sender:'staff', text}) });
+  input.value = '';
+}
+</script>
+</body>
+</html>
