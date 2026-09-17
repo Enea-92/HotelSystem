@@ -73,6 +73,7 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
   <div class="config-row">
     <span class="status" id="conn-status">● jo i lidhur</span>
     <input id="backend-url" placeholder="https://bregu-package.onrender.com" value="https://bregu-package.onrender.com">
+    <button onclick="logoutAdmin()" id="logout-btn" style="display:none; font-size:11px; border:none; background:var(--gold); color:var(--ink); border-radius:5px; padding:5px 10px; cursor:pointer; font-weight:500;">Dil</button>
   </div>
 </div>
 
@@ -319,8 +320,13 @@ async function unlock(){
     const recRes = await fetch(apiUrl('/api/recommendations'));
     recommendations = await recRes.json();
 
+    try{
+      localStorage.setItem('bregu_admin_session', JSON.stringify({ apiBase, hotel: currentHotel, password: adminPassword }));
+    }catch(e){}
+
     document.getElementById('conn-status').textContent = '● i lidhur';
     document.getElementById('conn-status').classList.add('ok');
+    document.getElementById('logout-btn').style.display = 'inline-block';
     document.getElementById('locked-view').style.display = 'none';
     document.getElementById('main-view').style.display = 'block';
     renderAll();
@@ -616,6 +622,27 @@ async function changePassword(){
     }
   }catch(e){ showToast('Gabim duke ndryshuar fjalëkalimin.', true); }
 }
+
+function logoutAdmin(){
+  try{ localStorage.removeItem('bregu_admin_session'); }catch(e){}
+  document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('main-view').style.display = 'none';
+  document.getElementById('locked-view').style.display = 'block';
+  document.getElementById('conn-status').textContent = '● jo i lidhur';
+  document.getElementById('conn-status').classList.remove('ok');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  try{
+    const saved = JSON.parse(localStorage.getItem('bregu_admin_session') || 'null');
+    if(saved && saved.apiBase && saved.hotel && saved.password){
+      document.getElementById('backend-url').value = saved.apiBase;
+      document.getElementById('hotel-slug').value = saved.hotel;
+      document.getElementById('admin-password').value = saved.password;
+      unlock();
+    }
+  }catch(e){}
+});
 </script>
 </body>
 </html>

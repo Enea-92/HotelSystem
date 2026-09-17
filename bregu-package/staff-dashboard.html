@@ -67,6 +67,7 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
   <div class="config-row">
     <span class="conn" id="conn-status">● jo i lidhur</span>
     <button onclick="toggleSound()" id="sound-btn">🔊 Tinguj: ON</button>
+    <button onclick="logout()" id="logout-btn" style="display:none;">Dil</button>
   </div>
 </div>
 
@@ -221,6 +222,10 @@ async function connect(){
     return;
   }
 
+  try{
+    localStorage.setItem('bregu_staff_session', JSON.stringify({ apiBase, hotel: currentHotel, password: staffPassword }));
+  }catch(e){}
+
   document.getElementById('locked-view').style.display = 'none';
   document.getElementById('main-view').style.display = 'block';
 
@@ -230,6 +235,7 @@ async function connect(){
   socket.on('connect', () => {
     document.getElementById('conn-status').textContent = '● i lidhur';
     document.getElementById('conn-status').classList.add('on');
+    document.getElementById('logout-btn').style.display = 'inline-block';
     socket.emit('join_staff', currentHotel);
     loadAll();
   });
@@ -395,6 +401,28 @@ async function sendReply(){
   await fetch(apiUrl('/api/messages'), { method:'POST', headers: authHeaders(), body: JSON.stringify({room_number: activeRoom, sender:'staff', text}) });
   input.value = '';
 }
+
+function logout(){
+  try{ localStorage.removeItem('bregu_staff_session'); }catch(e){}
+  if(socket) socket.disconnect();
+  document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('main-view').style.display = 'none';
+  document.getElementById('locked-view').style.display = 'block';
+  document.getElementById('conn-status').textContent = '● jo i lidhur';
+  document.getElementById('conn-status').classList.remove('on');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  try{
+    const saved = JSON.parse(localStorage.getItem('bregu_staff_session') || 'null');
+    if(saved && saved.apiBase && saved.hotel && saved.password){
+      document.getElementById('backend-url').value = saved.apiBase;
+      document.getElementById('hotel-slug').value = saved.hotel;
+      document.getElementById('staff-password').value = saved.password;
+      connect();
+    }
+  }catch(e){}
+});
 </script>
 </body>
 </html>
