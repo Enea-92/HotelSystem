@@ -7,8 +7,8 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
 :root{
-  --ink:#12302E; --sea:#0E3A3D; --sand:#F3ECDC; --sand-dim:#E7DEC8;
-  --aqua-dark:#186D66; --gold:#CE9A42; --coral:#C1592E; --line:rgba(18,48,46,0.14); --white:#FFFDF8;
+  --ink:#0B1B33; --sea:#0F2A4D; --sand:#EEF1F6; --sand-dim:#DCE3ED;
+  --aqua-dark:#2C5FA8; --gold:#CE9A42; --coral:#C1592E; --line:rgba(15,42,77,0.16); --white:#FFFFFF;
 }
 *{box-sizing:border-box;}
 body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); color:var(--ink); }
@@ -208,7 +208,7 @@ function apiUrl(path){
 function showToast(text, isError){
   const t = document.getElementById('toast');
   t.textContent = text;
-  t.style.background = isError ? '#C1592E' : '#12302E';
+  t.style.background = isError ? '#C1592E' : '#0B1B33';
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'), 2500);
 }
