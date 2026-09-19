@@ -508,6 +508,24 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, db: mongoose.connection.readyState === 1 ? 'connected' : 'not connected' });
 });
 
+// ============ keep-alive self-ping ============
+// Render's free tier spins the service down after ~15 minutes with no
+// incoming HTTP requests. If SELF_PING_URL is set (your own public backend
+// URL), the server pings its own /api/health every 10 minutes — well under
+// that threshold — so it never spins down on its own. This only keeps an
+// already-running server awake; it can't wake a service that's already
+// asleep (only real incoming traffic, e.g. a guest opening the app, does
+// that — which then takes Render ~30-50s to respond to, same as always).
+const SELF_PING_URL = process.env.SELF_PING_URL;
+if (SELF_PING_URL) {
+  setInterval(() => {
+    fetch(SELF_PING_URL.replace(/\/$/, '') + '/api/health').catch(() => {});
+  }, 10 * 60 * 1000);
+  console.log('Self-ping keep-alive enabled, pinging', SELF_PING_URL, 'every 10 minutes.');
+} else {
+  console.log('SELF_PING_URL not set — server will spin down after ~15 min idle on Render free tier.');
+}
+
 // ============ daily message wipe (11:00, Europe/Tirane time — checkout) ============
 let lastWipeDate = null;
 
