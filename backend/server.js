@@ -263,6 +263,13 @@ app.get('/api/feedback', requireStaff, async (req, res) => {
   res.json(docs.map(toDTO));
 });
 
+// ============ HOTEL INFO (public display name) ============
+
+app.get('/api/hotel-info', requireHotel, async (req, res) => {
+  const hotel = await Hotel.findOne({ slug: req.hotel });
+  res.json({ slug: req.hotel, name: hotel ? hotel.name : req.hotel });
+});
+
 // ============ HOTEL CONTENT (editable via admin panel) ============
 
 app.get('/api/content', requireHotel, async (req, res) => {

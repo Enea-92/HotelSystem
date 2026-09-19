@@ -384,7 +384,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
     <div class="top-row">
       <div>
         <p class="eyebrow" data-i18n="eyebrow">Udhërrëfyesi i mysafirit</p>
-        <h1 class="hotel-name">Hotel Bregu</h1>
+        <h1 class="hotel-name" id="hotel-name-el">Hotel Bregu</h1>
       </div>
       <div class="lang-switch">
         <button class="lang-btn on" data-lang="sq" onclick="setLang('sq')">SQ</button>
@@ -1030,9 +1030,10 @@ function escapeHtml(str){
 async function loadHotelContent(){
   if(!API_BASE || !currentHotel) return;
   try{
-    const [contentRes, recsRes] = await Promise.all([
+    const [contentRes, recsRes, infoRes] = await Promise.all([
       fetch(API_BASE + '/api/content?hotel=' + encodeURIComponent(currentHotel)),
-      fetch(API_BASE + '/api/recommendations?hotel=' + encodeURIComponent(currentHotel))
+      fetch(API_BASE + '/api/recommendations?hotel=' + encodeURIComponent(currentHotel)),
+      fetch(API_BASE + '/api/hotel-info?hotel=' + encodeURIComponent(currentHotel))
     ]);
     dynamicContent = await contentRes.json();
     dynamicRecs = await recsRes.json();
@@ -1041,6 +1042,14 @@ async function loadHotelContent(){
     renderDynamicRecommendations();
     initRealMap();
     fetchWeather(dynamicContent.location?.lat, dynamicContent.location?.lng);
+    try{
+      const info = await infoRes.json();
+      if(info?.name){
+        const nameEl = document.getElementById('hotel-name-el');
+        if(nameEl) nameEl.textContent = info.name;
+        document.title = info.name + ' — Udhërrëfyesi i mysafirit';
+      }
+    }catch(e){}
   }catch(e){ console.warn('Could not load hotel content, using example content.', e); }
   loadRoomNote();
 }
