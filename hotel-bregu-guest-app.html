@@ -22,12 +22,32 @@
   --coral:#C1592E;
   --line:rgba(18,48,46,0.14);
   --white:#FFFDF8;
+  --shadow-1:0 2px 10px rgba(18,48,46,0.06);
+  --shadow-2:0 10px 28px rgba(18,48,46,0.14);
+}
+html[data-theme="dark"]{
+  --ink:#EAE5D8;
+  --sea:#123B3D;
+  --sea-light:#1F4F52;
+  --sand:#0A1615;
+  --sand-dim:#12211F;
+  --aqua:#48BDB1;
+  --aqua-dark:#52C9BD;
+  --gold:#E4BA71;
+  --coral:#E28459;
+  --line:rgba(234,229,216,0.12);
+  --white:#152A28;
+  --shadow-1:0 2px 12px rgba(0,0,0,0.35);
+  --shadow-2:0 14px 36px rgba(0,0,0,0.5);
 }
 *{box-sizing:border-box;}
+html{ color-scheme:light; }
+html[data-theme="dark"]{ color-scheme:dark; }
 body{
   margin:0;
   font-family:'Work Sans', sans-serif;
   background:var(--sand-dim);
+  transition:background-color 0.35s ease, color 0.35s ease;
   color:var(--ink);
   display:flex;
   justify-content:center;
@@ -61,6 +81,16 @@ body{
 }
 .top-row{ display:flex; justify-content:space-between; align-items:flex-start; }
 .lang-switch{ display:flex; gap:4px; z-index:1; }
+.theme-toggle{
+  border:0.5px solid rgba(243,236,220,0.35);
+  background:rgba(243,236,220,0.08);
+  color:var(--sand);
+  width:26px; height:26px; border-radius:7px;
+  font-size:13px; line-height:1; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background-color 0.2s ease, transform 0.15s ease;
+}
+.theme-toggle:active{ transform:scale(0.9); }
 .lang-btn{
   border:0.5px solid rgba(243,236,220,0.35);
   background:rgba(243,236,220,0.08);
@@ -147,7 +177,7 @@ p.section-sub{
   padding:18px 20px;
   margin-bottom:18px;
   position:relative;
-  box-shadow:0 10px 24px rgba(14,58,61,0.28);
+  box-shadow:var(--shadow-2);
 }
 .keycard-row{
   display:flex;
@@ -184,10 +214,10 @@ p.section-sub{
   padding:14px;
   cursor:pointer;
   text-align:left;
-  box-shadow:0 2px 10px rgba(18,48,46,0.05);
+  box-shadow:var(--shadow-1);
   transition:transform 0.15s ease, box-shadow 0.15s ease;
 }
-.quick-card:hover{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(18,48,46,0.1); border-color:rgba(44,157,147,0.35); }
+.quick-card:hover{ transform:translateY(-2px); box-shadow:var(--shadow-2); border-color:rgba(44,157,147,0.35); }
 .quick-card:active{ transform:scale(0.98) translateY(0); }
 .quick-card .qi{
   color:var(--aqua-dark); margin-bottom:10px;
@@ -386,11 +416,14 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
         <p class="eyebrow" data-i18n="eyebrow">Udhërrëfyesi i mysafirit</p>
         <h1 class="hotel-name" id="hotel-name-el">Hotel Bregu</h1>
       </div>
-      <div class="lang-switch">
-        <button class="lang-btn on" data-lang="sq" onclick="setLang('sq')">SQ</button>
-        <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
-        <button class="lang-btn" data-lang="it" onclick="setLang('it')">IT</button>
-        <button class="lang-btn" data-lang="de" onclick="setLang('de')">DE</button>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Ndrysho pamjen">🌙</button>
+        <div class="lang-switch">
+          <button class="lang-btn on" data-lang="sq" onclick="setLang('sq')">SQ</button>
+          <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+          <button class="lang-btn" data-lang="it" onclick="setLang('it')">IT</button>
+          <button class="lang-btn" data-lang="de" onclick="setLang('de')">DE</button>
+        </div>
       </div>
     </div>
     <div class="room-row">
@@ -1303,6 +1336,30 @@ function showSessionLocked(){
   `;
   document.body.appendChild(overlay);
 }
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-toggle');
+  if(btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if(metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#0A1615' : '#0E3A3D');
+}
+
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try{ localStorage.setItem('bregu_theme', next); }catch(e){}
+}
+
+(function initTheme(){
+  let theme = null;
+  try{ theme = localStorage.getItem('bregu_theme'); }catch(e){}
+  if(!theme){
+    theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  applyTheme(theme);
+})();
+
 window.addEventListener('DOMContentLoaded', initFromUrl);
 
 if ('serviceWorker' in navigator) {
