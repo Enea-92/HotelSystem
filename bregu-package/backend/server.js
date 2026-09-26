@@ -14,7 +14,7 @@ const bcrypt = require('bcryptjs');
 const webpush = require('web-push');
 const {
   Hotel, Message, QuickRequest, RoomServiceOrder, Feedback,
-  HotelContent, Recommendation, AuthSettings, RoomNote, PushSubscription, toDTO
+  HotelContent, Recommendation, AuthSettings, RoomNote, PushSubscription, GeneratedQr, toDTO
 } = require('./models');
 
 const app = express();
@@ -218,6 +218,11 @@ app.patch('/api/quick-requests/:id', requireStaff, async (req, res) => {
   const doc = await QuickRequest.findOneAndUpdate({ _id: req.params.id, hotel: req.hotel }, { status: req.body.status || 'done' }, { new: true });
   const item = toDTO(doc);
   io.to(staffChannel(req.hotel)).emit('request_updated', item);
+
+  if (item.status === 'done') {
+    sendPushToRoom(req.hotel, item.room_number, 'Kërkesa juaj u përmbush', item.request_type).catch(() => {});
+  }
+
   res.json(item);
 });
 
@@ -246,6 +251,12 @@ app.patch('/api/room-service/:id', requireStaff, async (req, res) => {
   const doc = await RoomServiceOrder.findOneAndUpdate({ _id: req.params.id, hotel: req.hotel }, changes, { new: true });
   const order = toDTO(doc);
   io.to(roomChannel(req.hotel, order.room_number)).to(staffChannel(req.hotel)).emit('order_updated', order);
+
+  const statusText = { preparing: 'Porosia juaj po përgatitet.', delivered: 'Porosia juaj u dorëzua. Shijoni!' };
+  if (statusText[order.status]) {
+    sendPushToRoom(req.hotel, order.room_number, 'Përditësim porosie', statusText[order.status]).catch(() => {});
+  }
+
   res.json(order);
 });
 
@@ -442,6 +453,33 @@ app.post('/api/push/unsubscribe', async (req, res) => {
 });
 
 // ============ ROOM SESSION TOKENS (optional expiring QR codes) ============
+
+// ============ GENERATED QR CODES (persistent list, survives reloads) ============
+
+app.post('/api/qr-codes/bulk', requireAdmin, async (req, res) => {
+  const { rooms, app_url } = req.body; // rooms: [{room, floor}]
+  if (!Array.isArray(rooms) || rooms.length === 0 || !app_url) {
+    return res.status(400).json({ error: 'rooms[] and app_url required' });
+  }
+  const results = await Promise.all(rooms.map((r) =>
+    GeneratedQr.findOneAndUpdate(
+      { hotel: req.hotel, room_number: String(r.room) },
+      { hotel: req.hotel, room_number: String(r.room), floor: r.floor ? String(r.floor) : '', app_url },
+      { upsert: true, new: true }
+    )
+  ));
+  res.status(201).json(results.map(toDTO));
+});
+
+app.get('/api/qr-codes', requireAdmin, async (req, res) => {
+  const docs = await GeneratedQr.find({ hotel: req.hotel }).sort({ room_number: 1 });
+  res.json(docs.map(toDTO));
+});
+
+app.delete('/api/qr-codes/:room', requireAdmin, async (req, res) => {
+  await GeneratedQr.deleteOne({ hotel: req.hotel, room_number: req.params.room });
+  res.json({ deleted: true });
+});
 
 app.post('/api/session/issue', requireStaff, (req, res) => {
   const { room, floor, hours } = req.body;

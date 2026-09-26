@@ -136,6 +136,21 @@ const pushSubscriptionSchema = new mongoose.Schema(
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
 
+// --- Generated QR codes — a persistent record of every room QR the admin
+// has created, so the list survives page reloads (not just an in-browser
+// session). The QR image itself is regenerated on demand from these fields
+// (room + floor + app URL), never stored as binary data.
+const generatedQrSchema = new mongoose.Schema(
+  {
+    hotel: { type: String, required: true, index: true },
+    room_number: { type: String, required: true },
+    floor: { type: String, default: '' },
+    app_url: { type: String, required: true }
+  },
+  { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
+);
+generatedQrSchema.index({ hotel: 1, room_number: 1 }, { unique: true });
+
 module.exports = {
   Hotel: mongoose.model('Hotel', hotelSchema),
   Message: mongoose.model('Message', messageSchema),
@@ -147,5 +162,6 @@ module.exports = {
   AuthSettings: mongoose.model('AuthSettings', authSettingsSchema),
   RoomNote: mongoose.model('RoomNote', roomNoteSchema),
   PushSubscription: mongoose.model('PushSubscription', pushSubscriptionSchema),
+  GeneratedQr: mongoose.model('GeneratedQr', generatedQrSchema),
   toDTO
 };

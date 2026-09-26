@@ -110,6 +110,12 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
   </div>
 
   <div class="card">
+    <h2>Kodet QR ekzistuese</h2>
+    <p class="hint">Lista e plotë e kodeve QR të gjeneruara për këtë hotel — mbetet këtu përgjithmonë, edhe pas rifreskimit të faqes.</p>
+    <div id="qr-persisted-list"><p class="hint" style="margin:0;">Duke ngarkuar...</p></div>
+  </div>
+
+  <div class="card">
     <h2>Vendndodhja e hotelit (për hartën)</h2>
     <p class="hint">Koordinatat përdoren për të qendërzuar hartën reale te app-i i mysafirit.</p>
     <div class="field-row"><label>Gjerësia (lat)</label><input id="loc-lat" type="number" step="0.0001"></div>
@@ -156,11 +162,14 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
     <div class="field-row"><label>Dhoma nga</label><input id="note-room-from" placeholder="101" style="width:100px;"></div>
     <div class="field-row"><label>Dhoma deri (opsionale)</label><input id="note-room-to" placeholder="110 (lëre bosh për 1 dhomë)" style="width:100px;"></div>
     <div class="item-block">
-      <div class="lang-tabs">
-        <button type="button" class="lang-tab on" onclick="switchNoteLangTab(this,'sq')">SQ</button>
-        <button type="button" class="lang-tab" onclick="switchNoteLangTab(this,'en')">EN</button>
-        <button type="button" class="lang-tab" onclick="switchNoteLangTab(this,'it')">IT</button>
-        <button type="button" class="lang-tab" onclick="switchNoteLangTab(this,'de')">DE</button>
+      <div class="lang-tabs" style="justify-content:space-between; display:flex; align-items:center;">
+        <div style="display:flex; gap:6px;">
+          <button type="button" class="lang-tab on" onclick="switchNoteLangTab(this,'sq')">SQ</button>
+          <button type="button" class="lang-tab" onclick="switchNoteLangTab(this,'en')">EN</button>
+          <button type="button" class="lang-tab" onclick="switchNoteLangTab(this,'it')">IT</button>
+          <button type="button" class="lang-tab" onclick="switchNoteLangTab(this,'de')">DE</button>
+        </div>
+        <button type="button" class="lang-tab" style="background:var(--gold); color:var(--ink); border-color:var(--gold);" onclick="autoTranslateFrom(this)">🌐 Përkthe</button>
       </div>
       <div class="field-row"><label>Shënimi</label><div style="flex:1;">
         <textarea data-lang="sq" data-field="note" style="display:block;" rows="2" placeholder="Shkruaj shënimin në shqip..."></textarea>
@@ -254,7 +263,7 @@ function expandQrQueue(){
   return rooms;
 }
 
-function generateQrBatch(){
+async function generateQrBatch(){
   if(qrQueue.length === 0){ showToast('Shto të paktën një dhomë ose grup dhomash në listë.', true); return; }
   const appUrl = document.getElementById('qr-app-url').value.trim().replace(/\/$/, '');
   qrRooms = expandQrQueue();
@@ -273,6 +282,43 @@ function generateQrBatch(){
   document.getElementById('qr-download-zip').style.display = qrRooms.length > 1 ? 'inline-block' : 'none';
   document.getElementById('qr-print-btn').style.display = 'inline-block';
   showToast(`U gjeneruan ${qrRooms.length} kode QR, pa afat skadimi.`);
+
+  try{
+    await fetch(apiUrl('/api/qr-codes/bulk'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ rooms: qrRooms, app_url: appUrl })
+    });
+    loadPersistedQrCodes();
+  }catch(e){ console.warn('Could not persist QR codes', e); }
+}
+
+async function loadPersistedQrCodes(){
+  try{
+    const res = await fetch(apiUrl('/api/qr-codes'), { headers: { 'x-admin-password': adminPassword } });
+    const codes = await res.json();
+    const box = document.getElementById('qr-persisted-list');
+    if(!box) return;
+    if(codes.length === 0){ box.innerHTML = '<p class="hint" style="margin:0;">Ende pa kode QR të gjeneruara.</p>'; return; }
+    box.innerHTML = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px;">' + codes.map(c => {
+      const fullUrl = c.app_url + '?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(c.room_number) + (c.floor ? '&floor=' + encodeURIComponent(c.floor) : '');
+      const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(fullUrl);
+      return `<div class="qr-card">
+        <img src="${qrSrc}" alt="QR dhoma ${c.room_number}">
+        <p>Dhoma ${c.room_number}</p>
+        <a href="${qrSrc}" download="dhoma-${c.room_number}-qr.png">⬇ PNG</a>
+        <button class="del-btn" style="position:static; display:block; margin:4px auto 0;" onclick="deletePersistedQr('${c.room_number}')">Fshi</button>
+      </div>`;
+    }).join('') + '</div>';
+  }catch(e){ console.warn('Could not load persisted QR codes', e); }
+}
+
+async function deletePersistedQr(room){
+  try{
+    await fetch(apiUrl('/api/qr-codes/' + encodeURIComponent(room)), { method:'DELETE', headers: { 'x-admin-password': adminPassword } });
+    loadPersistedQrCodes();
+    showToast('Kodi QR i dhomës ' + room + ' u fshi nga lista.');
+  }catch(e){ showToast('Gabim duke fshirë.', true); }
 }
 
 async function downloadQrZip(){
@@ -331,6 +377,7 @@ async function unlock(){
     document.getElementById('main-view').style.display = 'block';
     renderAll();
     loadRoomNotesList();
+    loadPersistedQrCodes();
   } catch(e) {
     if(e.message === 'wrong password'){
       showToast('Fjalëkalim i gabuar.', true);
@@ -352,18 +399,54 @@ function renderAll(){
 }
 
 function langTabsHtml(prefix){
-  return `<div class="lang-tabs">
-    ${['sq','en','it','de'].map((l,i)=>`<button type="button" class="lang-tab ${i===0?'on':''}" onclick="switchLangTab(this,'${prefix}','${l}')">${l.toUpperCase()}</button>`).join('')}
+  return `<div class="lang-tabs" style="justify-content:space-between; display:flex; align-items:center;">
+    <div style="display:flex; gap:6px;">
+      ${['sq','en','it','de'].map((l,i)=>`<button type="button" class="lang-tab ${i===0?'on':''}" onclick="switchLangTab(this,'${prefix}','${l}')">${l.toUpperCase()}</button>`).join('')}
+    </div>
+    <button type="button" class="lang-tab" style="background:var(--gold); color:var(--ink); border-color:var(--gold);" onclick="autoTranslateFrom(this)">🌐 Përkthe</button>
   </div>`;
 }
 
 function switchLangTab(btn, prefix, lang){
   const block = btn.closest('.item-block');
-  block.querySelectorAll('.lang-tab').forEach(b=>b.classList.remove('on'));
+  block.querySelectorAll('.lang-tab').forEach(b=>{ if(!b.textContent.includes('Përkthe')) b.classList.remove('on'); });
   btn.classList.add('on');
   block.querySelectorAll('[data-lang]').forEach(el=>{
     el.style.display = el.getAttribute('data-lang') === lang ? '' : 'none';
   });
+}
+
+// Auto-translate every Albanian field in this block into EN/IT/DE, using the
+// free MyMemory API (no key needed). Only fills fields that are still empty,
+// so it never overwrites text you've already written or corrected by hand.
+async function autoTranslateFrom(btn){
+  const block = btn.closest('.item-block') || btn.closest('.card');
+  const sqFields = block.querySelectorAll('[data-lang="sq"]');
+  if(sqFields.length === 0) return;
+  const original = btn.textContent;
+  btn.textContent = '⏳...';
+  btn.disabled = true;
+
+  for(const sqEl of sqFields){
+    const field = sqEl.getAttribute('data-field');
+    const text = sqEl.value.trim();
+    if(!text) continue;
+    for(const lang of ['en','it','de']){
+      const targetEl = block.querySelector(`[data-lang="${lang}"][data-field="${field}"]`);
+      if(!targetEl || targetEl.value.trim()) continue; // don't overwrite existing text
+      try{
+        const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=sq|${lang}`);
+        const data = await res.json();
+        if(data?.responseData?.translatedText){
+          targetEl.value = data.responseData.translatedText;
+        }
+      }catch(e){ /* silently skip on failure, admin can still type manually */ }
+    }
+  }
+
+  btn.textContent = original;
+  btn.disabled = false;
+  showToast('Përkthimi u plotësua.');
 }
 
 function renderLangItems(containerId, items, fields, onDelete){
@@ -387,14 +470,14 @@ function addAmenity(){
   content.amenities.push({ name:{sq:'',en:'',it:'',de:''}, note:{sq:'',en:'',it:'',de:''} });
   renderLangItems('amenities-list', content.amenities, ['name','note'], removeAmenity);
 }
-function removeAmenity(idx){ content.amenities.splice(idx,1); renderLangItems('amenities-list', content.amenities, ['name','note'], removeAmenity); }
+function removeAmenity(idx){ content.amenities.splice(idx,1); renderLangItems('amenities-list', content.amenities, ['name','note'], removeAmenity); saveContent(); }
 
 function addLocationItem(){
   content.locations = content.locations || [];
   content.locations.push({ name:{sq:'',en:'',it:'',de:''}, desc:{sq:'',en:'',it:'',de:''}, time:{sq:'',en:'',it:'',de:''} });
   renderLangItems('locations-list', content.locations, ['name','desc','time'], removeLocationItem);
 }
-function removeLocationItem(idx){ content.locations.splice(idx,1); renderLangItems('locations-list', content.locations, ['name','desc','time'], removeLocationItem); }
+function removeLocationItem(idx){ content.locations.splice(idx,1); renderLangItems('locations-list', content.locations, ['name','desc','time'], removeLocationItem); saveContent(); }
 
 function renderRoomService(){
   const box = document.getElementById('roomservice-list');
@@ -413,7 +496,7 @@ function addRoomServiceItem(){
   content.room_service.push({ name:{sq:'',en:'',it:'',de:''}, price:0 });
   renderRoomService();
 }
-function removeRoomServiceItem(idx){ content.room_service.splice(idx,1); renderRoomService(); }
+function removeRoomServiceItem(idx){ content.room_service.splice(idx,1); renderRoomService(); saveContent(); }
 
 function renderRecommendations(){
   const box = document.getElementById('recs-list');
