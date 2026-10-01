@@ -436,6 +436,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
         <span data-i18n="call.button">Telefono</span>
       </a>
     </div>
+    <p style="font-size:10.5px; opacity:0.55; margin:8px 0 0;" data-i18n="rescan.notice">Sesioni skadon çdo ditë në orën 11:00 — do t'ju duhet të rishkanoni kodin QR.</p>
   </div>
 
   <div class="content">
@@ -496,6 +497,12 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
         <button class="req-chip" data-section="issues" data-i18n="req.issue_toilet" onclick="sendQuickRequest('req.issue_toilet','issue')">Tualeti i prishur</button>
         <button class="req-chip" data-section="issues" data-i18n="req.issue_plumbing" onclick="sendQuickRequest('req.issue_plumbing','issue')">Problem hidraulik</button>
         <button class="req-chip" data-section="issues" data-i18n="req.issue_electric" onclick="sendQuickRequest('req.issue_electric','issue')">Problem elektrik</button>
+        <button class="req-chip" data-section="issues" onclick="toggleOtherIssueBox()" data-i18n="req.issue_other">+ Problem tjetër</button>
+      </div>
+
+      <div id="other-issue-box" style="display:none; margin-bottom:10px;">
+        <textarea id="other-issue-text" rows="2" data-i18n-ph="issue.otherPlaceholder" placeholder="Përshkruaj problemin..." style="width:100%; border:0.5px solid var(--line); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13px; resize:none; margin-bottom:6px;"></textarea>
+        <button type="button" class="rs-add" onclick="sendOtherIssue()" data-i18n="issue.send">Dërgo</button>
       </div>
 
       <input type="file" id="issue-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelected(this)">
@@ -757,9 +764,10 @@ try {
   socket.on('connect', () => {
     if(currentHotel) socket.emit('join_room', { hotel: currentHotel, room: currentRoom });
   });
-  socket.on('new_message', (msg) => {
+  socket.on('new_message', async (msg) => {
     if (msg.sender === 'staff' && msg.room_number === currentRoom) {
-      pushInMsg(msg.text);
+      const text = (msg.lang && msg.lang !== currentLang) ? await translateForGuest(msg.text, msg.lang) : msg.text;
+      pushInMsg(text);
     }
   });
   socket.on('content_updated', (payload) => { if (payload?.hotel === currentHotel && typeof loadHotelContent === 'function') loadHotelContent(); });
@@ -780,6 +788,7 @@ try {
 const translations = {
   sq: {
     "eyebrow":"Udhërrëfyesi i mysafirit","room.chip":"Dhoma 214 · Kati 2","call.button":"Telefono",
+    "rescan.notice":"Sesioni skadon çdo ditë në orën 11:00 — do t'ju duhet të rishkanoni kodin QR.",
     "home.title":"Mirë se erdhët","home.subtitle":"Gjithçka që ju duhet gjatë qëndrimit, në një vend.",
     "keycard.wifi":"Wifi","keycard.pass":"Fjalëkalimi","keycard.copy":"Kopjo","keycard.copied":"U kopjua",
     "quick.room.title":"Dhoma ime","quick.room.sub":"Pajisje, kërkesa, shërbim në dhomë",
@@ -798,6 +807,7 @@ const translations = {
     "push.enable":"🔔 Aktivo njoftimet në telefon","push.enabled":"Njoftimet u aktivizuan!","push.denied":"Leja për njoftime u refuzua.","push.unavailable":"Njoftimet s'janë të disponueshme tani.",
     "req.issue_ac":"Klima s'punon","req.issue_tv":"TV s'punon","req.issue_toilet":"Tualeti i prishur","req.issue_plumbing":"Problem hidraulik","req.issue_electric":"Problem elektrik",
     "issue.attachPhoto":"Bashkangjit foto te problemi (opsionale)","issue.removePhoto":"Hiq foton",
+    "req.issue_other":"+ Problem tjetër","issue.otherPlaceholder":"Përshkruaj problemin...","issue.send":"Dërgo",
     "req.sentPrefix":"Kërkesë nga dhoma:","req.confirmToast":"Kërkesa u dërgua te recepsioni",
     "room.amenitiesHeading":"Pajisjet",
     "amenity.ac.name":"Klima","amenity.ac.note":"Kontrolli në murin pranë derës së banjës. 18-26°C.",
@@ -854,6 +864,7 @@ const translations = {
   },
   en: {
     "eyebrow":"Guest guide","room.chip":"Room 214 · Floor 2","call.button":"Call",
+    "rescan.notice":"The session expires daily at 11:00 — you'll need to re-scan the QR code.",
     "home.title":"Welcome","home.subtitle":"Everything you need during your stay, in one place.",
     "keycard.wifi":"Wifi","keycard.pass":"Password","keycard.copy":"Copy","keycard.copied":"Copied",
     "quick.room.title":"My room","quick.room.sub":"Amenities, requests, room service",
@@ -872,6 +883,7 @@ const translations = {
     "push.enable":"🔔 Enable phone notifications","push.enabled":"Notifications enabled!","push.denied":"Notification permission was denied.","push.unavailable":"Notifications aren't available right now.",
     "req.issue_ac":"AC not working","req.issue_tv":"TV not working","req.issue_toilet":"Broken toilet","req.issue_plumbing":"Plumbing issue","req.issue_electric":"Electrical issue",
     "issue.attachPhoto":"Attach a photo of the problem (optional)","issue.removePhoto":"Remove photo",
+    "req.issue_other":"+ Other problem","issue.otherPlaceholder":"Describe the problem...","issue.send":"Send",
     "req.sentPrefix":"Room request:","req.confirmToast":"Request sent to the front desk",
     "room.amenitiesHeading":"Amenities",
     "amenity.ac.name":"Air conditioning","amenity.ac.note":"Control panel by the bathroom door. 18-26°C.",
@@ -928,6 +940,7 @@ const translations = {
   },
   it: {
     "eyebrow":"Guida per gli ospiti","room.chip":"Camera 214 · Piano 2","call.button":"Chiama",
+    "rescan.notice":"La sessione scade ogni giorno alle 11:00 — dovrete scansionare di nuovo il codice QR.",
     "home.title":"Benvenuti","home.subtitle":"Tutto ciò che vi serve durante il soggiorno, in un unico posto.",
     "keycard.wifi":"Wifi","keycard.pass":"Password","keycard.copy":"Copia","keycard.copied":"Copiato",
     "quick.room.title":"La mia camera","quick.room.sub":"Servizi, richieste, room service",
@@ -946,6 +959,7 @@ const translations = {
     "push.enable":"🔔 Attiva notifiche sul telefono","push.enabled":"Notifiche attivate!","push.denied":"Il permesso per le notifiche è stato negato.","push.unavailable":"Le notifiche non sono disponibili ora.",
     "req.issue_ac":"Aria condizionata non funziona","req.issue_tv":"TV non funziona","req.issue_toilet":"WC rotto","req.issue_plumbing":"Problema idraulico","req.issue_electric":"Problema elettrico",
     "issue.attachPhoto":"Allega una foto del problema (opzionale)","issue.removePhoto":"Rimuovi foto",
+    "req.issue_other":"+ Altro problema","issue.otherPlaceholder":"Descrivi il problema...","issue.send":"Invia",
     "req.sentPrefix":"Richiesta dalla camera:","req.confirmToast":"Richiesta inviata alla reception",
     "room.amenitiesHeading":"Servizi",
     "amenity.ac.name":"Aria condizionata","amenity.ac.note":"Pannello vicino alla porta del bagno. 18-26°C.",
@@ -1002,6 +1016,7 @@ const translations = {
   },
   de: {
     "eyebrow":"Gästeführer","room.chip":"Zimmer 214 · Etage 2","call.button":"Anrufen",
+    "rescan.notice":"Die Sitzung läuft täglich um 11:00 Uhr ab — Sie müssen den QR-Code erneut scannen.",
     "home.title":"Willkommen","home.subtitle":"Alles, was Sie während Ihres Aufenthalts brauchen, an einem Ort.",
     "keycard.wifi":"WLAN","keycard.pass":"Passwort","keycard.copy":"Kopieren","keycard.copied":"Kopiert",
     "quick.room.title":"Mein Zimmer","quick.room.sub":"Ausstattung, Anfragen, Zimmerservice",
@@ -1020,6 +1035,7 @@ const translations = {
     "push.enable":"🔔 Telefon-Benachrichtigungen aktivieren","push.enabled":"Benachrichtigungen aktiviert!","push.denied":"Die Berechtigung für Benachrichtigungen wurde verweigert.","push.unavailable":"Benachrichtigungen sind momentan nicht verfügbar.",
     "req.issue_ac":"Klimaanlage funktioniert nicht","req.issue_tv":"TV funktioniert nicht","req.issue_toilet":"Toilette defekt","req.issue_plumbing":"Sanitärproblem","req.issue_electric":"Elektrisches Problem",
     "issue.attachPhoto":"Foto des Problems anhängen (optional)","issue.removePhoto":"Foto entfernen",
+    "req.issue_other":"+ Anderes Problem","issue.otherPlaceholder":"Problem beschreiben...","issue.send":"Senden",
     "req.sentPrefix":"Anfrage aus dem Zimmer:","req.confirmToast":"Anfrage an die Rezeption gesendet",
     "room.amenitiesHeading":"Ausstattung",
     "amenity.ac.name":"Klimaanlage","amenity.ac.note":"Bedienfeld neben der Badezimmertür. 18-26°C.",
@@ -1090,6 +1106,22 @@ let leafletMap = null;
 
 function escapeHtml(str){
   return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Translates staff messages into the guest's selected language via the
+// free MyMemory API, with an in-memory cache so repeated phrases are fast.
+const guestTranslateCache = new Map();
+async function translateForGuest(text, fromLang){
+  if(!text || !fromLang || fromLang === currentLang) return text;
+  const key = fromLang + '|' + currentLang + '|' + text;
+  if(guestTranslateCache.has(key)) return guestTranslateCache.get(key);
+  try{
+    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${currentLang}`);
+    const data = await res.json();
+    const translated = data?.responseData?.translatedText || text;
+    guestTranslateCache.set(key, translated);
+    return translated;
+  }catch(e){ return text; }
 }
 
 async function loadHotelContent(){
@@ -1547,7 +1579,7 @@ function timeNow(){
 
 function apiPost(path, body){
   if(!API_BASE) return Promise.resolve(null);
-  const fullBody = { ...body, hotel: currentHotel };
+  const fullBody = { ...body, hotel: currentHotel, lang: currentLang };
   if(sessionToken) fullBody.session_token = sessionToken;
   return fetch(API_BASE + path, {
     method: 'POST',
@@ -1591,8 +1623,32 @@ async function loadChatHistory(){
   try{
     const res = await fetch(API_BASE + '/api/messages/' + encodeURIComponent(currentRoom) + '?hotel=' + encodeURIComponent(currentHotel));
     const msgs = await res.json();
+
+    if(msgs.length === 0){
+      // No history yet for this room — ask the server for a real welcome
+      // message (with the hotel's actual name, in this guest's language).
+      document.getElementById('chat-log').innerHTML = ''; // remove the static placeholder bubble
+      try{
+        const wRes = await fetch(API_BASE + '/api/messages/welcome', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, lang: currentLang })
+        });
+        const wData = await wRes.json();
+        if(wData?.sent && wData.message) pushInMsg(wData.message.text, 'auto');
+      }catch(e){ console.warn('Welcome message failed', e); }
+      return;
+    }
+
+    document.getElementById('chat-log').innerHTML = ''; // remove the static placeholder bubble
     let lastEl = null;
-    msgs.forEach(m => { lastEl = m.sender === 'guest' ? pushOutMsg(m.text, false) : pushInMsg(m.text, false); });
+    for(const m of msgs){
+      if(m.sender === 'guest'){
+        lastEl = pushOutMsg(m.text, false);
+      } else {
+        const text = (m.lang && m.lang !== currentLang) ? await translateForGuest(m.text, m.lang) : m.text;
+        lastEl = pushInMsg(text, false);
+      }
+    }
     if(lastEl) lastEl.scrollIntoView({ behavior:'auto', block:'end' });
   }catch(e){ console.warn('Could not load chat history', e); }
 }
@@ -1654,6 +1710,30 @@ function sendQuickRequest(key, category){
     clearPendingPhoto();
   }
   apiPost('/api/quick-requests', body);
+}
+
+function toggleOtherIssueBox(){
+  const box = document.getElementById('other-issue-box');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  if(box.style.display === 'block') document.getElementById('other-issue-text').focus();
+}
+
+function sendOtherIssue(){
+  const textEl = document.getElementById('other-issue-text');
+  const text = textEl.value.trim();
+  if(!text) return;
+  const prefix = translations[currentLang]['req.sentPrefix'];
+  pushOutMsg(prefix + ' ' + text);
+  showToast(translations[currentLang]['req.confirmToast']);
+  showView('chat');
+  const body = { room_number: currentRoom, request_type: text, category: 'issue' };
+  if(pendingIssuePhoto){
+    body.image = pendingIssuePhoto;
+    clearPendingPhoto();
+  }
+  apiPost('/api/quick-requests', body);
+  textEl.value = '';
+  document.getElementById('other-issue-box').style.display = 'none';
 }
 
 let dndOn = false;

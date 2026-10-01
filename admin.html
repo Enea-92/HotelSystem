@@ -751,6 +751,13 @@ function logoutAdmin(){
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const urlHotel = params.get('hotel');
+  const urlBackend = params.get('backend');
+  if(urlHotel) document.getElementById('hotel-slug').value = urlHotel;
+  if(urlBackend) document.getElementById('backend-url').value = urlBackend;
+  if(urlHotel) return; // came from super-admin "Hap Admin" — let them type the password themselves
+
   try{
     const saved = JSON.parse(localStorage.getItem('bregu_admin_session') || 'null');
     if(saved && saved.apiBase && saved.hotel && saved.password){

@@ -124,6 +124,7 @@ async function loadHotels(){
           <div class="hotel-urls">App: hotel-bregu-guest-app.html?hotel=${h.slug} · Admin: admin.html?hotel=${h.slug} · Staf: staff-dashboard.html?hotel=${h.slug}</div>
         </div>
         <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
+          <button class="del-link" style="color:#2C5FA8;" onclick="openAdminFor('${h.slug}')">Hap Admin</button>
           <button class="del-link" style="color:${h.active === false ? '#2C5FA8' : '#CE9A42'};" onclick="toggleHotelActive('${h.slug}', ${h.active === false})">${h.active === false ? 'Aktivo' : 'Çaktivizo'}</button>
           <button class="del-link" onclick="deleteHotel('${h.slug}')">Fshi</button>
         </div>
@@ -166,6 +167,15 @@ async function deleteHotel(slug){
     showToast('Hoteli u fshi.');
     loadHotels();
   }catch(e){ showToast('Gabim duke fshirë.', true); }
+}
+
+function openAdminFor(slug){
+  const adminUrl = apiBase.includes('onrender.com')
+    ? window.location.href.replace(/super-admin\.html.*$/, 'admin.html')
+    : 'admin.html';
+  const url = adminUrl + '?hotel=' + encodeURIComponent(slug) + '&backend=' + encodeURIComponent(apiBase);
+  window.open(url, '_blank');
+  showToast('U hap admin.html — përdor fjalëkalimin SUPER ADMIN për të hyrë në këtë hotel.');
 }
 
 async function toggleHotelActive(slug, makeActive){

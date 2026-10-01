@@ -16,6 +16,7 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
 .topbar h1{ font-family:'Fraunces',serif; font-size:20px; font-weight:500; margin:0; }
 .conn{ font-family:'IBM Plex Mono',monospace; font-size:11px; padding:4px 10px; border-radius:5px; background:rgba(243,236,220,0.12); }
 .conn.on{ background:var(--aqua-dark); }
+.staff-lang-btn.on{ background:var(--gold); color:var(--ink); border-color:var(--gold); font-weight:600; }
 .config-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .config-row input{ font-family:'IBM Plex Mono',monospace; font-size:11px; border:0.5px solid rgba(243,236,220,0.4); background:rgba(243,236,220,0.08); color:var(--sand); border-radius:5px; padding:5px 8px; width:180px; }
 .config-row button{ font-size:11px; border:none; background:var(--gold); color:var(--ink); border-radius:5px; padding:5px 10px; cursor:pointer; font-weight:500; }
@@ -67,6 +68,12 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
   <div class="config-row">
     <span class="conn" id="conn-status">● jo i lidhur</span>
     <button onclick="toggleSound()" id="sound-btn">🔊 Tinguj: ON</button>
+    <div style="display:flex; gap:3px;">
+      <button class="staff-lang-btn" data-lang="sq" onclick="setStaffLang('sq')" style="font-size:10.5px; border:0.5px solid rgba(243,236,220,0.35); background:rgba(243,236,220,0.08); color:var(--sand); border-radius:4px; padding:4px 7px; cursor:pointer;">SQ</button>
+      <button class="staff-lang-btn" data-lang="en" onclick="setStaffLang('en')" style="font-size:10.5px; border:0.5px solid rgba(243,236,220,0.35); background:rgba(243,236,220,0.08); color:var(--sand); border-radius:4px; padding:4px 7px; cursor:pointer;">EN</button>
+      <button class="staff-lang-btn" data-lang="it" onclick="setStaffLang('it')" style="font-size:10.5px; border:0.5px solid rgba(243,236,220,0.35); background:rgba(243,236,220,0.08); color:var(--sand); border-radius:4px; padding:4px 7px; cursor:pointer;">IT</button>
+      <button class="staff-lang-btn" data-lang="de" onclick="setStaffLang('de')" style="font-size:10.5px; border:0.5px solid rgba(243,236,220,0.35); background:rgba(243,236,220,0.08); color:var(--sand); border-radius:4px; padding:4px 7px; cursor:pointer;">DE</button>
+    </div>
     <button onclick="logout()" id="logout-btn" style="display:none;">Dil</button>
   </div>
 </div>
@@ -133,9 +140,34 @@ let activeRoom = null;
 let knownRooms = new Set();
 let allMessages = [];
 let soundOn = true;
+let staffLang = localStorage.getItem('bregu_staff_lang') || 'sq';
 
 function authHeaders(){
   return { 'Content-Type': 'application/json', 'x-staff-password': staffPassword };
+}
+
+function setStaffLang(lang){
+  staffLang = lang;
+  try{ localStorage.setItem('bregu_staff_lang', lang); }catch(e){}
+  document.querySelectorAll('.staff-lang-btn').forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+  loadRequests();
+  if(activeRoom) renderThread();
+}
+
+// Translates text into staffLang via the free MyMemory API, with an
+// in-memory cache so the same phrase is never translated twice.
+const translateCache = new Map();
+async function translateForStaff(text, fromLang){
+  if(!text || !fromLang || fromLang === staffLang) return text;
+  const key = fromLang + '|' + staffLang + '|' + text;
+  if(translateCache.has(key)) return translateCache.get(key);
+  try{
+    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${staffLang}`);
+    const data = await res.json();
+    const translated = data?.responseData?.translatedText || text;
+    translateCache.set(key, translated);
+    return translated;
+  }catch(e){ return text; }
 }
 
 function apiUrl(path){
@@ -311,7 +343,7 @@ async function loadRequests(){
   box.innerHTML = requests.length === 0 ? '<p class="empty">Asnjë kërkesë pezull.</p>' : requests.map(r => `
     <div class="card">
       <div class="card-top"><span class="card-room">Dhoma ${r.room_number}</span><span class="card-time">${r.created_at}</span></div>
-      <div class="card-body">${r.request_type}</div>
+      <div class="card-body" id="req-text-${r.id}">${r.request_type}</div>
       <div class="card-btns"><button class="card-btn" onclick="markRequestDone('${r.id}')">Shëno si kryer</button></div>
     </div>`).join('');
 
@@ -320,10 +352,24 @@ async function loadRequests(){
   issueBox.innerHTML = issues.length === 0 ? '<p class="empty">Asnjë problem i raportuar.</p>' : issues.map(r => `
     <div class="card" style="border-color:rgba(193,89,46,0.35);">
       <div class="card-top"><span class="card-room">Dhoma ${r.room_number}</span><span class="card-time">${r.created_at}</span></div>
-      <div class="card-body">🔧 ${r.request_type}</div>
+      <div class="card-body" id="req-text-${r.id}">🔧 ${r.request_type}</div>
       ${r.image ? `<a href="${r.image}" target="_blank" rel="noopener"><img src="${r.image}" alt="Foto e problemit" style="width:100%; max-width:180px; border-radius:8px; margin-top:8px; display:block;"></a>` : ''}
       <div class="card-btns"><button class="card-btn" onclick="markRequestDone('${r.id}')">Shëno si zgjidhur</button></div>
     </div>`).join('');
+
+  // Translate anything the guest wrote in a different language than staffLang,
+  // updating each card's text in place once the translation comes back.
+  [...requests, ...issues].forEach(async (r) => {
+    if(!r.lang || r.lang === staffLang) return;
+    const prefix = r.category === 'issue' ? '🔧 ' : '';
+    const translated = await translateForStaff(r.request_type, r.lang);
+    const el = document.getElementById('req-text-' + r.id);
+    if(el) el.innerHTML = prefix + escapeHtmlStaff(translated) + ` <span style="opacity:0.4; font-size:10.5px;">(${r.lang.toUpperCase()}→${staffLang.toUpperCase()})</span>`;
+  });
+}
+
+function escapeHtmlStaff(str){
+  return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 async function markRequestDone(id){
@@ -391,15 +437,22 @@ async function openRoom(room){
 
 function renderThread(){
   const box = document.getElementById('chat-thread');
-  box.innerHTML = allMessages.map(m => `<div class="msg ${m.sender}">${m.text}</div>`).join('');
+  box.innerHTML = allMessages.map((m, idx) => `<div class="msg ${m.sender}" id="msg-${idx}">${escapeHtmlStaff(m.text)}</div>`).join('');
   box.scrollTop = box.scrollHeight;
+
+  allMessages.forEach(async (m, idx) => {
+    if(m.sender !== 'guest' || !m.lang || m.lang === staffLang) return;
+    const translated = await translateForStaff(m.text, m.lang);
+    const el = document.getElementById('msg-' + idx);
+    if(el) el.innerHTML = escapeHtmlStaff(translated) + ` <span style="opacity:0.5; font-size:10.5px; display:block; margin-top:3px;">(${m.lang.toUpperCase()}: ${escapeHtmlStaff(m.text)})</span>`;
+  });
 }
 
 async function sendReply(){
   const input = document.getElementById('reply-input');
   const text = input.value.trim();
   if(!text || !activeRoom) return;
-  await fetch(apiUrl('/api/messages'), { method:'POST', headers: authHeaders(), body: JSON.stringify({room_number: activeRoom, sender:'staff', text}) });
+  await fetch(apiUrl('/api/messages'), { method:'POST', headers: authHeaders(), body: JSON.stringify({room_number: activeRoom, sender:'staff', text, lang: staffLang}) });
   input.value = '';
 }
 
@@ -414,6 +467,7 @@ function logout(){
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.staff-lang-btn').forEach(b => b.classList.toggle('on', b.dataset.lang === staffLang));
   try{
     const saved = JSON.parse(localStorage.getItem('bregu_staff_session') || 'null');
     if(saved && saved.apiBase && saved.hotel && saved.password){

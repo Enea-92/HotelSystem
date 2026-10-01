@@ -19,7 +19,8 @@ const messageSchema = new mongoose.Schema(
     hotel: { type: String, required: true, index: true },
     room_number: { type: String, required: true, index: true },
     sender: { type: String, required: true, enum: ['guest', 'staff'] },
-    text: { type: String, required: true }
+    text: { type: String, required: true },
+    lang: { type: String, default: '' } // language the sender composed it in, for auto-translation on display
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
@@ -34,7 +35,8 @@ const quickRequestSchema = new mongoose.Schema(
     request_type: { type: String, required: true },
     category: { type: String, enum: ['request', 'issue'], default: 'request' },
     status: { type: String, default: 'pending' },
-    image: { type: String, default: '' } // optional base64 photo, mainly for issue reports (AC/TV/plumbing/etc.)
+    image: { type: String, default: '' }, // optional base64 photo, mainly for issue reports (AC/TV/plumbing/etc.)
+    lang: { type: String, default: '' }
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );

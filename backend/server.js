@@ -103,9 +103,17 @@ async function requireAdmin(req, res, next) {
   try {
     const hotel = (req.query.hotel || req.body.hotel || req.params.hotel || '').toLowerCase().trim();
     if (!hotel) return res.status(400).json({ error: 'hotel (slug) required' });
+    const provided = req.headers['x-admin-password'] || '';
+    // The super-admin password works as a master key for any hotel's admin
+    // panel, so the super admin can manage a hotel's content directly.
+    if (provided === SUPER_ADMIN_PASSWORD) {
+      const hotelExists = await Hotel.findOne({ slug: hotel });
+      if (!hotelExists) return res.status(404).json({ error: 'Hoteli nuk ekziston' });
+      req.hotel = hotel;
+      return next();
+    }
     const settings = await getAuthSettings(hotel);
     if (!settings) return res.status(404).json({ error: 'Hoteli nuk ekziston' });
-    const provided = req.headers['x-admin-password'] || '';
     const ok = await bcrypt.compare(provided, settings.admin_password_hash);
     if (!ok) return res.status(401).json({ error: 'Fjalëkalim admin i pasaktë' });
     req.hotel = hotel;
@@ -175,9 +183,9 @@ function verifyGuestSession(req, res, next) {
 // ============ CHAT ============
 
 app.post('/api/messages', requireHotel, verifyGuestSession, async (req, res) => {
-  const { room_number, sender, text } = req.body;
+  const { room_number, sender, text, lang } = req.body;
   if (!room_number || !sender || !text) return res.status(400).json({ error: 'room_number, sender, text required' });
-  const doc = await Message.create({ hotel: req.hotel, room_number, sender, text });
+  const doc = await Message.create({ hotel: req.hotel, room_number, sender, text, lang: lang || '' });
   const message = toDTO(doc);
 
   io.to(roomChannel(req.hotel, room_number)).to(staffChannel(req.hotel)).emit('new_message', message);
@@ -187,6 +195,34 @@ app.post('/api/messages', requireHotel, verifyGuestSession, async (req, res) => 
   }
 
   res.status(201).json(message);
+});
+
+// Sends a one-time welcome message (with the hotel's real name, in the
+// guest's selected language) the first time a room's chat is empty —
+// stored as a real message so it also triggers a push notification.
+const WELCOME_TEMPLATES = {
+  sq: (hotel) => `Mirë se erdhët në ${hotel}! Jam këtu për çdo gjë që ju nevojitet gjatë qëndrimit.`,
+  en: (hotel) => `Welcome to ${hotel}! I'm here for anything you need during your stay.`,
+  it: (hotel) => `Benvenuti a ${hotel}! Sono qui per qualsiasi cosa vi serva durante il soggiorno.`,
+  de: (hotel) => `Willkommen im ${hotel}! Ich bin für alles da, was Sie während Ihres Aufenthalts brauchen.`
+};
+
+app.post('/api/messages/welcome', requireHotel, async (req, res) => {
+  const { room_number, lang } = req.body;
+  if (!room_number) return res.status(400).json({ error: 'room_number required' });
+  const existingCount = await Message.countDocuments({ hotel: req.hotel, room_number });
+  if (existingCount > 0) return res.json({ sent: false });
+
+  const hotelDoc = await Hotel.findOne({ slug: req.hotel });
+  const hotelName = hotelDoc ? hotelDoc.name : req.hotel;
+  const template = WELCOME_TEMPLATES[lang] || WELCOME_TEMPLATES.sq;
+  const doc = await Message.create({ hotel: req.hotel, room_number, sender: 'staff', text: template(hotelName), lang: lang || 'sq' });
+  const message = toDTO(doc);
+
+  io.to(roomChannel(req.hotel, room_number)).to(staffChannel(req.hotel)).emit('new_message', message);
+  sendPushToRoom(req.hotel, room_number, hotelName, template(hotelName)).catch(() => {});
+
+  res.status(201).json({ sent: true, message });
 });
 
 app.get('/api/messages/:room', requireHotel, async (req, res) => {
@@ -202,12 +238,12 @@ app.get('/api/messages', requireStaff, async (req, res) => {
 // ============ QUICK REQUESTS ============
 
 app.post('/api/quick-requests', requireHotel, verifyGuestSession, async (req, res) => {
-  const { room_number, request_type, category, image } = req.body;
+  const { room_number, request_type, category, image, lang } = req.body;
   if (!room_number || !request_type) return res.status(400).json({ error: 'room_number, request_type required' });
   // Keep stored photos small — base64 JPEGs over ~2MB are rejected rather than
   // bloating the database (the guest app already resizes before upload).
   const safeImage = (typeof image === 'string' && image.startsWith('data:image') && image.length < 2_000_000) ? image : '';
-  const doc = await QuickRequest.create({ hotel: req.hotel, room_number, request_type, category: category === 'issue' ? 'issue' : 'request', image: safeImage });
+  const doc = await QuickRequest.create({ hotel: req.hotel, room_number, request_type, category: category === 'issue' ? 'issue' : 'request', image: safeImage, lang: lang || '' });
   const item = toDTO(doc);
   io.to(staffChannel(req.hotel)).emit('new_request', item);
   res.status(201).json(item);
