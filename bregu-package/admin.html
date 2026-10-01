@@ -116,6 +116,13 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
   </div>
 
   <div class="card">
+    <h2>Seksionet e dukshme te mysafiri</h2>
+    <p class="hint">Çaktivizo çdo pjesë që s'ka kuptim për hotelin tënd (p.sh. "Shërbimi në dhomë" nëse s'ka restorant) — fshihet menjëherë te app-i i mysafirit, pa prekur asnjë kod.</p>
+    <div id="section-toggles" style="display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;"></div>
+    <button class="save-btn" style="margin-top:14px;" onclick="saveSectionToggles()">Ruaj seksionet</button>
+  </div>
+
+  <div class="card">
     <h2>Vendndodhja e hotelit (për hartën)</h2>
     <p class="hint">Koordinatat përdoren për të qendërzuar hartën reale te app-i i mysafirit.</p>
     <div class="field-row"><label>Gjerësia (lat)</label><input id="loc-lat" type="number" step="0.0001"></div>
@@ -387,6 +394,33 @@ async function unlock(){
   }
 }
 
+const SECTION_LABELS = {
+  amenities: 'Pajisjet e dhomës', locations: 'Ku ndodhet (drejtime)', room_service: 'Shërbimi në dhomë',
+  quick_requests: 'Kërkesa të shpejta (peshqirë, pastrim, jastëkë)', toiletries: 'Artikuj higjienikë',
+  dnd: 'Mos shqetësoni', issues: 'Raportim problemesh (klimë/TV/hidraulik)',
+  restaurants: 'Rekomandime — Restorante', bars: 'Rekomandime — Bare', beaches: 'Rekomandime — Plazhe',
+  info_hours: 'Info — Orari', info_transport: 'Info — Transporti', info_emergency: 'Info — Urgjenca', info_faq: 'Info — Pyetje të shpeshta'
+};
+
+function renderSectionToggles(){
+  const sections = content.enabled_sections || {};
+  const box = document.getElementById('section-toggles');
+  box.innerHTML = Object.keys(SECTION_LABELS).map(key => `
+    <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; cursor:pointer;">
+      <input type="checkbox" data-section-key="${key}" ${sections[key] === false ? '' : 'checked'}>
+      ${SECTION_LABELS[key]}
+    </label>`).join('');
+}
+
+async function saveSectionToggles(){
+  const enabled_sections = {};
+  document.querySelectorAll('#section-toggles input[type="checkbox"]').forEach(cb => {
+    enabled_sections[cb.getAttribute('data-section-key')] = cb.checked;
+  });
+  content.enabled_sections = enabled_sections;
+  await saveContent();
+}
+
 function renderAll(){
   document.getElementById('loc-lat').value = content.location?.lat ?? '';
   document.getElementById('loc-lng').value = content.location?.lng ?? '';
@@ -396,6 +430,7 @@ function renderAll(){
   renderLangItems('locations-list', content.locations, ['name','desc','time'], removeLocationItem);
   renderRoomService();
   renderRecommendations();
+  renderSectionToggles();
 }
 
 function langTabsHtml(prefix){

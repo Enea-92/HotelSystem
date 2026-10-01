@@ -19,7 +19,7 @@ const {
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '3mb' })); // room enough for a resized base64 photo on issue reports
 
 const FOLLOWUP_HOURS = Number(process.env.FOLLOWUP_HOURS || 2);
 const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD || 'change-me-super-admin';
@@ -94,6 +94,7 @@ async function requireHotel(req, res, next) {
   if (!hotel) return res.status(400).json({ error: 'hotel (slug) required' });
   const exists = await Hotel.findOne({ slug: hotel });
   if (!exists) return res.status(404).json({ error: 'Hoteli nuk ekziston' });
+  if (exists.active === false) return res.status(403).json({ error: 'Ky hotel është çaktivizuar përkohësisht.' });
   req.hotel = hotel;
   next();
 }
@@ -201,9 +202,12 @@ app.get('/api/messages', requireStaff, async (req, res) => {
 // ============ QUICK REQUESTS ============
 
 app.post('/api/quick-requests', requireHotel, verifyGuestSession, async (req, res) => {
-  const { room_number, request_type, category } = req.body;
+  const { room_number, request_type, category, image } = req.body;
   if (!room_number || !request_type) return res.status(400).json({ error: 'room_number, request_type required' });
-  const doc = await QuickRequest.create({ hotel: req.hotel, room_number, request_type, category: category === 'issue' ? 'issue' : 'request' });
+  // Keep stored photos small — base64 JPEGs over ~2MB are rejected rather than
+  // bloating the database (the guest app already resizes before upload).
+  const safeImage = (typeof image === 'string' && image.startsWith('data:image') && image.length < 2_000_000) ? image : '';
+  const doc = await QuickRequest.create({ hotel: req.hotel, room_number, request_type, category: category === 'issue' ? 'issue' : 'request', image: safeImage });
   const item = toDTO(doc);
   io.to(staffChannel(req.hotel)).emit('new_request', item);
   res.status(201).json(item);
@@ -521,6 +525,16 @@ app.post('/api/super-admin/hotels', requireSuperAdmin, async (req, res) => {
 app.get('/api/super-admin/hotels', requireSuperAdmin, async (req, res) => {
   const docs = await Hotel.find().sort({ created_at: -1 });
   res.json(docs.map(toDTO));
+});
+
+app.patch('/api/super-admin/hotels/:slug', requireSuperAdmin, async (req, res) => {
+  const hotel = await Hotel.findOneAndUpdate(
+    { slug: req.params.slug },
+    { active: req.body.active !== false },
+    { new: true }
+  );
+  if (!hotel) return res.status(404).json({ error: 'Hoteli nuk ekziston' });
+  res.json(toDTO(hotel));
 });
 
 app.delete('/api/super-admin/hotels/:slug', requireSuperAdmin, async (req, res) => {

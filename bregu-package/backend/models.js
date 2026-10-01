@@ -8,7 +8,8 @@ const mongoose = require('mongoose');
 const hotelSchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    name: { type: String, required: true }
+    name: { type: String, required: true },
+    active: { type: Boolean, default: true } // deactivated hotels block guest access but keep all data
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
@@ -32,7 +33,8 @@ const quickRequestSchema = new mongoose.Schema(
     room_number: { type: String, required: true },
     request_type: { type: String, required: true },
     category: { type: String, enum: ['request', 'issue'], default: 'request' },
-    status: { type: String, default: 'pending' }
+    status: { type: String, default: 'pending' },
+    image: { type: String, default: '' } // optional base64 photo, mainly for issue reports (AC/TV/plumbing/etc.)
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
@@ -84,7 +86,27 @@ const hotelContentSchema = new mongoose.Schema({
   },
   amenities: [{ name: langText, note: langText }],
   locations: [{ name: langText, desc: langText, time: langText }],
-  room_service: [{ name: langText, price: Number }]
+  room_service: [{ name: langText, price: Number }],
+  // Toggles that let a hotel hide entire sections from the guest app —
+  // e.g. no room service if the hotel has no restaurant. Everything
+  // defaults to visible so existing hotels are unaffected.
+  enabled_sections: {
+    wifi: { type: Boolean, default: true },
+    amenities: { type: Boolean, default: true },
+    locations: { type: Boolean, default: true },
+    room_service: { type: Boolean, default: true },
+    quick_requests: { type: Boolean, default: true },
+    toiletries: { type: Boolean, default: true },
+    dnd: { type: Boolean, default: true },
+    issues: { type: Boolean, default: true },
+    restaurants: { type: Boolean, default: true },
+    bars: { type: Boolean, default: true },
+    beaches: { type: Boolean, default: true },
+    info_hours: { type: Boolean, default: true },
+    info_transport: { type: Boolean, default: true },
+    info_emergency: { type: Boolean, default: true },
+    info_faq: { type: Boolean, default: true }
+  }
 });
 
 // --- Recommendations (restaurants / bars / beaches), each with real coordinates ---

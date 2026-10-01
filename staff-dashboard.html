@@ -321,6 +321,7 @@ async function loadRequests(){
     <div class="card" style="border-color:rgba(193,89,46,0.35);">
       <div class="card-top"><span class="card-room">Dhoma ${r.room_number}</span><span class="card-time">${r.created_at}</span></div>
       <div class="card-body">🔧 ${r.request_type}</div>
+      ${r.image ? `<a href="${r.image}" target="_blank" rel="noopener"><img src="${r.image}" alt="Foto e problemit" style="width:100%; max-width:180px; border-radius:8px; margin-top:8px; display:block;"></a>` : ''}
       <div class="card-btns"><button class="card-btn" onclick="markRequestDone('${r.id}')">Shëno si zgjidhur</button></div>
     </div>`).join('');
 }

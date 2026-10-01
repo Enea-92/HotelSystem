@@ -120,10 +120,13 @@ async function loadHotels(){
     box.innerHTML = hotels.map(h => `
       <div class="hotel-row">
         <div>
-          <div class="hotel-name">${h.name} <span class="hotel-slug">(${h.slug})</span></div>
+          <div class="hotel-name">${h.name} <span class="hotel-slug">(${h.slug})</span> ${h.active === false ? '<span style="color:#C1592E; font-size:11px; font-weight:500;">● Çaktivizuar</span>' : '<span style="color:#2C5FA8; font-size:11px; font-weight:500;">● Aktiv</span>'}</div>
           <div class="hotel-urls">App: hotel-bregu-guest-app.html?hotel=${h.slug} · Admin: admin.html?hotel=${h.slug} · Staf: staff-dashboard.html?hotel=${h.slug}</div>
         </div>
-        <button class="del-link" onclick="deleteHotel('${h.slug}')">Fshi</button>
+        <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
+          <button class="del-link" style="color:${h.active === false ? '#2C5FA8' : '#CE9A42'};" onclick="toggleHotelActive('${h.slug}', ${h.active === false})">${h.active === false ? 'Aktivo' : 'Çaktivizo'}</button>
+          <button class="del-link" onclick="deleteHotel('${h.slug}')">Fshi</button>
+        </div>
       </div>`).join('');
   }catch(e){ showToast('Gabim duke ngarkuar hotelet.', true); }
 }
@@ -163,6 +166,18 @@ async function deleteHotel(slug){
     showToast('Hoteli u fshi.');
     loadHotels();
   }catch(e){ showToast('Gabim duke fshirë.', true); }
+}
+
+async function toggleHotelActive(slug, makeActive){
+  try{
+    await fetch(apiBase + '/api/super-admin/hotels/' + slug, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-super-admin-password': superPassword },
+      body: JSON.stringify({ active: makeActive })
+    });
+    showToast(makeActive ? 'Hoteli u aktivizua.' : 'Hoteli u çaktivizua — mysafirët s\'do të kenë qasje, por të dhënat mbeten të gjitha.');
+    loadHotels();
+  }catch(e){ showToast('Gabim duke ndryshuar statusin.', true); }
 }
 </script>
 </body>

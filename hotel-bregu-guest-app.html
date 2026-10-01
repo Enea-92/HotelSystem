@@ -486,18 +486,29 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
       <h2 class="section-title" data-i18n="room.title">Dhoma juaj</h2>
       <p class="section-sub" data-i18n="room.subtitle">Pajisje dhe orientim brenda hotelit.</p>
 
-      <h3 class="group-heading" data-i18n="quick.request.heading">Kërkesa të shpejta</h3>
+      <h3 class="group-heading" id="quick-requests-heading" data-i18n="quick.request.heading">Kërkesa të shpejta</h3>
       <div class="chip-row">
-        <button class="req-chip" data-i18n="req.towels" onclick="sendQuickRequest('req.towels')">Peshqirë shtesë</button>
-        <button class="req-chip" data-i18n="req.cleaning" onclick="sendQuickRequest('req.cleaning')">Pastrim dhome</button>
-        <button class="req-chip" data-i18n="req.pillows" onclick="sendQuickRequest('req.pillows')">Jastëkë shtesë</button>
-        <button class="req-chip" data-i18n="req.issue_ac" onclick="sendQuickRequest('req.issue_ac','issue')">Klima s'punon</button>
-        <button class="req-chip" data-i18n="req.issue_tv" onclick="sendQuickRequest('req.issue_tv','issue')">TV s'punon</button>
-        <button class="req-chip" data-i18n="req.issue_toilet" onclick="sendQuickRequest('req.issue_toilet','issue')">Tualeti i prishur</button>
-        <button class="req-chip" data-i18n="req.issue_plumbing" onclick="sendQuickRequest('req.issue_plumbing','issue')">Problem hidraulik</button>
-        <button class="req-chip" data-i18n="req.issue_electric" onclick="sendQuickRequest('req.issue_electric','issue')">Problem elektrik</button>
+        <button class="req-chip" data-section="quick_requests" data-i18n="req.towels" onclick="sendQuickRequest('req.towels')">Peshqirë shtesë</button>
+        <button class="req-chip" data-section="quick_requests" data-i18n="req.cleaning" onclick="sendQuickRequest('req.cleaning')">Pastrim dhome</button>
+        <button class="req-chip" data-section="quick_requests" data-i18n="req.pillows" onclick="sendQuickRequest('req.pillows')">Jastëkë shtesë</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_ac" onclick="sendQuickRequest('req.issue_ac','issue')">Klima s'punon</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_tv" onclick="sendQuickRequest('req.issue_tv','issue')">TV s'punon</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_toilet" onclick="sendQuickRequest('req.issue_toilet','issue')">Tualeti i prishur</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_plumbing" onclick="sendQuickRequest('req.issue_plumbing','issue')">Problem hidraulik</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_electric" onclick="sendQuickRequest('req.issue_electric','issue')">Problem elektrik</button>
       </div>
 
+      <input type="file" id="issue-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelected(this)">
+      <button type="button" id="issue-photo-btn" data-section="issues" onclick="document.getElementById('issue-photo-input').click()" style="display:flex; align-items:center; gap:6px; background:none; border:0.5px dashed var(--line); color:var(--ink); opacity:0.65; border-radius:8px; padding:7px 12px; font-size:12px; cursor:pointer; font-family:inherit; margin-bottom:10px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span data-i18n="issue.attachPhoto">Bashkangjit foto te problemi (opsionale)</span>
+      </button>
+      <div id="issue-photo-preview" style="display:none; align-items:center; gap:10px; margin:-4px 0 10px;">
+        <img src="" style="width:52px; height:52px; object-fit:cover; border-radius:8px; border:0.5px solid var(--line);">
+        <button type="button" onclick="clearPendingPhoto()" style="background:none; border:none; color:var(--coral); font-size:12px; cursor:pointer; font-family:inherit;" data-i18n="issue.removePhoto">Hiq foton</button>
+      </div>
+
+      <div id="section-toiletries">
       <h3 class="group-heading" data-i18n="quick.toiletries.heading">Artikuj higjienikë</h3>
       <div class="chip-row">
         <button class="req-chip" data-i18n="req.shampoo" onclick="sendQuickRequest('req.shampoo')">Shampo</button>
@@ -505,7 +516,9 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
         <button class="req-chip" data-i18n="req.slippers" onclick="sendQuickRequest('req.slippers')">Pantofla</button>
         <button class="req-chip" data-i18n="req.soap" onclick="sendQuickRequest('req.soap')">Sapun / xhel dushi</button>
       </div>
+      </div>
 
+      <div id="section-dnd">
       <h3 class="group-heading" data-i18n="dnd.heading">Mos shqetësoni</h3>
       <p class="section-sub" style="margin-bottom:10px;" data-i18n="dnd.sub">Aktivizoje kur nuk dëshiron të shqetësohesh nga stafi.</p>
       <div style="display:flex; align-items:center; justify-content:space-between; background:var(--white); border:0.5px solid var(--line); border-radius:12px; padding:12px 16px; margin-bottom:18px;">
@@ -514,7 +527,9 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
           <span id="dnd-knob" style="position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background:var(--white); box-shadow:0 1px 3px rgba(0,0,0,0.25); transition:transform 0.2s ease;"></span>
         </button>
       </div>
+      </div>
 
+      <div id="section-amenities">
       <h3 class="group-heading" data-i18n="room.amenitiesHeading">Pajisjet</h3>
       <div id="amenities-container">
       <div class="amenity-item"><div><p class="amenity-name" data-i18n="amenity.ac.name">Klima</p><p class="amenity-note" data-i18n="amenity.ac.note">Kontrolli në murin pranë derës së banjës. 18-26°C.</p></div></div>
@@ -522,7 +537,9 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
       <div class="amenity-item"><div><p class="amenity-name" data-i18n="amenity.minibar.name">Minibar</p><p class="amenity-note" data-i18n="amenity.minibar.note">Ujë falas. Pjesa tjetër faturohet në check-out.</p></div></div>
       <div class="amenity-item"><div><p class="amenity-name" data-i18n="amenity.dryer.name">Tharëse flokësh</p><p class="amenity-note" data-i18n="amenity.dryer.note">Sirtari i parë i tavolinës së make-up.</p></div></div>
       </div>
+      </div>
 
+      <div id="section-locations">
       <h3 class="group-heading" data-i18n="room.whereHeading">Ku ndodhet</h3>
       <div id="locations-container">
       <div class="loc-item">
@@ -542,7 +559,9 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
         <div><p class="loc-name" data-i18n="loc.elevator.name">Ashensori</p><p class="loc-desc" data-i18n="loc.elevator.desc">Në fund të korridorit tuaj, majtas.</p><span class="loc-time" data-i18n="loc.elevator.time">~30 sek nga dhoma</span></div>
       </div>
       </div>
+      </div>
 
+      <div id="section-roomservice">
       <h3 class="group-heading" data-i18n="roomservice.heading">Shërbimi në dhomë</h3>
       <div id="roomservice-container">
       <div class="rs-item"><p class="rs-name" data-i18n="rs.club.name">Sanduiç Club</p><span class="rs-price">450 L</span><button class="rs-add" data-i18n="roomservice.add" onclick="addRoomService('rs.club.name', 450)">Shto</button></div>
@@ -554,6 +573,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
         <p class="group-heading" style="margin:0 0 8px;" data-i18n="roomservice.cartHeading">Porosia juaj</p>
         <div id="rs-cart-lines"><p class="rs-cart-empty" data-i18n="roomservice.empty">Nuk keni shtuar ende asgjë.</p></div>
         <button class="rs-send" data-i18n="roomservice.send" onclick="sendRoomService()">Dërgo porosinë te recepsioni</button>
+      </div>
       </div>
     </div>
 
@@ -621,12 +641,15 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
       </div>
       <p class="weather-note" id="weather-note" data-i18n="weather.note">Të dhëna shembull — një hotel real do ta lidhte me një shërbim moti të drejtpërdrejtë.</p>
 
+      <div id="section-info_hours">
       <h3 class="group-heading" data-i18n="info.hoursHeading">Orari</h3>
       <div class="info-item"><span class="info-item-name" data-i18n="info.hours.checkin.name">Check-in</span><span class="info-item-val" data-i18n="info.hours.checkin.val">Nga ora 14:00</span></div>
       <div class="info-item"><span class="info-item-name" data-i18n="info.hours.checkout.name">Check-out</span><span class="info-item-val" data-i18n="info.hours.checkout.val">Deri në 11:00</span></div>
       <div class="info-item"><span class="info-item-name" data-i18n="info.hours.quiet.name">Ora e qetësisë</span><span class="info-item-val" data-i18n="info.hours.quiet.val">23:00–08:00</span></div>
       <div class="info-item"><span class="info-item-name" data-i18n="info.hours.cleaning.name">Pastrimi i dhomës</span><span class="info-item-val" data-i18n="info.hours.cleaning.val">10:00–13:00</span></div>
+      </div>
 
+      <div id="section-info_transport">
       <h3 class="group-heading" data-i18n="info.transportHeading">Transporti</h3>
       <div class="tr-item">
         <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-7a2 2 0 012-1h10a2 2 0 012 1l2 7v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><circle cx="7.5" cy="16.5" r="1"/><circle cx="16.5" cy="16.5" r="1"/></svg></div>
@@ -640,18 +663,23 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
         <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="14" rx="2"/><path d="M4 10h16M8 18v2M16 18v2"/></svg></div>
         <div><p class="loc-name" data-i18n="tr.bus.name">Autobusi urban</p><p class="loc-desc" data-i18n="tr.bus.desc">Ndalesa më e afërt 5 min në këmbë, linja drejt qendrës çdo 30 min.</p></div>
       </div>
+      </div>
 
+      <div id="section-info_emergency">
       <h3 class="group-heading" data-i18n="info.emergencyHeading">Urgjenca</h3>
       <div class="info-item"><span class="info-item-name" data-i18n="em.reception.name">Recepsioni (24 orë)</span><span class="info-item-val">+355 69 000 0000</span></div>
       <div class="info-item"><span class="info-item-name" data-i18n="em.police.name">Policia</span><span class="info-item-val">129</span></div>
       <div class="info-item"><span class="info-item-name" data-i18n="em.ambulance.name">Ambulanca</span><span class="info-item-val">127</span></div>
       <div class="info-item"><span class="info-item-name" data-i18n="em.pharmacy.name">Farmacia më e afërt</span><span class="info-item-val" data-i18n="em.pharmacy.val">3 min në këmbë</span></div>
+      </div>
 
+      <div id="section-info_faq">
       <h3 class="group-heading" data-i18n="info.faqHeading">Pyetje të shpeshta</h3>
       <details class="faq"><summary data-i18n="faq.q1">Si e ndez ujin e ngrohtë?</summary><p data-i18n="faq.a1">Çelësi është pranë kokës së dushit, kthejeni majtas dhe prisni rreth 30 sekonda.</p></details>
       <details class="faq"><summary data-i18n="faq.q2">A ka parking falas?</summary><p data-i18n="faq.a2">Po, parkimi i jashtëm është falas për mysafirët, pranë hyrjes anësore.</p></details>
       <details class="faq"><summary data-i18n="faq.q3">A pranoni kafshë shtëpiake?</summary><p data-i18n="faq.a3">Pranohen kafshë të vogla me njoftim paraprak në recepsion, me tarifë shtesë.</p></details>
       <details class="faq"><summary data-i18n="faq.q4">Deri sa orë shërbehet mëngjesi?</summary><p data-i18n="faq.a4">Mëngjesi shërbehet çdo ditë nga ora 07:30 deri në 10:30.</p></details>
+      </div>
     </div>
 
     <!-- CHAT -->
@@ -769,6 +797,7 @@ const translations = {
     "dnd.enabledMsg":"Mysafiri aktivizoi 'Mos shqetësoni'.","dnd.disabledMsg":"Mysafiri çaktivizoi 'Mos shqetësoni'.",
     "push.enable":"🔔 Aktivo njoftimet në telefon","push.enabled":"Njoftimet u aktivizuan!","push.denied":"Leja për njoftime u refuzua.","push.unavailable":"Njoftimet s'janë të disponueshme tani.",
     "req.issue_ac":"Klima s'punon","req.issue_tv":"TV s'punon","req.issue_toilet":"Tualeti i prishur","req.issue_plumbing":"Problem hidraulik","req.issue_electric":"Problem elektrik",
+    "issue.attachPhoto":"Bashkangjit foto te problemi (opsionale)","issue.removePhoto":"Hiq foton",
     "req.sentPrefix":"Kërkesë nga dhoma:","req.confirmToast":"Kërkesa u dërgua te recepsioni",
     "room.amenitiesHeading":"Pajisjet",
     "amenity.ac.name":"Klima","amenity.ac.note":"Kontrolli në murin pranë derës së banjës. 18-26°C.",
@@ -842,6 +871,7 @@ const translations = {
     "dnd.enabledMsg":"The guest turned on Do Not Disturb.","dnd.disabledMsg":"The guest turned off Do Not Disturb.",
     "push.enable":"🔔 Enable phone notifications","push.enabled":"Notifications enabled!","push.denied":"Notification permission was denied.","push.unavailable":"Notifications aren't available right now.",
     "req.issue_ac":"AC not working","req.issue_tv":"TV not working","req.issue_toilet":"Broken toilet","req.issue_plumbing":"Plumbing issue","req.issue_electric":"Electrical issue",
+    "issue.attachPhoto":"Attach a photo of the problem (optional)","issue.removePhoto":"Remove photo",
     "req.sentPrefix":"Room request:","req.confirmToast":"Request sent to the front desk",
     "room.amenitiesHeading":"Amenities",
     "amenity.ac.name":"Air conditioning","amenity.ac.note":"Control panel by the bathroom door. 18-26°C.",
@@ -915,6 +945,7 @@ const translations = {
     "dnd.enabledMsg":"L'ospite ha attivato 'Non disturbare'.","dnd.disabledMsg":"L'ospite ha disattivato 'Non disturbare'.",
     "push.enable":"🔔 Attiva notifiche sul telefono","push.enabled":"Notifiche attivate!","push.denied":"Il permesso per le notifiche è stato negato.","push.unavailable":"Le notifiche non sono disponibili ora.",
     "req.issue_ac":"Aria condizionata non funziona","req.issue_tv":"TV non funziona","req.issue_toilet":"WC rotto","req.issue_plumbing":"Problema idraulico","req.issue_electric":"Problema elettrico",
+    "issue.attachPhoto":"Allega una foto del problema (opzionale)","issue.removePhoto":"Rimuovi foto",
     "req.sentPrefix":"Richiesta dalla camera:","req.confirmToast":"Richiesta inviata alla reception",
     "room.amenitiesHeading":"Servizi",
     "amenity.ac.name":"Aria condizionata","amenity.ac.note":"Pannello vicino alla porta del bagno. 18-26°C.",
@@ -988,6 +1019,7 @@ const translations = {
     "dnd.enabledMsg":"Der Gast hat 'Bitte nicht stören' aktiviert.","dnd.disabledMsg":"Der Gast hat 'Bitte nicht stören' deaktiviert.",
     "push.enable":"🔔 Telefon-Benachrichtigungen aktivieren","push.enabled":"Benachrichtigungen aktiviert!","push.denied":"Die Berechtigung für Benachrichtigungen wurde verweigert.","push.unavailable":"Benachrichtigungen sind momentan nicht verfügbar.",
     "req.issue_ac":"Klimaanlage funktioniert nicht","req.issue_tv":"TV funktioniert nicht","req.issue_toilet":"Toilette defekt","req.issue_plumbing":"Sanitärproblem","req.issue_electric":"Elektrisches Problem",
+    "issue.attachPhoto":"Foto des Problems anhängen (optional)","issue.removePhoto":"Foto entfernen",
     "req.sentPrefix":"Anfrage aus dem Zimmer:","req.confirmToast":"Anfrage an die Rezeption gesendet",
     "room.amenitiesHeading":"Ausstattung",
     "amenity.ac.name":"Klimaanlage","amenity.ac.note":"Bedienfeld neben der Badezimmertür. 18-26°C.",
@@ -1068,9 +1100,19 @@ async function loadHotelContent(){
       fetch(API_BASE + '/api/recommendations?hotel=' + encodeURIComponent(currentHotel)),
       fetch(API_BASE + '/api/hotel-info?hotel=' + encodeURIComponent(currentHotel))
     ]);
+    if(contentRes.status === 403){
+      showHotelDeactivated();
+      return;
+    }
     dynamicContent = await contentRes.json();
     dynamicRecs = await recsRes.json();
     dynamicRoomService = dynamicContent.room_service || [];
+    applyEnabledSections(dynamicContent.enabled_sections);
+    const activeCatBtn = document.querySelector('.cat-tab.on');
+    if(activeCatBtn && activeCatBtn.style.display === 'none'){
+      const firstVisible = document.querySelector('.cat-tab:not([style*="display: none"])');
+      if(firstVisible) firstVisible.click();
+    }
     renderDynamicRoom();
     renderDynamicRecommendations();
     initRealMap();
@@ -1121,6 +1163,35 @@ async function fetchWeather(lat, lng){
     if(tempEl) tempEl.textContent = temp + '°C';
     if(noteEl) noteEl.textContent = translations[currentLang]['weather.live'] || '';
   }catch(e){ console.warn('Weather fetch failed, keeping example data.', e); }
+}
+
+function applyEnabledSections(sections){
+  if(!sections) return;
+  const wrapperMap = {
+    amenities: 'section-amenities', locations: 'section-locations', room_service: 'section-roomservice',
+    toiletries: 'section-toiletries', dnd: 'section-dnd',
+    info_hours: 'section-info_hours', info_transport: 'section-info_transport',
+    info_emergency: 'section-info_emergency', info_faq: 'section-info_faq'
+  };
+  Object.keys(wrapperMap).forEach(key => {
+    const el = document.getElementById(wrapperMap[key]);
+    if(el) el.style.display = (sections[key] === false) ? 'none' : '';
+  });
+
+  document.querySelectorAll('[data-section="quick_requests"]').forEach(el => {
+    el.style.display = (sections.quick_requests === false) ? 'none' : '';
+  });
+  document.querySelectorAll('[data-section="issues"]').forEach(el => {
+    el.style.display = (sections.issues === false) ? 'none' : '';
+  });
+  const qrHeading = document.getElementById('quick-requests-heading');
+  if(qrHeading) qrHeading.style.display = (sections.quick_requests === false && sections.issues === false) ? 'none' : '';
+
+  const catMap = { restorante: 'restaurants', bare: 'bars', plazhe: 'beaches' };
+  document.querySelectorAll('.cat-tab').forEach(btn => {
+    const key = catMap[btn.dataset.cat];
+    if(key) btn.style.display = (sections[key] === false) ? 'none' : '';
+  });
 }
 
 function renderDynamicRoom(){
@@ -1325,6 +1396,18 @@ function showMissingHotel(){
   document.body.appendChild(overlay);
 }
 
+function showHotelDeactivated(){
+  if(document.getElementById('session-locked-overlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'session-locked-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#0E3A3D;color:#F3ECDC;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;z-index:9999;font-family:"Work Sans",sans-serif;';
+  overlay.innerHTML = `
+    <h1 style="font-family:'Fraunces',serif;font-weight:500;font-size:20px;margin:0 0 10px;">App-i është përkohësisht jo-aktiv</h1>
+    <p style="font-size:14px;opacity:0.75;max-width:320px;line-height:1.6;margin:0;">Ju lutemi kontaktoni recepsionin për asistencë.</p>
+  `;
+  document.body.appendChild(overlay);
+}
+
 function showSessionLocked(){
   const overlay = document.createElement('div');
   overlay.id = 'session-locked-overlay';
@@ -1523,13 +1606,54 @@ function sendMsg(){
   apiPost('/api/messages', { room_number: currentRoom, sender: 'guest', text });
 }
 
+let pendingIssuePhoto = null;
+
+function handlePhotoSelected(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxWidth = 900;
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      pendingIssuePhoto = canvas.toDataURL('image/jpeg', 0.7);
+      renderPhotoPreview();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function renderPhotoPreview(){
+  const box = document.getElementById('issue-photo-preview');
+  if(!pendingIssuePhoto){ box.style.display = 'none'; return; }
+  box.style.display = 'flex';
+  box.querySelector('img').src = pendingIssuePhoto;
+}
+
+function clearPendingPhoto(){
+  pendingIssuePhoto = null;
+  renderPhotoPreview();
+}
+
 function sendQuickRequest(key, category){
   const label = translations[currentLang][key];
   const prefix = translations[currentLang]['req.sentPrefix'];
   pushOutMsg(prefix + ' ' + label);
   showToast(translations[currentLang]['req.confirmToast']);
   showView('chat');
-  apiPost('/api/quick-requests', { room_number: currentRoom, request_type: label, category: category || 'request' });
+  const body = { room_number: currentRoom, request_type: label, category: category || 'request' };
+  if(category === 'issue' && pendingIssuePhoto){
+    body.image = pendingIssuePhoto;
+    clearPendingPhoto();
+  }
+  apiPost('/api/quick-requests', body);
 }
 
 let dndOn = false;
