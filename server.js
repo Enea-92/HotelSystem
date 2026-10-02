@@ -639,6 +639,12 @@ app.patch('/api/super-admin/hotels/:slug', requireSuperAdmin, async (req, res) =
   if (req.body.theme !== undefined && THEME_KEYS.includes(req.body.theme)) changes.theme = req.body.theme;
   const hotel = await Hotel.findOneAndUpdate({ slug: req.params.slug }, changes, { new: true });
   if (!hotel) return res.status(404).json({ error: 'Hoteli nuk ekziston' });
+  // Any guest app currently open for this hotel (including an admin preview
+  // iframe) listens for this event and re-pulls /api/hotel-info, so a theme
+  // change shows up live instead of only after a manual page reload.
+  if (changes.theme !== undefined) {
+    io.emit('content_updated', { hotel: req.params.slug });
+  }
   res.json(toDTO(hotel));
 });
 
