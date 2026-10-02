@@ -600,9 +600,20 @@ app.get('/api/session/verify', (req, res) => {
   res.json({ valid: true, hotel: payload.hotel, room: payload.room, floor: payload.floor, exp: payload.exp });
 });
 
-// ============ SUPER ADMIN (create/manage hotels) ============
+// ============ HOTEL THEME (the hotel's own admin can change its palette too) ============
 
-const THEME_KEYS = ['teal', 'ocean', 'sunset', 'forest', 'royal'];
+const THEME_KEYS = ['teal', 'ocean', 'sunset', 'forest', 'royal', 'rose', 'slate', 'olive', 'amber', 'midnight'];
+
+app.put('/api/hotel/theme', requireAdmin, async (req, res) => {
+  const { theme } = req.body;
+  if (!THEME_KEYS.includes(theme)) return res.status(400).json({ error: 'Paletë e panjohur.' });
+  const hotel = await Hotel.findOneAndUpdate({ slug: req.hotel }, { theme }, { new: true });
+  if (!hotel) return res.status(404).json({ error: 'Hoteli nuk ekziston' });
+  io.emit('content_updated', { hotel: req.hotel });
+  res.json(toDTO(hotel));
+});
+
+// ============ SUPER ADMIN (create/manage hotels) ============
 
 app.post('/api/super-admin/hotels', requireSuperAdmin, async (req, res) => {
   const { slug, name, admin_password, staff_password, theme } = req.body;

@@ -373,6 +373,15 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
 .weather-warning.show{ display:flex; }
 .weather-warning .wi{ font-size:15px; flex-shrink:0; line-height:1.3; }
 
+.admin-editable{ outline:1.5px dashed rgba(206,154,66,0.55); outline-offset:4px; border-radius:10px; }
+.admin-edit-btn{
+  position:absolute; top:6px; right:6px; z-index:30;
+  background:var(--gold); color:var(--ink); border:none; border-radius:6px;
+  font-size:11px; font-weight:600; padding:5px 9px; cursor:pointer;
+  box-shadow:var(--shadow-1); font-family:'Work Sans', sans-serif;
+}
+.admin-edit-btn:active{ transform:scale(0.95); }
+
 .stars{ display:flex; gap:6px; margin:10px 0 12px; }
 .star-btn{ background:none; border:none; font-size:26px; cursor:pointer; color:var(--line); padding:0; line-height:1; }
 .star-btn.filled{ color:var(--gold); }
@@ -1174,6 +1183,7 @@ let dynamicContent = null;
 let dynamicRecs = [];
 let dynamicRoomService = [];
 let leafletMap = null;
+let isAdminPreview = false;
 
 function escapeHtml(str){
   return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1233,6 +1243,7 @@ async function loadHotelContent(){
         applyPresetColors();
       }
     }catch(e){}
+    if(isAdminPreview) enableAdminEditButtons();
   }catch(e){ console.warn('Could not load hotel content, using example content.', e); }
   loadRoomNote();
 }
@@ -1320,6 +1331,40 @@ async function fetchWeather(lat, lng){
       weatherRefreshTimer = setInterval(() => fetchWeather(), 15 * 60 * 1000);
     }
   }catch(e){ console.warn('Weather fetch failed, keeping example data.', e); }
+}
+
+// When this page is embedded as the admin's live preview (loaded with
+// ?preview=1), overlay a small "Edit" button on each editable section so the
+// admin can jump straight to that section's editor without hunting through
+// the panel. Clicking posts a message to the parent window (the admin page),
+// which listens for it and scrolls/highlights the matching card.
+const ADMIN_EDIT_TARGETS = [
+  { selector: '.keycard', section: 'wifi' },
+  { selector: '#section-amenities', section: 'amenities' },
+  { selector: '#section-locations', section: 'locations' },
+  { selector: '#section-roomservice', section: 'room_service' },
+  { selector: '#real-map', section: 'location' },
+  { selector: '#recs-container', section: 'recommendations' },
+  { selector: '#section-info_faq', section: 'faq' }
+];
+function enableAdminEditButtons(){
+  document.querySelectorAll('.admin-edit-btn').forEach(b => b.remove());
+  ADMIN_EDIT_TARGETS.forEach(t => {
+    const el = document.querySelector(t.selector);
+    if(!el) return;
+    el.classList.add('admin-editable');
+    if(!el.style.position) el.style.position = 'relative';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'admin-edit-btn';
+    btn.textContent = '✏️ Edit';
+    btn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      try{ window.parent.postMessage({ type: 'bregu-edit-section', section: t.section }, '*'); }catch(err){}
+    };
+    el.appendChild(btn);
+  });
 }
 
 function applyEnabledSections(sections){
@@ -1517,6 +1562,7 @@ async function initFromUrl(){
   const urlToken = params.get('token');
   const urlRoom = params.get('room');
   const urlFloor = params.get('floor');
+  isAdminPreview = params.get('preview') === '1';
   let sessionValid = false;
 
   if(urlHotel){
@@ -1580,7 +1626,7 @@ async function initFromUrl(){
   loadHotelContent();
   loadDndState();
   if(socket) socket.emit('join_room', { hotel: currentHotel, room: currentRoom });
-  showTutorialIfNeeded();
+  if(!isAdminPreview) showTutorialIfNeeded();
 }
 
 function showTutorialIfNeeded(){
@@ -1657,6 +1703,26 @@ const THEME_PRESETS = {
   royal: {
     light:{ '--ink':'#241A38','--sea':'#3B2A5E','--sea-light':'#55417F','--sand':'#F4F0FA','--sand-dim':'#E5DCF2','--aqua':'#8A5FB3','--aqua-dark':'#6D4791','--gold':'#D9A441','--coral':'#C1592E','--line':'rgba(36,26,56,0.14)','--white':'#FFFEFF' },
     dark:{ '--ink':'#EDE6F7','--sea':'#3A2C57','--sea-light':'#4E3C72','--sand':'#160F22','--sand-dim':'#201732','--aqua':'#A985CC','--aqua-dark':'#BB9BDA','--gold':'#E7BE70','--coral':'#E8916B','--line':'rgba(237,230,247,0.16)','--white':'#241A38' }
+  },
+  rose: {
+    light:{ '--ink':'#3A1826','--sea':'#7D2E52','--sea-light':'#9F4A72','--sand':'#FBEEF3','--sand-dim':'#F4DCE6','--aqua':'#D97BA0','--aqua-dark':'#B85683','--gold':'#E3A857','--coral':'#C1592E','--line':'rgba(58,24,38,0.14)','--white':'#FFFCFD' },
+    dark:{ '--ink':'#F6E9EF','--sea':'#5C2440','--sea-light':'#78355A','--sand':'#1C0F16','--sand-dim':'#261620','--aqua':'#E8A0C0','--aqua-dark':'#F0B3CE','--gold':'#F0C27E','--coral':'#E8916B','--line':'rgba(246,233,239,0.16)','--white':'#2A1620' }
+  },
+  slate: {
+    light:{ '--ink':'#1C2630','--sea':'#2E3F4F','--sea-light':'#44596D','--sand':'#F2F4F6','--sand-dim':'#E2E7EB','--aqua':'#5C8AA6','--aqua-dark':'#436C85','--gold':'#C9A24A','--coral':'#C1592E','--line':'rgba(28,38,48,0.14)','--white':'#FFFFFF' },
+    dark:{ '--ink':'#E8EDF1','--sea':'#283744','--sea-light':'#3B4E5E','--sand':'#10161C','--sand-dim':'#192228','--aqua':'#7FA8C2','--aqua-dark':'#93B9D1','--gold':'#D9BB6E','--coral':'#E8916B','--line':'rgba(232,237,241,0.16)','--white':'#1B2630' }
+  },
+  olive: {
+    light:{ '--ink':'#262318','--sea':'#4A4A2E','--sea-light':'#686B3E','--sand':'#F6F4E8','--sand-dim':'#EAE6D1','--aqua':'#8A9B4E','--aqua-dark':'#6F8039','--gold':'#C9A33F','--coral':'#C1592E','--line':'rgba(38,35,24,0.14)','--white':'#FFFEF9' },
+    dark:{ '--ink':'#EFECDB','--sea':'#3B3B22','--sea-light':'#52542F','--sand':'#17160D','--sand-dim':'#201F13','--aqua':'#A8BA6E','--aqua-dark':'#BBCD7F','--gold':'#D9BE6E','--coral':'#E8916B','--line':'rgba(239,236,219,0.16)','--white':'#232210' }
+  },
+  amber: {
+    light:{ '--ink':'#2E220D','--sea':'#8A5A1E','--sea-light':'#AC7736','--sand':'#FCF3E2','--sand-dim':'#F3E3C4','--aqua':'#E0A53D','--aqua-dark':'#C78A25','--gold':'#F0C96B','--coral':'#C1592E','--line':'rgba(46,34,13,0.14)','--white':'#FFFDF7' },
+    dark:{ '--ink':'#F7ECD7','--sea':'#5E3F15','--sea-light':'#7A5724','--sand':'#1E1608','--sand-dim':'#281E0D','--aqua':'#F0BD5E','--aqua-dark':'#F5CC7C','--gold':'#F5D389','--coral':'#E8916B','--line':'rgba(247,236,215,0.16)','--white':'#2C2110' }
+  },
+  midnight: {
+    light:{ '--ink':'#141A2E','--sea':'#1B2444','--sea-light':'#2C3A68','--sand':'#EFF1F8','--sand-dim':'#DEE2EF','--aqua':'#5768B0','--aqua-dark':'#3F4F8F','--gold':'#C9A24A','--coral':'#C1592E','--line':'rgba(20,26,46,0.14)','--white':'#FFFFFF' },
+    dark:{ '--ink':'#E7EAF5','--sea':'#141B33','--sea-light':'#202B4D','--sand':'#090C16','--sand-dim':'#0F1322','--aqua':'#7C8CD6','--aqua-dark':'#95A4E6','--gold':'#D9BB6E','--coral':'#E8916B','--line':'rgba(231,234,245,0.16)','--white':'#121729' }
   }
 };
 

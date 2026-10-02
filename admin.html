@@ -38,6 +38,12 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
 .item-block{ border:0.5px solid var(--line); border-radius:10px; padding:14px; margin-bottom:12px; position:relative; }
 .item-block .del-btn{ position:absolute; top:10px; right:10px; border:none; background:none; color:var(--coral); font-size:12px; cursor:pointer; font-weight:500; }
 .add-btn{ border:0.5px dashed var(--aqua-dark); color:var(--aqua-dark); background:none; border-radius:8px; padding:8px 14px; font-size:12.5px; cursor:pointer; width:100%; font-family:inherit; }
+.theme-swatches{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:4px; }
+.theme-swatch{ border:2px solid transparent; border-radius:10px; padding:4px; cursor:pointer; text-align:center; background:none; font-family:inherit; }
+.theme-swatch.on{ border-color:var(--aqua-dark); }
+.theme-swatch .dots{ display:flex; border-radius:6px; overflow:hidden; width:54px; height:28px; }
+.theme-swatch .dots span{ flex:1; }
+.theme-swatch small{ display:block; font-size:10.5px; margin-top:3px; opacity:0.7; }
 .save-btn{ border:none; background:var(--sea); color:var(--sand); border-radius:8px; padding:9px 18px; font-size:13px; font-weight:500; cursor:pointer; margin-top:6px; }
 select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; font-family:inherit; font-size:13px; }
 .checkbox-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; margin-bottom:10px; }
@@ -143,6 +149,12 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
     <p class="hint">Çaktivizo çdo pjesë që s'ka kuptim për hotelin tënd (p.sh. "Shërbimi në dhomë" nëse s'ka restorant) — fshihet menjëherë te app-i i mysafirit, pa prekur asnjë kod.</p>
     <div id="section-toggles" style="display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;"></div>
     <button class="save-btn" style="margin-top:14px;" onclick="saveSectionToggles()">Ruaj seksionet</button>
+  </div>
+
+  <div class="card" id="card-theme">
+    <h2>Paleta e ngjyrave</h2>
+    <p class="hint">Ngjyrat e app-it të mysafirit. Ndryshohet menjëherë te pamja live djathtas.</p>
+    <div class="theme-swatches" id="admin-theme-swatches"></div>
   </div>
 
   <div class="card" id="card-location">
@@ -251,6 +263,7 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
   <p class="hint" style="margin:10px 0 2px; font-weight:500; opacity:0.8;">Shko te seksioni për ta edituar:</p>
   <div class="jump-list">
     <button class="jump-btn" onclick="jumpToSection('card-sections')">Seksionet e dukshme</button>
+    <button class="jump-btn" onclick="jumpToSection('card-theme')">Paleta e ngjyrave</button>
     <button class="jump-btn" onclick="jumpToSection('card-location')">Vendndodhja</button>
     <button class="jump-btn" onclick="jumpToSection('card-wifi')">Wifi</button>
     <button class="jump-btn" onclick="jumpToSection('card-amenities')">Pajisjet</button>
@@ -275,6 +288,54 @@ let currentHotel = '';
 let adminPassword = '';
 let content = null;
 let recommendations = [];
+let currentHotelTheme = 'teal';
+
+// Color presets a hotel can pick for its guest app — must match THEME_PRESETS
+// in hotel-bregu-guest-app.html and THEME_KEYS in server.js. Only the preview
+// dots live here.
+const THEME_CHOICES = [
+  { key:'teal',     label:'Bregu (teal)',  dots:['#0E3A3D','#2C9D93','#CE9A42'] },
+  { key:'ocean',    label:'Oqean (blu)',   dots:['#0D3B66','#3B82C4','#E0A458'] },
+  { key:'sunset',   label:'Perëndim',      dots:['#7A3B2E','#D97B4F','#EFC88B'] },
+  { key:'forest',   label:'Pyll (gjelbër)', dots:['#1F3D2B','#4C8B5A','#C9A14A'] },
+  { key:'royal',    label:'Mbretëror',     dots:['#3B2A5E','#8A5FB3','#D9A441'] },
+  { key:'rose',     label:'Trëndafili',    dots:['#7D2E52','#D97BA0','#E3A857'] },
+  { key:'slate',    label:'Gri-blu',       dots:['#2E3F4F','#5C8AA6','#C9A24A'] },
+  { key:'olive',    label:'Ulliri',        dots:['#4A4A2E','#8A9B4E','#C9A33F'] },
+  { key:'amber',    label:'Qelibar',       dots:['#8A5A1E','#E0A53D','#F0C96B'] },
+  { key:'midnight', label:'Mesnatë',       dots:['#1B2444','#5768B0','#C9A24A'] }
+];
+
+function renderThemeSwatches(containerId, selectedKey, onPick){
+  const box = document.getElementById(containerId);
+  if(!box) return;
+  box.innerHTML = THEME_CHOICES.map(t => `
+    <button type="button" class="theme-swatch ${t.key===selectedKey?'on':''}" data-theme-key="${t.key}">
+      <span class="dots">${t.dots.map(c=>`<span style="background:${c};"></span>`).join('')}</span>
+      <small>${t.label}</small>
+    </button>`).join('');
+  box.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      box.querySelectorAll('.theme-swatch').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on');
+      onPick(btn.getAttribute('data-theme-key'));
+    });
+  });
+}
+
+async function setAdminTheme(theme){
+  try{
+    const res = await fetch(apiUrl('/api/hotel/theme'), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ theme })
+    });
+    if(!res.ok) throw new Error('bad response');
+    currentHotelTheme = theme;
+    showToast('Paleta u ndryshua.');
+    reloadPreview();
+  }catch(e){ showToast('Gabim duke ndryshuar paletën.', true); }
+}
 
 function apiUrl(path){
   const sep = path.includes('?') ? '&' : '?';
@@ -300,8 +361,27 @@ function reloadPreview(){
   const floor = document.getElementById('preview-floor').value.trim() || '1';
   const frame = document.getElementById('preview-iframe');
   if(!appUrl || !currentHotel || !frame) return;
-  frame.src = appUrl + '?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(room) + '&floor=' + encodeURIComponent(floor);
+  frame.src = appUrl + '?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(room) + '&floor=' + encodeURIComponent(floor) + '&preview=1';
 }
+
+// The guest app, when loaded here with &preview=1, overlays a small "Edit"
+// button on each section and posts a message back up to us when it's
+// clicked, so the admin can jump straight from the live preview to that
+// section's editor instead of hunting for it in the panel.
+const PREVIEW_SECTION_TO_CARD = {
+  wifi: 'card-wifi',
+  amenities: 'card-amenities',
+  locations: 'card-locations',
+  room_service: 'card-roomservice',
+  location: 'card-location',
+  recommendations: 'card-recommendations',
+  faq: 'card-faq'
+};
+window.addEventListener('message', (e) => {
+  if(e?.data?.type !== 'bregu-edit-section') return;
+  const cardId = PREVIEW_SECTION_TO_CARD[e.data.section];
+  if(cardId) jumpToSection(cardId);
+});
 
 function showToast(text, isError){
   const t = document.getElementById('toast');
@@ -461,6 +541,8 @@ async function unlock(){
       const hotelName = info?.name || currentHotel;
       document.getElementById('panel-title').textContent = hotelName + ' — Admin';
       document.title = hotelName + ' — Admin';
+      currentHotelTheme = info?.theme || 'teal';
+      renderThemeSwatches('admin-theme-swatches', currentHotelTheme, setAdminTheme);
     }catch(e){}
 
     try{
@@ -526,7 +608,7 @@ function renderAll(){
 }
 
 function langTabsHtml(prefix){
-  return `<div class="lang-tabs" style="justify-content:space-between; display:flex; align-items:center;">
+  return `<div class="lang-tabs" style="justify-content:space-between; display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding-right:52px; margin-top:6px;">
     <div style="display:flex; gap:6px;">
       ${['sq','en','it','de'].map((l,i)=>`<button type="button" class="lang-tab ${i===0?'on':''}" onclick="switchLangTab(this,'${prefix}','${l}')">${l.toUpperCase()}</button>`).join('')}
     </div>
@@ -623,6 +705,16 @@ function addRoomServiceItem(){
   content.room_service = content.room_service || [];
   content.room_service.push({ name:{sq:'',en:'',it:'',de:''}, price:0, image_url:'' });
   renderRoomService();
+  // Scroll the new (blank) item into view and focus its name field — without
+  // this the new block just lands below the fold and it looks like nothing
+  // happened when you click "+ Shto artikull".
+  const blocks = document.querySelectorAll('#roomservice-list .item-block');
+  const last = blocks[blocks.length - 1];
+  if(last){
+    last.scrollIntoView({ behavior:'smooth', block:'center' });
+    const nameInput = last.querySelector('[data-field="name"][data-lang="sq"]');
+    if(nameInput) nameInput.focus();
+  }
 }
 function removeRoomServiceItem(idx){ content.room_service.splice(idx,1); renderRoomService(); saveContent(); }
 
