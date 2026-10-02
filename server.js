@@ -379,8 +379,9 @@ app.put('/api/auth/password', requireAdmin, async (req, res) => {
     return res.status(400).json({ error: `Fjalëkalimi duhet të ketë të paktën ${MIN_PASSWORD_LENGTH} karaktere.` });
   }
   const hash = await bcrypt.hash(newPassword, 10);
-  const field = role === 'admin' ? 'admin_password_hash' : 'staff_password_hash';
-  await AuthSettings.findOneAndUpdate({ hotel: req.hotel }, { [field]: hash });
+  const hashField = role === 'admin' ? 'admin_password_hash' : 'staff_password_hash';
+  const plainField = role === 'admin' ? 'admin_password_plain' : 'staff_password_plain';
+  await AuthSettings.findOneAndUpdate({ hotel: req.hotel }, { [hashField]: hash, [plainField]: newPassword });
   authSettingsCache.delete(req.hotel); // force a fresh read next time, picking up the new hash
   res.json({ ok: true });
 });
@@ -633,7 +634,13 @@ app.post('/api/super-admin/hotels', requireSuperAdmin, async (req, res) => {
   const hotel = await Hotel.create({ slug: cleanSlug, name, theme: cleanTheme });
   const adminHash = await bcrypt.hash(admin_password, 10);
   const staffHash = await bcrypt.hash(staff_password, 10);
-  await AuthSettings.create({ hotel: cleanSlug, admin_password_hash: adminHash, staff_password_hash: staffHash });
+  await AuthSettings.create({
+    hotel: cleanSlug,
+    admin_password_hash: adminHash,
+    staff_password_hash: staffHash,
+    admin_password_plain: admin_password,
+    staff_password_plain: staff_password
+  });
   await HotelContent.create({ hotel: cleanSlug });
 
   res.status(201).json(toDTO(hotel));
@@ -641,7 +648,15 @@ app.post('/api/super-admin/hotels', requireSuperAdmin, async (req, res) => {
 
 app.get('/api/super-admin/hotels', requireSuperAdmin, async (req, res) => {
   const docs = await Hotel.find().sort({ created_at: -1 });
-  res.json(docs.map(toDTO));
+  const authDocs = await AuthSettings.find({ hotel: { $in: docs.map(h => h.slug) } });
+  const authBySlug = new Map(authDocs.map(a => [a.hotel, a]));
+  res.json(docs.map(h => {
+    const dto = toDTO(h);
+    const auth = authBySlug.get(h.slug);
+    dto.admin_password = auth?.admin_password_plain || '';
+    dto.staff_password = auth?.staff_password_plain || '';
+    return dto;
+  }));
 });
 
 app.patch('/api/super-admin/hotels/:slug', requireSuperAdmin, async (req, res) => {

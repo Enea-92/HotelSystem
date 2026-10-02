@@ -36,7 +36,19 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse.clone()));
+          // Clone immediately, before anything else touches the response —
+          // a body can only be read once, and with DevTools' Network panel
+          // open Chrome sometimes starts reading it before our own code
+          // does, which makes a later .clone() throw "body already used".
+          // Caching is a nice-to-have here, so any failure is swallowed
+          // instead of becoming an unhandled rejection in the console.
+          let responseToCache;
+          try { responseToCache = networkResponse.clone(); } catch (e) { responseToCache = null; }
+          if (responseToCache && networkResponse.ok) {
+            caches.open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, responseToCache))
+              .catch(() => {});
+          }
           return networkResponse;
         })
         .catch(() => caches.match(event.request))

@@ -153,8 +153,9 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
 
   <div class="card" id="card-theme">
     <h2>Paleta e ngjyrave</h2>
-    <p class="hint">Ngjyrat e app-it të mysafirit. Ndryshohet menjëherë te pamja live djathtas.</p>
+    <p class="hint">Ngjyrat e app-it të mysafirit. Zgjidh një paletë dhe shtyp "Ruaj paletën" për ta aplikuar.</p>
     <div class="theme-swatches" id="admin-theme-swatches"></div>
+    <button class="save-btn" style="margin-top:14px;" onclick="saveAdminTheme()">Ruaj paletën</button>
   </div>
 
   <div class="card" id="card-location">
@@ -290,6 +291,7 @@ let adminPassword = '';
 let content = null;
 let recommendations = [];
 let currentHotelTheme = 'teal';
+let selectedAdminTheme = 'teal';
 
 // Color presets a hotel can pick for its guest app — must match THEME_PRESETS
 // in hotel-bregu-guest-app.html and THEME_KEYS in server.js. Only the preview
@@ -324,18 +326,24 @@ function renderThemeSwatches(containerId, selectedKey, onPick){
   });
 }
 
-async function setAdminTheme(theme){
+function setAdminTheme(theme){
+  // Just remembers the pick locally — nothing is sent to the server until
+  // "Ruaj paletën" is pressed, same pattern as every other section here.
+  selectedAdminTheme = theme;
+}
+
+async function saveAdminTheme(){
   try{
     const res = await fetch(apiUrl('/api/hotel/theme'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
-      body: JSON.stringify({ theme })
+      body: JSON.stringify({ theme: selectedAdminTheme })
     });
     if(!res.ok) throw new Error('bad response');
-    currentHotelTheme = theme;
-    showToast('Paleta u ndryshua.');
+    currentHotelTheme = selectedAdminTheme;
+    showToast('Paleta u ruajt.');
     reloadPreview();
-  }catch(e){ showToast('Gabim duke ndryshuar paletën.', true); }
+  }catch(e){ showToast('Gabim duke ruajtur paletën.', true); }
 }
 
 function apiUrl(path){
@@ -543,6 +551,7 @@ async function unlock(){
       document.getElementById('panel-title').textContent = hotelName + ' — Admin';
       document.title = hotelName + ' — Admin';
       currentHotelTheme = info?.theme || 'teal';
+      selectedAdminTheme = currentHotelTheme;
       renderThemeSwatches('admin-theme-swatches', currentHotelTheme, setAdminTheme);
     }catch(e){}
 

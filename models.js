@@ -134,11 +134,16 @@ const recommendationSchema = new mongoose.Schema({
   lng: Number
 });
 
-// --- Auth: admin/staff passwords stored as bcrypt hashes, one pair per hotel ---
+// --- Auth: admin/staff passwords stored as bcrypt hashes, one pair per hotel.
+// The *_plain copies exist only so the super-admin can look a hotel's current
+// credentials back up (e.g. to hand them to hotel staff) — they're never
+// used for login checks, and no non-super-admin endpoint returns them. ---
 const authSettingsSchema = new mongoose.Schema({
   hotel: { type: String, required: true, unique: true },
   admin_password_hash: { type: String, required: true },
-  staff_password_hash: { type: String, required: true }
+  staff_password_hash: { type: String, required: true },
+  admin_password_plain: { type: String, default: '' },
+  staff_password_plain: { type: String, default: '' }
 });
 
 // --- Per-room notes/instructions — admin can apply the same note to one or

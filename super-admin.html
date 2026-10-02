@@ -165,12 +165,16 @@ async function unlock(){
   }
 }
 
+let hotelCredsMap = {};
+
 async function loadHotels(){
   try{
     const res = await fetch(apiBase + '/api/super-admin/hotels', { headers: { 'x-super-admin-password': superPassword } });
     const hotels = await res.json();
     const box = document.getElementById('hotels-list');
     if(hotels.length === 0){ box.innerHTML = '<p style="opacity:0.5; font-size:13px;">Ende pa hotele.</p>'; return; }
+    hotelCredsMap = {};
+    hotels.forEach(h => { hotelCredsMap[h.slug] = { admin: h.admin_password || '', staff: h.staff_password || '' }; });
     box.innerHTML = hotels.map(h => `
       <div class="hotel-row" style="flex-direction:column; align-items:stretch; gap:8px;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
@@ -184,12 +188,35 @@ async function loadHotels(){
             <button class="del-link" onclick="deleteHotel('${h.slug}')">Fshi</button>
           </div>
         </div>
+        <div style="font-size:12px; opacity:0.85; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <span>🔑 Admin: <strong id="cred-admin-${h.slug}">${h.admin_password ? '••••••••' : '—'}</strong></span>
+          <span>👤 Staf: <strong id="cred-staff-${h.slug}">${h.staff_password ? '••••••••' : '—'}</strong></span>
+          <button type="button" class="del-link" style="color:#2C5FA8;" id="cred-toggle-${h.slug}" onclick="toggleCredVisibility('${h.slug}')">Shfaq fjalëkalimet</button>
+        </div>
         <div class="theme-swatches" id="theme-swatches-${h.slug}"></div>
       </div>`).join('');
     hotels.forEach(h => {
       renderThemeSwatches('theme-swatches-' + h.slug, h.theme || 'teal', (key) => setHotelTheme(h.slug, key));
     });
   }catch(e){ showToast('Gabim duke ngarkuar hotelet.', true); }
+}
+
+function toggleCredVisibility(slug){
+  const creds = hotelCredsMap[slug];
+  if(!creds) return;
+  const adminEl = document.getElementById('cred-admin-' + slug);
+  const staffEl = document.getElementById('cred-staff-' + slug);
+  const btn = document.getElementById('cred-toggle-' + slug);
+  const revealed = btn.textContent === 'Fshih fjalëkalimet';
+  if(revealed){
+    adminEl.textContent = creds.admin ? '••••••••' : '—';
+    staffEl.textContent = creds.staff ? '••••••••' : '—';
+    btn.textContent = 'Shfaq fjalëkalimet';
+  } else {
+    adminEl.textContent = creds.admin || '(i panjohur — ndryshoje nga paneli i admin-it)';
+    staffEl.textContent = creds.staff || '(i panjohur — ndryshoje nga paneli i admin-it)';
+    btn.textContent = 'Fshih fjalëkalimet';
+  }
 }
 
 async function createHotel(){
