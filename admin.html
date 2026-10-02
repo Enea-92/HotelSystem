@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bregu — Admin</title>
+<title>Admin</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
 :root{
@@ -55,6 +55,27 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
 .qr-card p{ font-family:'IBM Plex Mono',monospace; font-size:12px; margin:6px 0 2px; font-weight:500; }
 .qr-card a{ font-size:11px; color:var(--aqua-dark); text-decoration:none; }
 
+.admin-layout{ display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start; max-width:1300px; margin:0 auto; padding:0 20px 20px; }
+.admin-layout .edit-col{ min-width:0; }
+.preview-panel{ position:sticky; top:16px; background:var(--white); border:0.5px solid var(--line); border-radius:12px; padding:14px; max-height:calc(100vh - 32px); display:flex; flex-direction:column; }
+.preview-panel h2{ font-family:'Fraunces',serif; font-size:15px; font-weight:500; margin:0 0 4px; }
+.preview-panel p.hint{ font-size:11.5px; opacity:0.55; margin:0 0 10px; }
+.preview-controls{ display:flex; gap:6px; margin-bottom:10px; }
+.preview-controls input{ border:0.5px solid var(--line); border-radius:6px; padding:6px 8px; font-size:12px; width:70px; font-family:inherit; }
+.preview-controls button{ border:none; background:var(--sea); color:var(--sand); border-radius:6px; padding:6px 10px; font-size:11.5px; cursor:pointer; font-family:inherit; }
+.preview-frame-wrap{ border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#000; flex-shrink:0; }
+.preview-frame-wrap iframe{ width:100%; height:560px; border:none; display:block; }
+.jump-list{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:12px; }
+.jump-btn{ border:0.5px solid var(--line); background:var(--sand-dim); color:var(--ink); border-radius:7px; padding:7px 8px; font-size:11.5px; cursor:pointer; font-family:inherit; text-align:left; }
+.jump-btn:hover{ background:var(--aqua-dark); color:#fff; }
+@keyframes flashHighlight{ 0%,100%{ box-shadow:none; } 30%{ box-shadow:0 0 0 3px var(--gold) inset; } }
+.flash-highlight{ animation:flashHighlight 1.1s ease; }
+@media (max-width:980px){
+  .admin-layout{ grid-template-columns:1fr; }
+  .preview-panel{ position:static; order:-1; max-height:none; }
+  .preview-frame-wrap iframe{ height:440px; }
+}
+
 @media print{
   body *{ visibility:hidden; }
   .printable-card, .printable-card *{ visibility:visible; }
@@ -69,7 +90,7 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
 <body>
 
 <div class="topbar">
-  <h1>Bregu — Admin</h1>
+  <h1 id="panel-title">Admin</h1>
   <div class="config-row">
     <span class="status" id="conn-status">● jo i lidhur</span>
     <input id="backend-url" placeholder="https://hotelsystem-lzlm.onrender.com" value="https://hotelsystem-lzlm.onrender.com">
@@ -86,7 +107,9 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
   </div>
 </div>
 
-<div class="wrap" id="main-view" style="display:none;">
+<div id="main-view" style="display:none;">
+<div class="admin-layout">
+<div class="edit-col">
 
   <div class="card printable-card" id="qr-card">
     <h2>Gjenero kode QR për dhoma</h2>
@@ -115,47 +138,47 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
     <div id="qr-persisted-list"><p class="hint" style="margin:0;">Duke ngarkuar...</p></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-sections">
     <h2>Seksionet e dukshme te mysafiri</h2>
     <p class="hint">Çaktivizo çdo pjesë që s'ka kuptim për hotelin tënd (p.sh. "Shërbimi në dhomë" nëse s'ka restorant) — fshihet menjëherë te app-i i mysafirit, pa prekur asnjë kod.</p>
     <div id="section-toggles" style="display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;"></div>
     <button class="save-btn" style="margin-top:14px;" onclick="saveSectionToggles()">Ruaj seksionet</button>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-location">
     <h2>Vendndodhja e hotelit (për hartën)</h2>
     <p class="hint">Koordinatat përdoren për të qendërzuar hartën reale te app-i i mysafirit.</p>
     <div class="field-row"><label>Gjerësia (lat)</label><input id="loc-lat" type="number" step="0.0001"></div>
     <div class="field-row"><label>Gjatësia (lng)</label><input id="loc-lng" type="number" step="0.0001"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-wifi">
     <h2>Wifi</h2>
     <div class="field-row"><label>Emri i rrjetit</label><input id="wifi-ssid"></div>
     <div class="field-row"><label>Fjalëkalimi</label><input id="wifi-pass"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-amenities">
     <h2>Pajisjet e dhomës</h2>
     <p class="hint">Klima, kasaforta, minibar, etj.</p>
     <div id="amenities-list"></div>
     <button class="add-btn" onclick="addAmenity()">+ Shto pajisje</button>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-locations">
     <h2>Ku ndodhet (drejtime brenda hotelit)</h2>
     <div id="locations-list"></div>
     <button class="add-btn" onclick="addLocationItem()">+ Shto drejtim</button>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-roomservice">
     <h2>Shërbimi në dhomë (menu)</h2>
     <p class="hint">Shto foto për çdo artikull (URL) që klientët ta shohin para se të porosisin.</p>
     <div id="roomservice-list"></div>
     <button class="add-btn" onclick="addRoomServiceItem()">+ Shto artikull</button>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-faq">
     <h2>Pyetje të shpeshta (FAQ)</h2>
     <p class="hint">Shfaqen te "Info praktike" i mysafirit. Përdoren gjithashtu për t'u përgjigjur automatikisht në chat kur mesazhi i mysafirit përputhet me një pyetje këtu — para se stafi ta shohë fare.</p>
     <div id="faq-list"></div>
@@ -164,14 +187,14 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
 
   <button class="save-btn" onclick="saveContent()">Ruaj gjithçka lart</button>
 
-  <div class="card" style="margin-top:24px;">
+  <div class="card" id="card-recommendations" style="margin-top:24px;">
     <h2>Rekomandime (restorante / bare / plazhe)</h2>
     <p class="hint">Secili me koordinata reale, shfaqet si pin në hartë te app-i i mysafirit.</p>
     <div id="recs-list"></div>
     <button class="add-btn" onclick="addRecommendation()">+ Shto rekomandim</button>
   </div>
 
-  <div class="card" style="margin-top:24px;">
+  <div class="card" id="card-roomnotes" style="margin-top:24px;">
     <h2>Shënime për dhoma specifike</h2>
     <p class="hint">Vendos të njëjtin shënim për një ose disa dhoma njëkohësisht (p.sh. "kjo dhomë ka xhakuzi", "dhomë e qetë, pa ballkon"). Shfaqet te Kryesorja e mysafirit vetëm nëse ka shënim.</p>
     <div class="field-row"><label>Dhoma nga</label><input id="note-room-from" placeholder="101" style="width:100px;"></div>
@@ -214,6 +237,35 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
 
 </div>
 
+<div class="preview-panel">
+  <h2>👁 Pamja e mysafirit</h2>
+  <p class="hint">Si duket faqja e vërtetë e mysafirit, live. Ndryshimet e ruajtura shfaqen këtu automatikisht (ose shtyp "Rifresko").</p>
+  <div class="preview-controls">
+    <input id="preview-room" placeholder="Dhoma" value="101">
+    <input id="preview-floor" placeholder="Kati" value="1">
+    <button onclick="reloadPreview()">🔄 Rifresko</button>
+  </div>
+  <div class="preview-frame-wrap">
+    <iframe id="preview-iframe" src="about:blank"></iframe>
+  </div>
+  <p class="hint" style="margin:10px 0 2px; font-weight:500; opacity:0.8;">Shko te seksioni për ta edituar:</p>
+  <div class="jump-list">
+    <button class="jump-btn" onclick="jumpToSection('card-sections')">Seksionet e dukshme</button>
+    <button class="jump-btn" onclick="jumpToSection('card-location')">Vendndodhja</button>
+    <button class="jump-btn" onclick="jumpToSection('card-wifi')">Wifi</button>
+    <button class="jump-btn" onclick="jumpToSection('card-amenities')">Pajisjet</button>
+    <button class="jump-btn" onclick="jumpToSection('card-locations')">Ku ndodhet</button>
+    <button class="jump-btn" onclick="jumpToSection('card-roomservice')">Shërbimi në dhomë</button>
+    <button class="jump-btn" onclick="jumpToSection('card-faq')">FAQ</button>
+    <button class="jump-btn" onclick="jumpToSection('card-recommendations')">Rekomandime</button>
+    <button class="jump-btn" onclick="jumpToSection('card-roomnotes')">Shënime dhome</button>
+    <button class="jump-btn" onclick="jumpToSection('qr-card')">Kodet QR</button>
+  </div>
+</div>
+
+</div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -227,6 +279,28 @@ let recommendations = [];
 function apiUrl(path){
   const sep = path.includes('?') ? '&' : '?';
   return apiBase + path + sep + 'hotel=' + encodeURIComponent(currentHotel);
+}
+
+function jumpToSection(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.scrollIntoView({ behavior:'smooth', block:'start' });
+  el.classList.remove('flash-highlight');
+  void el.offsetWidth; // restart the animation even if it was just played
+  el.classList.add('flash-highlight');
+}
+
+// Points the preview iframe at the real guest app for this hotel/room, so the
+// admin sees exactly what a guest would see. The guest app itself listens for
+// "content_updated" over socket.io, so most saves (content, recommendations,
+// room notes) refresh the preview live — this button is a manual fallback.
+function reloadPreview(){
+  const appUrl = (document.getElementById('qr-app-url')?.value || '').trim().replace(/\/$/, '');
+  const room = document.getElementById('preview-room').value.trim() || '101';
+  const floor = document.getElementById('preview-floor').value.trim() || '1';
+  const frame = document.getElementById('preview-iframe');
+  if(!appUrl || !currentHotel || !frame) return;
+  frame.src = appUrl + '?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(room) + '&floor=' + encodeURIComponent(floor);
 }
 
 function showToast(text, isError){
@@ -382,6 +456,14 @@ async function unlock(){
     recommendations = await recRes.json();
 
     try{
+      const infoRes = await fetch(apiUrl('/api/hotel-info'));
+      const info = await infoRes.json();
+      const hotelName = info?.name || currentHotel;
+      document.getElementById('panel-title').textContent = hotelName + ' — Admin';
+      document.title = hotelName + ' — Admin';
+    }catch(e){}
+
+    try{
       localStorage.setItem('bregu_admin_session', JSON.stringify({ apiBase, hotel: currentHotel, password: adminPassword }));
     }catch(e){}
 
@@ -393,6 +475,7 @@ async function unlock(){
     renderAll();
     loadRoomNotesList();
     loadPersistedQrCodes();
+    reloadPreview();
   } catch(e) {
     if(e.message === 'wrong password'){
       showToast('Fjalëkalim i gabuar.', true);
@@ -643,6 +726,7 @@ async function saveContent(){
     });
     if(!res.ok) throw new Error(await res.text());
     showToast('U ruajt me sukses.');
+    reloadPreview();
   }catch(e){ showToast('Gabim: fjalëkalim i pasaktë ose lidhje e humbur.', true); }
 }
 
@@ -673,6 +757,7 @@ async function saveRecommendation(idx){
     recommendations[idx] = saved;
     renderRecommendations();
     showToast('Rekomandimi u ruajt.');
+    reloadPreview();
   }catch(e){ showToast('Gabim duke ruajtur rekomandimin.', true); }
 }
 
@@ -729,6 +814,7 @@ async function saveRoomNoteBulk(){
     if(!res.ok) throw new Error(await res.text());
     showToast(`Shënimi u ruajt për ${rooms.length} dhoma.`);
     loadRoomNotesList();
+    reloadPreview();
   }catch(e){ showToast('Gabim duke ruajtur shënimin.', true); }
 }
 
@@ -784,6 +870,8 @@ function logoutAdmin(){
   document.getElementById('locked-view').style.display = 'block';
   document.getElementById('conn-status').textContent = '● jo i lidhur';
   document.getElementById('conn-status').classList.remove('ok');
+  document.getElementById('panel-title').textContent = 'Admin';
+  document.title = 'Admin';
 }
 
 window.addEventListener('DOMContentLoaded', () => {

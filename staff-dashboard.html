@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bregu — Paneli i stafit</title>
+<title>Paneli i stafit</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
 :root{
@@ -67,7 +67,7 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
 <body>
 
 <div class="topbar">
-  <h1>Bregu — Paneli i stafit</h1>
+  <h1 id="panel-title">Paneli i stafit</h1>
   <div class="config-row">
     <span class="conn" id="conn-status">● jo i lidhur</span>
     <button onclick="toggleSound()" id="sound-btn">🔊 Tinguj: ON</button>
@@ -140,6 +140,7 @@ let socket = null;
 let apiBase = 'https://hotelsystem-lzlm.onrender.com';
 let staffPassword = '';
 let currentHotel = '';
+let hotelDisplayName = '';
 let activeRoom = null;
 let knownRooms = new Set();
 let allMessages = [];
@@ -261,6 +262,14 @@ async function connect(){
   try{
     localStorage.setItem('bregu_staff_session', JSON.stringify({ apiBase, hotel: currentHotel, password: staffPassword }));
   }catch(e){}
+
+  try{
+    const infoRes = await fetch(apiUrl('/api/hotel-info'));
+    const info = await infoRes.json();
+    hotelDisplayName = info?.name || currentHotel;
+  }catch(e){ hotelDisplayName = currentHotel; }
+  document.getElementById('panel-title').textContent = hotelDisplayName + ' — Paneli i stafit';
+  updateTitleBadge();
 
   document.getElementById('locked-view').style.display = 'none';
   document.getElementById('main-view').style.display = 'block';
@@ -403,7 +412,7 @@ function updateTitleBadge(){
   const issue = parseInt(document.getElementById('issue-count')?.textContent || '0', 10);
   const order = parseInt(document.getElementById('order-count')?.textContent || '0', 10);
   const total = req + issue + order;
-  document.title = (total > 0 ? '(' + total + ') ' : '') + 'Bregu — Paneli i stafit';
+  document.title = (total > 0 ? '(' + total + ') ' : '') + (hotelDisplayName || 'Bregu') + ' — Paneli i stafit';
 }
 
 function escapeHtmlStaff(str){
@@ -504,6 +513,9 @@ function logout(){
   document.getElementById('locked-view').style.display = 'block';
   document.getElementById('conn-status').textContent = '● jo i lidhur';
   document.getElementById('conn-status').classList.remove('on');
+  hotelDisplayName = '';
+  document.getElementById('panel-title').textContent = 'Paneli i stafit';
+  document.title = 'Paneli i stafit';
 }
 
 window.addEventListener('DOMContentLoaded', () => {

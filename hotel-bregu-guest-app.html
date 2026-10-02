@@ -24,6 +24,8 @@
   --white:#FFFDF8;
   --shadow-1:0 2px 10px rgba(18,48,46,0.06);
   --shadow-2:0 10px 28px rgba(18,48,46,0.14);
+  --surface-translucent:rgba(255,253,248,0.92);
+  --on-sea:#F3ECDC;
 }
 html[data-theme="dark"]{
   --ink:#F3EFE3;
@@ -39,6 +41,8 @@ html[data-theme="dark"]{
   --white:#1B322F;
   --shadow-1:0 2px 12px rgba(0,0,0,0.4);
   --shadow-2:0 14px 36px rgba(0,0,0,0.55);
+  --surface-translucent:rgba(14,27,25,0.92);
+  --on-sea:#F3ECDC;
 }
 /* In dark mode, secondary/muted text elsewhere in the page uses a reduced
    opacity tuned for light backgrounds; against the near-black dark
@@ -92,7 +96,7 @@ body{
   background:
     radial-gradient(circle at 15% -10%, rgba(206,154,66,0.25), transparent 55%),
     linear-gradient(160deg, var(--sea-light) 0%, var(--sea) 55%);
-  color:var(--sand);
+  color:var(--on-sea);
   padding:20px 20px 26px;
   position:relative;
   overflow:hidden;
@@ -110,7 +114,7 @@ body{
 .theme-toggle{
   border:0.5px solid rgba(243,236,220,0.35);
   background:rgba(243,236,220,0.08);
-  color:var(--sand);
+  color:var(--on-sea);
   width:26px; height:26px; border-radius:7px;
   font-size:13px; line-height:1; cursor:pointer;
   display:flex; align-items:center; justify-content:center;
@@ -120,7 +124,7 @@ body{
 .lang-btn{
   border:0.5px solid rgba(243,236,220,0.35);
   background:rgba(243,236,220,0.08);
-  color:var(--sand);
+  color:var(--on-sea);
   font-family:'IBM Plex Mono', monospace;
   font-size:10.5px;
   padding:4px 7px;
@@ -198,7 +202,7 @@ p.section-sub{
 
 .keycard{
   background:linear-gradient(135deg, var(--sea-light) 0%, var(--sea) 70%);
-  color:var(--sand);
+  color:var(--on-sea);
   border-radius:14px;
   padding:18px 20px;
   margin-bottom:18px;
@@ -218,7 +222,7 @@ p.section-sub{
 .copy-btn{
   background:none;
   border:0.5px solid rgba(243,236,220,0.4);
-  color:var(--sand);
+  color:var(--on-sea);
   border-radius:6px;
   padding:4px 10px;
   font-size:11px;
@@ -314,7 +318,7 @@ p.section-sub{
 .rs-cart-empty{ font-size:12.5px; opacity:0.5; }
 .rs-send{
   width:100%; margin-top:10px; padding:10px; border:none; border-radius:8px;
-  background:var(--sea); color:var(--sand); font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
+  background:var(--sea); color:var(--on-sea); font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
 }
 .rs-send:active{ transform:scale(0.98); }
 
@@ -323,7 +327,7 @@ p.section-sub{
   flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12.5px; font-weight:500;
   border:0.5px solid var(--line); background:var(--white); cursor:pointer; color:var(--ink); opacity:0.55;
 }
-.cat-tab.on{ background:var(--sea); color:var(--sand); border-color:var(--sea); opacity:1; }
+.cat-tab.on{ background:var(--sea); color:var(--on-sea); border-color:var(--sea); opacity:1; }
 .rec-card{
   background:var(--white); border:0.5px solid var(--line); border-radius:12px;
   padding:14px 16px; margin-bottom:10px; display:none;
@@ -355,11 +359,19 @@ details.faq[open] summary::after{ content:"–"; }
 details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; }
 
 .weather-card{
-  background:var(--sea); color:var(--sand); border-radius:12px; padding:16px 18px;
+  background:var(--sea); color:var(--on-sea); border-radius:12px; padding:16px 18px;
   display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;
 }
 .weather-temp{ font-family:'Fraunces', serif; font-size:26px; font-weight:500; }
 .weather-note{ font-size:11px; opacity:0.55; margin:6px 0 18px; }
+.weather-warning{
+  display:none; align-items:flex-start; gap:8px;
+  background:rgba(193,89,46,0.12); border:1px solid rgba(193,89,46,0.4);
+  color:var(--coral); border-radius:10px; padding:10px 12px;
+  font-size:12px; line-height:1.45; margin:-10px 0 18px;
+}
+.weather-warning.show{ display:flex; }
+.weather-warning .wi{ font-size:15px; flex-shrink:0; line-height:1.3; }
 
 .stars{ display:flex; gap:6px; margin:10px 0 12px; }
 .star-btn{ background:none; border:none; font-size:26px; cursor:pointer; color:var(--line); padding:0; line-height:1; }
@@ -370,7 +382,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
 }
 .fb-submit{
   margin-top:10px; padding:9px 16px; border:none; border-radius:8px;
-  background:var(--sea); color:var(--sand); font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
+  background:var(--sea); color:var(--on-sea); font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
 }
 .fb-thanks{ font-size:14px; font-weight:500; color:var(--aqua-dark); }
 .toast{
@@ -385,7 +397,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
 .chat-log{ padding-bottom:8px; }
 .msg{ max-width:78%; margin-bottom:10px; font-size:13.5px; line-height:1.5; scroll-margin-bottom:130px; }
 .msg-in{ background:var(--white); border:0.5px solid var(--line); padding:10px 13px; border-radius:12px 12px 12px 3px; }
-.msg-out{ background:var(--sea); color:var(--sand); padding:10px 13px; border-radius:12px 12px 3px 12px; margin-left:auto; }
+.msg-out{ background:var(--sea); color:var(--on-sea); padding:10px 13px; border-radius:12px 12px 3px 12px; margin-left:auto; }
 .msg-time{ font-size:10px; opacity:0.5; margin-top:4px; }
 .chat-input-row{
   position:fixed; bottom:calc(56px + env(safe-area-inset-bottom, 0px));
@@ -393,7 +405,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
   width:100%; max-width:460px; box-sizing:border-box;
   display:flex; gap:8px;
   padding:10px 18px;
-  background:rgba(243,236,220,0.95); backdrop-filter:blur(8px);
+  background:var(--surface-translucent); backdrop-filter:blur(8px);
   border-top:0.5px solid var(--line);
   z-index:14;
 }
@@ -403,7 +415,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
 }
 .chat-input-row input:focus{ border-color:var(--aqua-dark); }
 .send-btn{
-  width:40px; height:40px; border-radius:50%; background:var(--sea); color:var(--sand);
+  width:40px; height:40px; border-radius:50%; background:var(--sea); color:var(--on-sea);
   border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
 .send-btn:active{ transform:scale(0.94); }
@@ -411,7 +423,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
 .tabbar{
   position:fixed; bottom:0; left:50%; transform:translateX(-50%);
   width:100%; max-width:460px;
-  background:rgba(255,253,248,0.92); backdrop-filter:blur(8px);
+  background:var(--surface-translucent); backdrop-filter:blur(8px);
   border-top:0.5px solid var(--line); display:flex;
   padding-bottom:env(safe-area-inset-bottom, 0px);
   z-index:15;
@@ -663,8 +675,10 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
           <div class="weather-temp" id="weather-temp">28°C</div>
         </div>
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#F3ECDC" stroke-width="1.6" id="weather-icon"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+        <span id="weather-icon-emoji" style="font-size:30px; display:none;"></span>
       </div>
       <p class="weather-note" id="weather-note" data-i18n="weather.note">Të dhëna shembull — një hotel real do ta lidhte me një shërbim moti të drejtpërdrejtë.</p>
+      <div class="weather-warning" id="weather-warning"><span class="wi">⚠️</span><span id="weather-warning-text"></span></div>
 
       <div id="section-info_hours">
       <h3 class="group-heading" data-i18n="info.hoursHeading">Orari</h3>
@@ -780,7 +794,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
     </div>
     <h3 style="font-family:'Fraunces',serif; font-weight:500; font-size:17px; margin:0 0 4px; color:var(--ink);" data-i18n="issue.photoPrompt.title">Do shtosh një foto të problemit?</h3>
     <p style="font-size:13px; opacity:0.75; margin:0 0 18px; color:var(--ink);" data-i18n="issue.photoPrompt.sub">Ndihmon stafin ta kuptojë problemin më shpejt. Nuk është e detyrueshme.</p>
-    <button type="button" onclick="document.getElementById('issue-photo-input').click()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--sea); color:var(--sand); border:none; border-radius:10px; padding:13px; font-size:14px; font-weight:500; font-family:inherit; cursor:pointer; margin-bottom:10px;">
+    <button type="button" onclick="document.getElementById('issue-photo-input').click()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--sea); color:var(--on-sea); border:none; border-radius:10px; padding:13px; font-size:14px; font-weight:500; font-family:inherit; cursor:pointer; margin-bottom:10px;">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
       <span data-i18n="issue.photoPrompt.takePhoto">Bëj / zgjidh foto</span>
     </button>
@@ -797,7 +811,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
       <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">🧭</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.explore">Zbulo</b> — <span data-i18n="tutorial.exploreDesc">restorante, bare, plazhe me hartë</span>.</span></div>
       <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">💬</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.chat">Chat</b> — <span data-i18n="tutorial.chatDesc">shkruaj drejt e te recepsioni</span>.</span></div>
     </div>
-    <button type="button" onclick="closeTutorial()" style="width:100%; background:var(--sea); color:var(--sand); border:none; border-radius:10px; padding:12px; font-size:14px; font-weight:500; font-family:inherit; cursor:pointer;" data-i18n="tutorial.gotIt">E kuptova</button>
+    <button type="button" onclick="closeTutorial()" style="width:100%; background:var(--sea); color:var(--on-sea); border:none; border-radius:10px; padding:12px; font-size:14px; font-weight:500; font-family:inherit; cursor:pointer;" data-i18n="tutorial.gotIt">E kuptova</button>
   </div>
 </div>
 
@@ -885,7 +899,7 @@ const translations = {
     "rec.hidden.meta":"Shkëmbor, ujë i thellë · 15 min në këmbë","rec.hidden.tip":"Merrni këpucë uji. Nuk ka hije natyrale, çadër është e nevojshme.",
     "badge.staffpick":"Zgjedhja e stafit",
     "info.title":"Informacione praktike","info.subtitle":"Çdo gjë tjetër që mund t'ju duhet.",
-    "weather.today":"Sot","weather.note":"Të dhëna shembull — një hotel real do ta lidhte me një shërbim moti të drejtpërdrejtë.","weather.live":"Të dhëna të drejtpërdrejta nga moti aktual.",
+    "weather.today":"Sot","weather.note":"Të dhëna shembull — një hotel real do ta lidhte me një shërbim moti të drejtpërdrejtë.","weather.live":"Të dhëna të drejtpërdrejta nga moti aktual.","weather.warning.storm":"Parashikohet stuhi me rrufe sot — kini kujdes me aktivitetet jashtë.","weather.warning.rain":"Parashikohet shi i dendur sot.","weather.warning.snow":"Parashikohen reshje të dendura dëbore sot.","weather.warning.heat":"Nxehtësi ekstreme sot — pini shumë ujë dhe shmangni diellin e fortë.","weather.warning.cold":"Temperatura shumë të ulëta sot — vishuni ngrohtë.",
     "order.preparing":"Porosia juaj po përgatitet","order.delivered":"Porosia juaj u dorëzua",
     "info.hoursHeading":"Orari",
     "info.hours.checkin.name":"Check-in","info.hours.checkin.val":"Nga ora 14:00",
@@ -963,7 +977,7 @@ const translations = {
     "rec.hidden.meta":"Rocky, deep water · 15 min walk","rec.hidden.tip":"Bring water shoes. No natural shade, an umbrella is a must.",
     "badge.staffpick":"Staff pick",
     "info.title":"Practical info","info.subtitle":"Anything else you might need.",
-    "weather.today":"Today","weather.note":"Sample data — a real hotel would connect this to a live weather service.","weather.live":"Live data from current weather.",
+    "weather.today":"Today","weather.note":"Sample data — a real hotel would connect this to a live weather service.","weather.live":"Live data from current weather.","weather.warning.storm":"Thunderstorms expected today — plan outdoor activities with care.","weather.warning.rain":"Heavy rain expected today.","weather.warning.snow":"Heavy snowfall expected today.","weather.warning.heat":"Extreme heat today — stay hydrated and avoid strong sun.","weather.warning.cold":"Very low temperatures today — dress warmly.",
     "order.preparing":"Your order is being prepared","order.delivered":"Your order has been delivered",
     "info.hoursHeading":"Hours",
     "info.hours.checkin.name":"Check-in","info.hours.checkin.val":"From 2:00 pm",
@@ -1041,7 +1055,7 @@ const translations = {
     "rec.hidden.meta":"Roccioso, acqua profonda · 15 min a piedi","rec.hidden.tip":"Portate scarpe da scoglio. Nessun'ombra naturale, l'ombrellone è indispensabile.",
     "badge.staffpick":"Consiglio dello staff",
     "info.title":"Informazioni pratiche","info.subtitle":"Tutto il resto che potrebbe servirvi.",
-    "weather.today":"Oggi","weather.note":"Dati di esempio — un hotel reale li collegherebbe a un servizio meteo in tempo reale.","weather.live":"Dati in tempo reale dal meteo attuale.",
+    "weather.today":"Oggi","weather.note":"Dati di esempio — un hotel reale li collegherebbe a un servizio meteo in tempo reale.","weather.live":"Dati in tempo reale dal meteo attuale.","weather.warning.storm":"Temporali previsti oggi — attenzione alle attività all'aperto.","weather.warning.rain":"Pioggia intensa prevista oggi.","weather.warning.snow":"Nevicate abbondanti previste oggi.","weather.warning.heat":"Caldo estremo oggi — bevete molta acqua ed evitate il sole forte.","weather.warning.cold":"Temperature molto basse oggi — vestitevi pesante.",
     "order.preparing":"Il vostro ordine è in preparazione","order.delivered":"Il vostro ordine è stato consegnato",
     "info.hoursHeading":"Orari",
     "info.hours.checkin.name":"Check-in","info.hours.checkin.val":"Dalle 14:00",
@@ -1119,7 +1133,7 @@ const translations = {
     "rec.hidden.meta":"Felsig, tiefes Wasser · 15 Min. zu Fuß","rec.hidden.tip":"Bringen Sie Badeschuhe mit. Kein natürlicher Schatten, ein Schirm ist notwendig.",
     "badge.staffpick":"Tipp vom Team",
     "info.title":"Praktische Informationen","info.subtitle":"Alles andere, was Sie brauchen könnten.",
-    "weather.today":"Heute","weather.note":"Beispieldaten — ein echtes Hotel würde dies mit einem Live-Wetterdienst verbinden.","weather.live":"Live-Daten vom aktuellen Wetter.",
+    "weather.today":"Heute","weather.note":"Beispieldaten — ein echtes Hotel würde dies mit einem Live-Wetterdienst verbinden.","weather.live":"Live-Daten vom aktuellen Wetter.","weather.warning.storm":"Heute werden Gewitter erwartet — Vorsicht bei Outdoor-Aktivitäten.","weather.warning.rain":"Heute wird starker Regen erwartet.","weather.warning.snow":"Heute werden starke Schneefälle erwartet.","weather.warning.heat":"Heute extreme Hitze — viel trinken und starke Sonne meiden.","weather.warning.cold":"Heute sehr niedrige Temperaturen — warm anziehen.",
     "order.preparing":"Ihre Bestellung wird zubereitet","order.delivered":"Ihre Bestellung wurde geliefert",
     "info.hoursHeading":"Öffnungszeiten",
     "info.hours.checkin.name":"Check-in","info.hours.checkin.val":"Ab 14:00 Uhr",
@@ -1246,16 +1260,65 @@ function renderRoomNote(){
   }
 }
 
+let weatherCoords = null;
+let weatherRefreshTimer = null;
+
+function weatherEmoji(code){
+  if(code === 0) return '☀️';
+  if([1,2,3].includes(code)) return '⛅';
+  if([45,48].includes(code)) return '🌫️';
+  if([51,53,55,56,57].includes(code)) return '🌦️';
+  if([61,63,66].includes(code)) return '🌧️';
+  if([65,67,80,81,82].includes(code)) return '🌧️';
+  if([71,73,75,77,85,86].includes(code)) return '❄️';
+  if([95,96,99].includes(code)) return '⛈️';
+  return '🌡️';
+}
+
+function weatherSeverity(code, temp){
+  if([95,96,99].includes(code)) return 'storm';
+  if([65,67,82].includes(code)) return 'rain';
+  if([75,86].includes(code)) return 'snow';
+  if(typeof temp === 'number' && temp >= 38) return 'heat';
+  if(typeof temp === 'number' && temp <= 0) return 'cold';
+  return null;
+}
+
+function renderWeatherWarning(code, temp){
+  const box = document.getElementById('weather-warning');
+  const textEl = document.getElementById('weather-warning-text');
+  if(!box || !textEl) return;
+  const sev = weatherSeverity(code, temp);
+  if(sev){
+    textEl.textContent = translations[currentLang]['weather.warning.' + sev] || '';
+    box.classList.add('show');
+  } else {
+    box.classList.remove('show');
+  }
+}
+
 async function fetchWeather(lat, lng){
-  if(typeof lat !== 'number' || typeof lng !== 'number') return;
+  if(typeof lat === 'number' && typeof lng === 'number'){
+    weatherCoords = { lat, lng };
+  }
+  if(!weatherCoords) return;
   try{
-    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code`);
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${weatherCoords.lat}&longitude=${weatherCoords.lng}&current=temperature_2m,weather_code`);
     const data = await res.json();
     const temp = Math.round(data.current.temperature_2m);
+    const code = data.current.weather_code;
     const tempEl = document.getElementById('weather-temp');
     const noteEl = document.getElementById('weather-note');
+    const svgEl = document.getElementById('weather-icon');
+    const emojiEl = document.getElementById('weather-icon-emoji');
     if(tempEl) tempEl.textContent = temp + '°C';
     if(noteEl) noteEl.textContent = translations[currentLang]['weather.live'] || '';
+    if(svgEl) svgEl.style.display = 'none';
+    if(emojiEl){ emojiEl.textContent = weatherEmoji(code); emojiEl.style.display = 'block'; }
+    renderWeatherWarning(code, temp);
+    if(!weatherRefreshTimer){
+      weatherRefreshTimer = setInterval(() => fetchWeather(), 15 * 60 * 1000);
+    }
   }catch(e){ console.warn('Weather fetch failed, keeping example data.', e); }
 }
 
@@ -1423,6 +1486,7 @@ function setLang(lang){
   renderDynamicFaq();
   renderDndToggle();
   renderRoomNote();
+  if(weatherCoords) fetchWeather();
 }
 
 function updateRoomChip(){
