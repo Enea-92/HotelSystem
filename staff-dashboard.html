@@ -56,6 +56,9 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
 .msg{ max-width:70%; margin-bottom:8px; font-size:13px; padding:8px 12px; border-radius:10px; line-height:1.5; }
 .msg.guest{ background:var(--sand-dim); }
 .msg.staff{ background:var(--sea); color:var(--sand); margin-left:auto; }
+.msg.bot{ background:var(--gold); color:var(--ink); margin-left:auto; }
+#escalation-banner{ display:none; background:var(--coral); color:#fff; padding:10px 20px; font-size:13px; max-width:1400px; margin:14px auto 0; border-radius:10px; }
+#escalation-banner button{ margin-left:10px; background:none; border:1px solid #fff; color:#fff; border-radius:5px; cursor:pointer; padding:2px 8px; font-family:inherit; }
 .reply-row{ display:flex; gap:8px; }
 .reply-row input{ flex:1; border:0.5px solid var(--line); border-radius:8px; padding:9px 12px; font-family:inherit; font-size:13px; }
 .reply-row button{ border:none; background:var(--sea); color:var(--sand); border-radius:8px; padding:9px 16px; cursor:pointer; font-size:13px; }
@@ -89,6 +92,7 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
 </div>
 
 <div id="main-view" style="display:none;">
+  <div id="escalation-banner"></div>
   <div class="stats-row" id="stats-row"></div>
 
   <div class="board">
@@ -305,7 +309,30 @@ async function connect(){
       showBrowserNotification('Mesazh i ri — Dhoma ' + msg.room_number, msg.text);
     }
   });
+  socket.on('escalation_alert', (payload) => {
+    escalations.push(payload);
+    renderEscalationBanner();
+    playBeep();
+    const typeLabel = { message:'mesazh', request:'kërkesë', issue:'problem', order:'porosi' }[payload.type] || payload.type;
+    showBrowserNotification('⏰ Vonesë (' + typeLabel + ') — Dhoma ' + payload.room_number, payload.text);
+  });
 }
+
+// Items unanswered past ESCALATION_MINUTES (server-side) land here so the
+// staff can't miss a quiet, aging request — a visible banner on top of the
+// usual sound + browser notification.
+let escalations = [];
+function renderEscalationBanner(){
+  const box = document.getElementById('escalation-banner');
+  if(!box) return;
+  if(escalations.length === 0){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  const typeLabel = { message:'mesazh', request:'kërkesë', issue:'problem', order:'porosi' };
+  box.innerHTML = `⏰ <strong>${escalations.length}</strong> artikuj pa përgjigje: ` +
+    escalations.slice(-4).map(e => `Dhoma ${e.room_number} (${typeLabel[e.type] || e.type})`).join(', ') +
+    `<button onclick="clearEscalations()">Mbyll</button>`;
+}
+function clearEscalations(){ escalations = []; renderEscalationBanner(); }
 
 async function loadAll(){
   loadRequests();
@@ -339,6 +366,7 @@ async function loadRequests(){
   const issues = items.filter(r => r.category === 'issue');
 
   document.getElementById('req-count').textContent = requests.length;
+  updateTitleBadge();
   const box = document.getElementById('requests-list');
   box.innerHTML = requests.length === 0 ? '<p class="empty">Asnjë kërkesë pezull.</p>' : requests.map(r => `
     <div class="card">
@@ -368,6 +396,16 @@ async function loadRequests(){
   });
 }
 
+// Keeps the pending workload visible even when the staff member has switched
+// to another browser tab — e.g. "(5) Bregu — Paneli i stafit".
+function updateTitleBadge(){
+  const req = parseInt(document.getElementById('req-count')?.textContent || '0', 10);
+  const issue = parseInt(document.getElementById('issue-count')?.textContent || '0', 10);
+  const order = parseInt(document.getElementById('order-count')?.textContent || '0', 10);
+  const total = req + issue + order;
+  document.title = (total > 0 ? '(' + total + ') ' : '') + 'Bregu — Paneli i stafit';
+}
+
 function escapeHtmlStaff(str){
   return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -381,6 +419,7 @@ async function loadOrders(){
   const res = await fetch(apiUrl('/api/room-service'), { headers: authHeaders() });
   const orders = await res.json();
   document.getElementById('order-count').textContent = orders.length;
+  updateTitleBadge();
   const box = document.getElementById('orders-list');
   box.innerHTML = orders.length === 0 ? '<p class="empty">Asnjë porosi pezull.</p>' : orders.map(o => `
     <div class="card">
@@ -437,14 +476,15 @@ async function openRoom(room){
 
 function renderThread(){
   const box = document.getElementById('chat-thread');
-  box.innerHTML = allMessages.map((m, idx) => `<div class="msg ${m.sender}" id="msg-${idx}">${escapeHtmlStaff(m.text)}</div>`).join('');
+  box.innerHTML = allMessages.map((m, idx) => `<div class="msg ${m.sender}" id="msg-${idx}">${m.sender === 'bot' ? '🤖 <em>Automatik:</em> ' : ''}${escapeHtmlStaff(m.text)}</div>`).join('');
   box.scrollTop = box.scrollHeight;
 
   allMessages.forEach(async (m, idx) => {
-    if(m.sender !== 'guest' || !m.lang || m.lang === staffLang) return;
+    if((m.sender !== 'guest' && m.sender !== 'bot') || !m.lang || m.lang === staffLang) return;
     const translated = await translateForStaff(m.text, m.lang);
     const el = document.getElementById('msg-' + idx);
-    if(el) el.innerHTML = escapeHtmlStaff(translated) + ` <span style="opacity:0.5; font-size:10.5px; display:block; margin-top:3px;">(${m.lang.toUpperCase()}: ${escapeHtmlStaff(m.text)})</span>`;
+    const prefix = m.sender === 'bot' ? '🤖 <em>Automatik:</em> ' : '';
+    if(el) el.innerHTML = prefix + escapeHtmlStaff(translated) + ` <span style="opacity:0.5; font-size:10.5px; display:block; margin-top:3px;">(${m.lang.toUpperCase()}: ${escapeHtmlStaff(m.text)})</span>`;
   });
 }
 

@@ -26,19 +26,45 @@
   --shadow-2:0 10px 28px rgba(18,48,46,0.14);
 }
 html[data-theme="dark"]{
-  --ink:#EAE5D8;
+  --ink:#F3EFE3;
   --sea:#123B3D;
   --sea-light:#1F4F52;
-  --sand:#0A1615;
-  --sand-dim:#12211F;
-  --aqua:#48BDB1;
-  --aqua-dark:#52C9BD;
-  --gold:#E4BA71;
-  --coral:#E28459;
-  --line:rgba(234,229,216,0.12);
-  --white:#152A28;
-  --shadow-1:0 2px 12px rgba(0,0,0,0.35);
-  --shadow-2:0 14px 36px rgba(0,0,0,0.5);
+  --sand:#0E1B19;
+  --sand-dim:#152422;
+  --aqua:#4FC6BA;
+  --aqua-dark:#5CD3C6;
+  --gold:#E8BE78;
+  --coral:#E8916B;
+  --line:rgba(243,239,227,0.16);
+  --white:#1B322F;
+  --shadow-1:0 2px 12px rgba(0,0,0,0.4);
+  --shadow-2:0 14px 36px rgba(0,0,0,0.55);
+}
+/* In dark mode, secondary/muted text elsewhere in the page uses a reduced
+   opacity tuned for light backgrounds; against the near-black dark
+   backgrounds that same opacity reads as a dim, low-contrast grey. Raise the
+   floor specifically in dark mode so every label and description stays
+   legible against its background. */
+html[data-theme="dark"] p.section-sub,
+html[data-theme="dark"] .group-heading,
+html[data-theme="dark"] .keycard-label,
+html[data-theme="dark"] .quick-card .qs,
+html[data-theme="dark"] .loc-desc,
+html[data-theme="dark"] .amenity-note,
+html[data-theme="dark"] .rs-cart-empty,
+html[data-theme="dark"] .cat-tab,
+html[data-theme="dark"] .rec-tip,
+html[data-theme="dark"] .map-note,
+html[data-theme="dark"] .info-item-val,
+html[data-theme="dark"] details.faq p,
+html[data-theme="dark"] .weather-note,
+html[data-theme="dark"] .msg-time,
+html[data-theme="dark"] .tab-btn{
+  opacity:0.82 !important;
+}
+html[data-theme="dark"] .cat-tab.on,
+html[data-theme="dark"] .tab-btn.on{
+  opacity:1 !important;
 }
 *{box-sizing:border-box;}
 html{ color-scheme:light; }
@@ -492,28 +518,20 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
         <button class="req-chip" data-section="quick_requests" data-i18n="req.towels" onclick="sendQuickRequest('req.towels')">Peshqirë shtesë</button>
         <button class="req-chip" data-section="quick_requests" data-i18n="req.cleaning" onclick="sendQuickRequest('req.cleaning')">Pastrim dhome</button>
         <button class="req-chip" data-section="quick_requests" data-i18n="req.pillows" onclick="sendQuickRequest('req.pillows')">Jastëkë shtesë</button>
-        <button class="req-chip" data-section="issues" data-i18n="req.issue_ac" onclick="sendQuickRequest('req.issue_ac','issue')">Klima s'punon</button>
-        <button class="req-chip" data-section="issues" data-i18n="req.issue_tv" onclick="sendQuickRequest('req.issue_tv','issue')">TV s'punon</button>
-        <button class="req-chip" data-section="issues" data-i18n="req.issue_toilet" onclick="sendQuickRequest('req.issue_toilet','issue')">Tualeti i prishur</button>
-        <button class="req-chip" data-section="issues" data-i18n="req.issue_plumbing" onclick="sendQuickRequest('req.issue_plumbing','issue')">Problem hidraulik</button>
-        <button class="req-chip" data-section="issues" data-i18n="req.issue_electric" onclick="sendQuickRequest('req.issue_electric','issue')">Problem elektrik</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_ac" onclick="reportIssue('req.issue_ac')">Klima s'punon</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_tv" onclick="reportIssue('req.issue_tv')">TV s'punon</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_toilet" onclick="reportIssue('req.issue_toilet')">Tualeti i prishur</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_plumbing" onclick="reportIssue('req.issue_plumbing')">Problem hidraulik</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_electric" onclick="reportIssue('req.issue_electric')">Problem elektrik</button>
         <button class="req-chip" data-section="issues" onclick="toggleOtherIssueBox()" data-i18n="req.issue_other">+ Problem tjetër</button>
       </div>
 
       <div id="other-issue-box" style="display:none; margin-bottom:10px;">
-        <textarea id="other-issue-text" rows="2" data-i18n-ph="issue.otherPlaceholder" placeholder="Përshkruaj problemin..." style="width:100%; border:0.5px solid var(--line); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13px; resize:none; margin-bottom:6px;"></textarea>
+        <textarea id="other-issue-text" rows="2" data-i18n-ph="issue.otherPlaceholder" placeholder="Përshkruaj problemin..." style="width:100%; border:0.5px solid var(--line); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13px; resize:none; margin-bottom:6px; background:var(--white); color:var(--ink);"></textarea>
         <button type="button" class="rs-add" onclick="sendOtherIssue()" data-i18n="issue.send">Dërgo</button>
       </div>
 
       <input type="file" id="issue-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelected(this)">
-      <button type="button" id="issue-photo-btn" data-section="issues" onclick="document.getElementById('issue-photo-input').click()" style="display:flex; align-items:center; gap:6px; background:none; border:0.5px dashed var(--line); color:var(--ink); opacity:0.65; border-radius:8px; padding:7px 12px; font-size:12px; cursor:pointer; font-family:inherit; margin-bottom:10px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        <span data-i18n="issue.attachPhoto">Bashkangjit foto te problemi (opsionale)</span>
-      </button>
-      <div id="issue-photo-preview" style="display:none; align-items:center; gap:10px; margin:-4px 0 10px;">
-        <img src="" style="width:52px; height:52px; object-fit:cover; border-radius:8px; border:0.5px solid var(--line);">
-        <button type="button" onclick="clearPendingPhoto()" style="background:none; border:none; color:var(--coral); font-size:12px; cursor:pointer; font-family:inherit;" data-i18n="issue.removePhoto">Hiq foton</button>
-      </div>
 
       <div id="section-toiletries">
       <h3 class="group-heading" data-i18n="quick.toiletries.heading">Artikuj higjienikë</h3>
@@ -682,10 +700,13 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
 
       <div id="section-info_faq">
       <h3 class="group-heading" data-i18n="info.faqHeading">Pyetje të shpeshta</h3>
+      <div id="faq-dynamic-container" style="display:none;"></div>
+      <div id="faq-default-container">
       <details class="faq"><summary data-i18n="faq.q1">Si e ndez ujin e ngrohtë?</summary><p data-i18n="faq.a1">Çelësi është pranë kokës së dushit, kthejeni majtas dhe prisni rreth 30 sekonda.</p></details>
       <details class="faq"><summary data-i18n="faq.q2">A ka parking falas?</summary><p data-i18n="faq.a2">Po, parkimi i jashtëm është falas për mysafirët, pranë hyrjes anësore.</p></details>
       <details class="faq"><summary data-i18n="faq.q3">A pranoni kafshë shtëpiake?</summary><p data-i18n="faq.a3">Pranohen kafshë të vogla me njoftim paraprak në recepsion, me tarifë shtesë.</p></details>
       <details class="faq"><summary data-i18n="faq.q4">Deri sa orë shërbehet mëngjesi?</summary><p data-i18n="faq.a4">Mëngjesi shërbehet çdo ditë nga ora 07:30 deri në 10:30.</p></details>
+      </div>
       </div>
     </div>
 
@@ -752,6 +773,34 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
 
 </div>
 
+<div id="issue-photo-modal" style="display:none; position:fixed; inset:0; background:rgba(10,15,14,0.55); z-index:9998; align-items:flex-end; justify-content:center;">
+  <div style="width:100%; max-width:460px; background:var(--sand); border-radius:18px 18px 0 0; padding:24px 22px calc(22px + env(safe-area-inset-bottom, 0px)); box-shadow:var(--shadow-2); animation:viewFadeIn 0.22s ease;">
+    <div id="issue-photo-modal-preview" style="display:none; margin-bottom:14px;">
+      <img src="" style="width:100%; max-height:180px; object-fit:cover; border-radius:10px; border:0.5px solid var(--line);">
+    </div>
+    <h3 style="font-family:'Fraunces',serif; font-weight:500; font-size:17px; margin:0 0 4px; color:var(--ink);" data-i18n="issue.photoPrompt.title">Do shtosh një foto të problemit?</h3>
+    <p style="font-size:13px; opacity:0.75; margin:0 0 18px; color:var(--ink);" data-i18n="issue.photoPrompt.sub">Ndihmon stafin ta kuptojë problemin më shpejt. Nuk është e detyrueshme.</p>
+    <button type="button" onclick="document.getElementById('issue-photo-input').click()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--sea); color:var(--sand); border:none; border-radius:10px; padding:13px; font-size:14px; font-weight:500; font-family:inherit; cursor:pointer; margin-bottom:10px;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span data-i18n="issue.photoPrompt.takePhoto">Bëj / zgjidh foto</span>
+    </button>
+    <button type="button" onclick="finalizeIssueSend(false)" style="width:100%; background:none; border:0.5px solid var(--line); color:var(--ink); border-radius:10px; padding:12px; font-size:13.5px; font-family:inherit; cursor:pointer;" data-i18n="issue.photoPrompt.skip">Vazhdo pa foto</button>
+  </div>
+</div>
+
+<div id="tutorial-overlay" style="display:none; position:fixed; inset:0; background:rgba(10,15,14,0.6); z-index:9997; align-items:center; justify-content:center; padding:20px;">
+  <div style="width:100%; max-width:380px; background:var(--sand); border-radius:16px; padding:26px 22px; box-shadow:var(--shadow-2); text-align:center;">
+    <h3 style="font-family:'Fraunces',serif; font-weight:500; font-size:18px; margin:0 0 14px; color:var(--ink);" data-i18n="tutorial.title">Mirë se erdhët!</h3>
+    <div style="text-align:left; display:flex; flex-direction:column; gap:12px; margin-bottom:20px; color:var(--ink);">
+      <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">🏠</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.home">Kryesore</b> — <span data-i18n="tutorial.homeDesc">hyrje e shpejtë tek çdo gjë</span>.</span></div>
+      <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">🛏️</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.room">Dhoma</b> — <span data-i18n="tutorial.roomDesc">wifi, pajisje, kërkesa, probleme</span>.</span></div>
+      <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">🧭</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.explore">Zbulo</b> — <span data-i18n="tutorial.exploreDesc">restorante, bare, plazhe me hartë</span>.</span></div>
+      <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">💬</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.chat">Chat</b> — <span data-i18n="tutorial.chatDesc">shkruaj drejt e te recepsioni</span>.</span></div>
+    </div>
+    <button type="button" onclick="closeTutorial()" style="width:100%; background:var(--sea); color:var(--sand); border:none; border-radius:10px; padding:12px; font-size:14px; font-weight:500; font-family:inherit; cursor:pointer;" data-i18n="tutorial.gotIt">E kuptova</button>
+  </div>
+</div>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -765,7 +814,7 @@ try {
     if(currentHotel) socket.emit('join_room', { hotel: currentHotel, room: currentRoom });
   });
   socket.on('new_message', async (msg) => {
-    if (msg.sender === 'staff' && msg.room_number === currentRoom) {
+    if (msg.sender !== 'guest' && msg.room_number === currentRoom) {
       const text = (msg.lang && msg.lang !== currentLang) ? await translateForGuest(msg.text, msg.lang) : msg.text;
       pushInMsg(text);
     }
@@ -808,6 +857,8 @@ const translations = {
     "req.issue_ac":"Klima s'punon","req.issue_tv":"TV s'punon","req.issue_toilet":"Tualeti i prishur","req.issue_plumbing":"Problem hidraulik","req.issue_electric":"Problem elektrik",
     "issue.attachPhoto":"Bashkangjit foto te problemi (opsionale)","issue.removePhoto":"Hiq foton",
     "req.issue_other":"+ Problem tjetër","issue.otherPlaceholder":"Përshkruaj problemin...","issue.send":"Dërgo",
+    "issue.photoPrompt.title":"Do shtosh një foto të problemit?","issue.photoPrompt.sub":"Ndihmon stafin ta kuptojë problemin më shpejt. Nuk është e detyrueshme.","issue.photoPrompt.takePhoto":"Bëj / zgjidh foto","issue.photoPrompt.skip":"Vazhdo pa foto",
+    "tutorial.title":"Mirë se erdhët!","tutorial.homeDesc":"hyrje e shpejtë tek çdo gjë","tutorial.roomDesc":"wifi, pajisje, kërkesa, probleme","tutorial.exploreDesc":"restorante, bare, plazhe me hartë","tutorial.chatDesc":"shkruaj drejt e te recepsioni","tutorial.gotIt":"E kuptova",
     "req.sentPrefix":"Kërkesë nga dhoma:","req.confirmToast":"Kërkesa u dërgua te recepsioni",
     "room.amenitiesHeading":"Pajisjet",
     "amenity.ac.name":"Klima","amenity.ac.note":"Kontrolli në murin pranë derës së banjës. 18-26°C.",
@@ -884,6 +935,8 @@ const translations = {
     "req.issue_ac":"AC not working","req.issue_tv":"TV not working","req.issue_toilet":"Broken toilet","req.issue_plumbing":"Plumbing issue","req.issue_electric":"Electrical issue",
     "issue.attachPhoto":"Attach a photo of the problem (optional)","issue.removePhoto":"Remove photo",
     "req.issue_other":"+ Other problem","issue.otherPlaceholder":"Describe the problem...","issue.send":"Send",
+    "issue.photoPrompt.title":"Add a photo of the problem?","issue.photoPrompt.sub":"Helps the staff understand the issue faster. It's optional.","issue.photoPrompt.takePhoto":"Take / choose a photo","issue.photoPrompt.skip":"Continue without a photo",
+    "tutorial.title":"Welcome!","tutorial.homeDesc":"a quick way to everything","tutorial.roomDesc":"wifi, amenities, requests, issues","tutorial.exploreDesc":"restaurants, bars, beaches with a map","tutorial.chatDesc":"message the front desk directly","tutorial.gotIt":"Got it",
     "req.sentPrefix":"Room request:","req.confirmToast":"Request sent to the front desk",
     "room.amenitiesHeading":"Amenities",
     "amenity.ac.name":"Air conditioning","amenity.ac.note":"Control panel by the bathroom door. 18-26°C.",
@@ -960,6 +1013,8 @@ const translations = {
     "req.issue_ac":"Aria condizionata non funziona","req.issue_tv":"TV non funziona","req.issue_toilet":"WC rotto","req.issue_plumbing":"Problema idraulico","req.issue_electric":"Problema elettrico",
     "issue.attachPhoto":"Allega una foto del problema (opzionale)","issue.removePhoto":"Rimuovi foto",
     "req.issue_other":"+ Altro problema","issue.otherPlaceholder":"Descrivi il problema...","issue.send":"Invia",
+    "issue.photoPrompt.title":"Vuoi aggiungere una foto del problema?","issue.photoPrompt.sub":"Aiuta lo staff a capire il problema più in fretta. Non è obbligatorio.","issue.photoPrompt.takePhoto":"Scatta / scegli una foto","issue.photoPrompt.skip":"Continua senza foto",
+    "tutorial.title":"Benvenuti!","tutorial.homeDesc":"accesso rapido a tutto","tutorial.roomDesc":"wifi, servizi, richieste, problemi","tutorial.exploreDesc":"ristoranti, bar, spiagge con mappa","tutorial.chatDesc":"scrivi direttamente alla reception","tutorial.gotIt":"Ho capito",
     "req.sentPrefix":"Richiesta dalla camera:","req.confirmToast":"Richiesta inviata alla reception",
     "room.amenitiesHeading":"Servizi",
     "amenity.ac.name":"Aria condizionata","amenity.ac.note":"Pannello vicino alla porta del bagno. 18-26°C.",
@@ -1036,6 +1091,8 @@ const translations = {
     "req.issue_ac":"Klimaanlage funktioniert nicht","req.issue_tv":"TV funktioniert nicht","req.issue_toilet":"Toilette defekt","req.issue_plumbing":"Sanitärproblem","req.issue_electric":"Elektrisches Problem",
     "issue.attachPhoto":"Foto des Problems anhängen (optional)","issue.removePhoto":"Foto entfernen",
     "req.issue_other":"+ Anderes Problem","issue.otherPlaceholder":"Problem beschreiben...","issue.send":"Senden",
+    "issue.photoPrompt.title":"Möchten Sie ein Foto des Problems hinzufügen?","issue.photoPrompt.sub":"Hilft dem Personal, das Problem schneller zu verstehen. Optional.","issue.photoPrompt.takePhoto":"Foto aufnehmen / auswählen","issue.photoPrompt.skip":"Ohne Foto fortfahren",
+    "tutorial.title":"Willkommen!","tutorial.homeDesc":"schneller Zugang zu allem","tutorial.roomDesc":"WLAN, Ausstattung, Anfragen, Probleme","tutorial.exploreDesc":"Restaurants, Bars, Strände mit Karte","tutorial.chatDesc":"direkt an die Rezeption schreiben","tutorial.gotIt":"Verstanden",
     "req.sentPrefix":"Anfrage aus dem Zimmer:","req.confirmToast":"Anfrage an die Rezeption gesendet",
     "room.amenitiesHeading":"Ausstattung",
     "amenity.ac.name":"Klimaanlage","amenity.ac.note":"Bedienfeld neben der Badezimmertür. 18-26°C.",
@@ -1147,6 +1204,7 @@ async function loadHotelContent(){
     }
     renderDynamicRoom();
     renderDynamicRecommendations();
+    renderDynamicFaq();
     initRealMap();
     fetchWeather(dynamicContent.location?.lat, dynamicContent.location?.lng);
     try{
@@ -1155,6 +1213,10 @@ async function loadHotelContent(){
         const nameEl = document.getElementById('hotel-name-el');
         if(nameEl) nameEl.textContent = info.name;
         document.title = info.name + ' — Udhërrëfyesi i mysafirit';
+      }
+      if(info?.theme){
+        currentThemePreset = info.theme;
+        applyPresetColors();
       }
     }catch(e){}
   }catch(e){ console.warn('Could not load hotel content, using example content.', e); }
@@ -1254,9 +1316,12 @@ function renderDynamicRoom(){
   }
   if(Array.isArray(dynamicRoomService) && dynamicRoomService.length){
     document.getElementById('roomservice-container').innerHTML = dynamicRoomService.map((item, idx) => `
-      <div class="rs-item">
-        <p class="rs-name">${escapeHtml(item.name?.[currentLang] || item.name?.sq || '')}</p>
-        <span class="rs-price">${item.price} L</span>
+      <div class="rs-item" style="${item.image_url ? 'display:flex; align-items:center; gap:10px;' : ''}">
+        ${item.image_url ? `<img src="${escapeHtml(item.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">` : ''}
+        <div style="flex:1;">
+          <p class="rs-name">${escapeHtml(item.name?.[currentLang] || item.name?.sq || '')}</p>
+          <span class="rs-price">${item.price} L</span>
+        </div>
         <button class="rs-add" onclick="addRoomServiceFromContent(${idx})">${escapeHtml(translations[currentLang]['roomservice.add'])}</button>
       </div>`).join('');
   }
@@ -1267,6 +1332,24 @@ function addRoomServiceFromContent(idx){
   if(!item) return;
   rsCart.push({ name: item.name?.[currentLang] || item.name?.sq || '', price: item.price });
   renderCart();
+}
+
+function renderDynamicFaq(){
+  const dynBox = document.getElementById('faq-dynamic-container');
+  const defaultBox = document.getElementById('faq-default-container');
+  if(!dynBox || !defaultBox) return;
+  if(Array.isArray(dynamicContent?.faq) && dynamicContent.faq.length){
+    dynBox.innerHTML = dynamicContent.faq.map(item => `
+      <details class="faq">
+        <summary>${escapeHtml(item.q?.[currentLang] || item.q?.sq || '')}</summary>
+        <p>${escapeHtml(item.a?.[currentLang] || item.a?.sq || '')}</p>
+      </details>`).join('');
+    dynBox.style.display = 'block';
+    defaultBox.style.display = 'none';
+  } else {
+    dynBox.style.display = 'none';
+    defaultBox.style.display = 'block';
+  }
 }
 
 function renderDynamicRecommendations(){
@@ -1306,8 +1389,24 @@ function initRealMap(){
   });
 }
 
+// Picks the language the app should open in: the guest's own earlier choice
+// (remembered on this device), otherwise a best guess from the browser/phone
+// language, otherwise English — never Albanian by default for someone who
+// hasn't chosen it, since most guests aren't Albanian speakers.
+function detectInitialLang(){
+  const supported = ['sq','en','it','de'];
+  try{
+    const saved = localStorage.getItem('bregu_lang');
+    if(saved && supported.includes(saved)) return saved;
+  }catch(e){}
+  const browserLang = (navigator.language || navigator.userLanguage || '').slice(0,2).toLowerCase();
+  if(supported.includes(browserLang)) return browserLang;
+  return 'en';
+}
+
 function setLang(lang){
   currentLang = lang;
+  try{ localStorage.setItem('bregu_lang', lang); }catch(e){}
   document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('on', b.dataset.lang===lang));
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const key = el.getAttribute('data-i18n');
@@ -1321,6 +1420,7 @@ function setLang(lang){
   updateRoomChip();
   renderDynamicRoom();
   renderDynamicRecommendations();
+  renderDynamicFaq();
   renderDndToggle();
   renderRoomNote();
 }
@@ -1347,6 +1447,7 @@ function getHotelDay(){
 }
 
 async function initFromUrl(){
+  setLang(detectInitialLang());
   const params = new URLSearchParams(window.location.search);
   const urlHotel = params.get('hotel');
   const urlToken = params.get('token');
@@ -1415,6 +1516,21 @@ async function initFromUrl(){
   loadHotelContent();
   loadDndState();
   if(socket) socket.emit('join_room', { hotel: currentHotel, room: currentRoom });
+  showTutorialIfNeeded();
+}
+
+function showTutorialIfNeeded(){
+  try{
+    if(localStorage.getItem('bregu_tutorial_seen')) return;
+  }catch(e){}
+  const overlay = document.getElementById('tutorial-overlay');
+  if(overlay) overlay.style.display = 'flex';
+}
+
+function closeTutorial(){
+  const overlay = document.getElementById('tutorial-overlay');
+  if(overlay) overlay.style.display = 'none';
+  try{ localStorage.setItem('bregu_tutorial_seen', '1'); }catch(e){}
 }
 
 function showMissingHotel(){
@@ -1451,8 +1567,45 @@ function showSessionLocked(){
   `;
   document.body.appendChild(overlay);
 }
+// Color presets a hotel can choose at creation (super-admin) or change later —
+// each one supplies both a light and a dark variant of every themeable
+// variable, so dark mode stays correctly contrasted no matter which preset
+// is active. "teal" matches the :root/dark-mode defaults already in the
+// <style> block above, so hotels that never pick a theme see no difference.
+let currentThemePreset = 'teal';
+const THEME_PRESETS = {
+  teal: {
+    light:{ '--ink':'#12302E','--sea':'#0E3A3D','--sea-light':'#1C5257','--sand':'#F3ECDC','--sand-dim':'#E7DEC8','--aqua':'#2C9D93','--aqua-dark':'#186D66','--gold':'#CE9A42','--coral':'#C1592E','--line':'rgba(18,48,46,0.14)','--white':'#FFFDF8' },
+    dark:{ '--ink':'#F3EFE3','--sea':'#123B3D','--sea-light':'#1F4F52','--sand':'#0E1B19','--sand-dim':'#152422','--aqua':'#4FC6BA','--aqua-dark':'#5CD3C6','--gold':'#E8BE78','--coral':'#E8916B','--line':'rgba(243,239,227,0.16)','--white':'#1B322F' }
+  },
+  ocean: {
+    light:{ '--ink':'#0E2238','--sea':'#0D3B66','--sea-light':'#1C5A8C','--sand':'#EFF4F8','--sand-dim':'#DCE6EE','--aqua':'#3B82C4','--aqua-dark':'#2563A0','--gold':'#E0A458','--coral':'#C1592E','--line':'rgba(14,34,56,0.14)','--white':'#FFFFFF' },
+    dark:{ '--ink':'#E8EFF6','--sea':'#123A5C','--sea-light':'#1E4F78','--sand':'#0B1620','--sand-dim':'#12212E','--aqua':'#5AA6E0','--aqua-dark':'#6FB8EE','--gold':'#F0BE7E','--coral':'#E8916B','--line':'rgba(232,239,246,0.16)','--white':'#17293A' }
+  },
+  sunset: {
+    light:{ '--ink':'#3A1F17','--sea':'#7A3B2E','--sea-light':'#9C5440','--sand':'#FBF0E6','--sand-dim':'#F3DFCB','--aqua':'#D97B4F','--aqua-dark':'#B85F37','--gold':'#EFC88B','--coral':'#C1592E','--line':'rgba(58,31,23,0.14)','--white':'#FFFCF9' },
+    dark:{ '--ink':'#F6E9DE','--sea':'#5C2E24','--sea-light':'#79412F','--sand':'#1C120D','--sand-dim':'#261A13','--aqua':'#E89766','--aqua-dark':'#F0AD7C','--gold':'#F3D29A','--coral':'#E8916B','--line':'rgba(246,233,222,0.16)','--white':'#2A1B14' }
+  },
+  forest: {
+    light:{ '--ink':'#15261B','--sea':'#1F3D2B','--sea-light':'#345A3E','--sand':'#F1F4EC','--sand-dim':'#E1E8D6','--aqua':'#4C8B5A','--aqua-dark':'#357245','--gold':'#C9A14A','--coral':'#C1592E','--line':'rgba(21,38,27,0.14)','--white':'#FEFFFB' },
+    dark:{ '--ink':'#E9F0E4','--sea':'#223F2E','--sea-light':'#315340','--sand':'#0E1810','--sand-dim':'#162419','--aqua':'#6EB47F','--aqua-dark':'#7FC28F','--gold':'#D9BB6E','--coral':'#E8916B','--line':'rgba(233,240,228,0.16)','--white':'#1B2C20' }
+  },
+  royal: {
+    light:{ '--ink':'#241A38','--sea':'#3B2A5E','--sea-light':'#55417F','--sand':'#F4F0FA','--sand-dim':'#E5DCF2','--aqua':'#8A5FB3','--aqua-dark':'#6D4791','--gold':'#D9A441','--coral':'#C1592E','--line':'rgba(36,26,56,0.14)','--white':'#FFFEFF' },
+    dark:{ '--ink':'#EDE6F7','--sea':'#3A2C57','--sea-light':'#4E3C72','--sand':'#160F22','--sand-dim':'#201732','--aqua':'#A985CC','--aqua-dark':'#BB9BDA','--gold':'#E7BE70','--coral':'#E8916B','--line':'rgba(237,230,247,0.16)','--white':'#241A38' }
+  }
+};
+
+function applyPresetColors(){
+  const mode = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const preset = THEME_PRESETS[currentThemePreset] || THEME_PRESETS.teal;
+  const vars = preset[mode];
+  Object.keys(vars).forEach((key) => document.documentElement.style.setProperty(key, vars[key]));
+}
+
 function applyTheme(theme){
   document.documentElement.setAttribute('data-theme', theme);
+  applyPresetColors();
   const btn = document.getElementById('theme-toggle');
   if(btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
   const metaTheme = document.querySelector('meta[name="theme-color"]');
@@ -1663,6 +1816,52 @@ function sendMsg(){
 }
 
 let pendingIssuePhoto = null;
+let pendingIssueContext = null; // { key } for a predefined chip, or { text } for free-text issues
+
+function sendQuickRequest(key, category){
+  // Non-issue quick requests (towels, cleaning, pillows, toiletries...) send immediately.
+  // Issue reports go through reportIssue() instead, so they can offer the photo/skip prompt.
+  const label = translations[currentLang][key];
+  const prefix = translations[currentLang]['req.sentPrefix'];
+  pushOutMsg(prefix + ' ' + label);
+  showToast(translations[currentLang]['req.confirmToast']);
+  showView('chat');
+  apiPost('/api/quick-requests', { room_number: currentRoom, request_type: label, category: category || 'request' });
+}
+
+function reportIssue(key){
+  pendingIssueContext = { key };
+  openIssuePhotoModal();
+}
+
+function toggleOtherIssueBox(){
+  const box = document.getElementById('other-issue-box');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  if(box.style.display === 'block') document.getElementById('other-issue-text').focus();
+}
+
+function sendOtherIssue(){
+  const textEl = document.getElementById('other-issue-text');
+  const text = textEl.value.trim();
+  if(!text) return;
+  pendingIssueContext = { text };
+  document.getElementById('other-issue-box').style.display = 'none';
+  openIssuePhotoModal();
+}
+
+function openIssuePhotoModal(){
+  pendingIssuePhoto = null;
+  const modal = document.getElementById('issue-photo-modal');
+  const preview = document.getElementById('issue-photo-modal-preview');
+  preview.style.display = 'none';
+  modal.style.display = 'flex';
+}
+
+function closeIssuePhotoModal(){
+  document.getElementById('issue-photo-modal').style.display = 'none';
+  pendingIssuePhoto = null;
+  pendingIssueContext = null;
+}
 
 function handlePhotoSelected(input){
   const file = input.files[0];
@@ -1678,7 +1877,13 @@ function handlePhotoSelected(input){
       canvas.height = Math.round(img.height * scale);
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
       pendingIssuePhoto = canvas.toDataURL('image/jpeg', 0.7);
-      renderPhotoPreview();
+      const preview = document.getElementById('issue-photo-modal-preview');
+      if(preview){
+        preview.style.display = 'block';
+        preview.querySelector('img').src = pendingIssuePhoto;
+      }
+      // A photo was explicitly chosen for this report — send right away.
+      finalizeIssueSend(true);
     };
     img.src = e.target.result;
   };
@@ -1686,54 +1891,23 @@ function handlePhotoSelected(input){
   input.value = '';
 }
 
-function renderPhotoPreview(){
-  const box = document.getElementById('issue-photo-preview');
-  if(!pendingIssuePhoto){ box.style.display = 'none'; return; }
-  box.style.display = 'flex';
-  box.querySelector('img').src = pendingIssuePhoto;
-}
-
-function clearPendingPhoto(){
-  pendingIssuePhoto = null;
-  renderPhotoPreview();
-}
-
-function sendQuickRequest(key, category){
-  const label = translations[currentLang][key];
-  const prefix = translations[currentLang]['req.sentPrefix'];
-  pushOutMsg(prefix + ' ' + label);
-  showToast(translations[currentLang]['req.confirmToast']);
-  showView('chat');
-  const body = { room_number: currentRoom, request_type: label, category: category || 'request' };
-  if(category === 'issue' && pendingIssuePhoto){
-    body.image = pendingIssuePhoto;
-    clearPendingPhoto();
-  }
-  apiPost('/api/quick-requests', body);
-}
-
-function toggleOtherIssueBox(){
-  const box = document.getElementById('other-issue-box');
-  box.style.display = box.style.display === 'none' ? 'block' : 'none';
-  if(box.style.display === 'block') document.getElementById('other-issue-text').focus();
-}
-
-function sendOtherIssue(){
-  const textEl = document.getElementById('other-issue-text');
-  const text = textEl.value.trim();
-  if(!text) return;
+function finalizeIssueSend(){
+  if(!pendingIssueContext) return;
+  const text = pendingIssueContext.key ? translations[currentLang][pendingIssueContext.key] : pendingIssueContext.text;
   const prefix = translations[currentLang]['req.sentPrefix'];
   pushOutMsg(prefix + ' ' + text);
   showToast(translations[currentLang]['req.confirmToast']);
   showView('chat');
   const body = { room_number: currentRoom, request_type: text, category: 'issue' };
-  if(pendingIssuePhoto){
-    body.image = pendingIssuePhoto;
-    clearPendingPhoto();
-  }
+  if(pendingIssuePhoto) body.image = pendingIssuePhoto;
   apiPost('/api/quick-requests', body);
-  textEl.value = '';
-  document.getElementById('other-issue-box').style.display = 'none';
+  if(pendingIssueContext.text){
+    const textEl = document.getElementById('other-issue-text');
+    if(textEl) textEl.value = '';
+  }
+  document.getElementById('issue-photo-modal').style.display = 'none';
+  pendingIssuePhoto = null;
+  pendingIssueContext = null;
 }
 
 let dndOn = false;

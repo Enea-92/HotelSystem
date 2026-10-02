@@ -35,6 +35,17 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
 .hotel-slug{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; opacity:0.6; }
 .hotel-urls{ font-size:11px; opacity:0.5; margin-top:4px; }
 .del-link{ color:var(--coral); font-size:12px; cursor:pointer; background:none; border:none; font-family:inherit; }
+.theme-swatches{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:4px; }
+.theme-swatch{ border:2px solid transparent; border-radius:10px; padding:4px; cursor:pointer; text-align:center; background:none; font-family:inherit; }
+.theme-swatch.on{ border-color:var(--aqua-dark); }
+.theme-swatch .dots{ display:flex; border-radius:6px; overflow:hidden; width:54px; height:28px; }
+.theme-swatch .dots span{ flex:1; }
+.theme-swatch small{ display:block; font-size:10.5px; margin-top:3px; opacity:0.7; }
+.stats-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+.stats-table th, .stats-table td{ text-align:left; padding:7px 8px; border-bottom:0.5px solid var(--line); }
+.stats-table th{ font-weight:600; opacity:0.6; font-size:11px; text-transform:uppercase; letter-spacing:0.03em; }
+.stats-table td.num{ font-family:'IBM Plex Mono',monospace; }
+.stats-table .overdue{ color:var(--coral); font-weight:600; }
 .toast{
   position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
   background:var(--ink); color:var(--sand); font-size:13px; padding:10px 20px;
@@ -68,14 +79,23 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
     <p class="hint">Çdo hotel merr URL-në e vet: e njëjta faqe app-i, thjesht me ?hotel=slug në fund.</p>
     <div class="field-row"><label>Slug (URL)</label><input id="new-slug" placeholder="p.sh. bregu, seaview, kaltra"></div>
     <div class="field-row"><label>Emri i hotelit</label><input id="new-name" placeholder="p.sh. Hotel Bregu"></div>
-    <div class="field-row"><label>Fjalëkalim admin</label><input id="new-admin-pass" placeholder="Min. 4 karaktere"></div>
-    <div class="field-row"><label>Fjalëkalim stafi</label><input id="new-staff-pass" placeholder="Min. 4 karaktere"></div>
+    <div class="field-row"><label>Fjalëkalim admin</label><input id="new-admin-pass" placeholder="Min. 8 karaktere"></div>
+    <div class="field-row"><label>Fjalëkalim stafi</label><input id="new-staff-pass" placeholder="Min. 8 karaktere"></div>
+    <div class="field-row"><label>Ngjyrat e website-it</label>
+      <div class="theme-swatches" id="new-theme-swatches"></div>
+    </div>
     <button class="save-btn" onclick="createHotel()">Krijo hotelin</button>
   </div>
 
   <div class="card">
     <h2>Hotelet ekzistuese</h2>
     <div id="hotels-list"><p style="opacity:0.5; font-size:13px;">Duke ngarkuar...</p></div>
+  </div>
+
+  <div class="card">
+    <h2>Statistika krahasuese</h2>
+    <p class="hint">Cilat hotele kanë më shumë probleme/kërkesa, si vlerësohen, dhe sa artikuj janë ende pa u trajtuar (vonesë mbi 15 min).</p>
+    <div id="stats-table-box"><p style="opacity:0.5; font-size:13px;">Duke ngarkuar...</p></div>
   </div>
 
 </div>
@@ -85,6 +105,33 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
 <script>
 let apiBase = 'https://hotelsystem-lzlm.onrender.com';
 let superPassword = '';
+
+// Color presets a hotel can pick for its guest app — must match THEME_PRESETS
+// in hotel-bregu-guest-app.html. Only the preview dots live here.
+const THEME_CHOICES = [
+  { key:'teal',   label:'Bregu (teal)', dots:['#0E3A3D','#2C9D93','#CE9A42'] },
+  { key:'ocean',  label:'Oqean (blu)',  dots:['#0D3B66','#3B82C4','#E0A458'] },
+  { key:'sunset', label:'Perëndim',     dots:['#7A3B2E','#D97B4F','#EFC88B'] },
+  { key:'forest', label:'Pyll (gjelbër)', dots:['#1F3D2B','#4C8B5A','#C9A14A'] },
+  { key:'royal',  label:'Mbretëror',    dots:['#3B2A5E','#8A5FB3','#D9A441'] }
+];
+let selectedNewTheme = 'teal';
+
+function renderThemeSwatches(containerId, selectedKey, onPick){
+  const box = document.getElementById(containerId);
+  box.innerHTML = THEME_CHOICES.map(t => `
+    <button type="button" class="theme-swatch ${t.key===selectedKey?'on':''}" data-theme-key="${t.key}">
+      <span class="dots">${t.dots.map(c=>`<span style="background:${c};"></span>`).join('')}</span>
+      <small>${t.label}</small>
+    </button>`).join('');
+  box.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      box.querySelectorAll('.theme-swatch').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on');
+      onPick(btn.getAttribute('data-theme-key'));
+    });
+  });
+}
 
 function showToast(text, isError){
   const t = document.getElementById('toast');
@@ -105,7 +152,9 @@ async function unlock(){
     document.getElementById('conn-status').classList.add('ok');
     document.getElementById('locked-view').style.display = 'none';
     document.getElementById('main-view').style.display = 'block';
+    renderThemeSwatches('new-theme-swatches', selectedNewTheme, (key) => { selectedNewTheme = key; });
     loadHotels();
+    loadStats();
   }catch(e){
     showToast(e.message === 'wrong password' ? 'Fjalëkalim i gabuar.' : "S'u lidh dot me backend-in.", true);
   }
@@ -118,17 +167,23 @@ async function loadHotels(){
     const box = document.getElementById('hotels-list');
     if(hotels.length === 0){ box.innerHTML = '<p style="opacity:0.5; font-size:13px;">Ende pa hotele.</p>'; return; }
     box.innerHTML = hotels.map(h => `
-      <div class="hotel-row">
-        <div>
-          <div class="hotel-name">${h.name} <span class="hotel-slug">(${h.slug})</span> ${h.active === false ? '<span style="color:#C1592E; font-size:11px; font-weight:500;">● Çaktivizuar</span>' : '<span style="color:#2C5FA8; font-size:11px; font-weight:500;">● Aktiv</span>'}</div>
-          <div class="hotel-urls">App: hotel-bregu-guest-app.html?hotel=${h.slug} · Admin: admin.html?hotel=${h.slug} · Staf: staff-dashboard.html?hotel=${h.slug}</div>
+      <div class="hotel-row" style="flex-direction:column; align-items:stretch; gap:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <div class="hotel-name">${h.name} <span class="hotel-slug">(${h.slug})</span> ${h.active === false ? '<span style="color:#C1592E; font-size:11px; font-weight:500;">● Çaktivizuar</span>' : '<span style="color:#2C5FA8; font-size:11px; font-weight:500;">● Aktiv</span>'}</div>
+            <div class="hotel-urls">App: hotel-bregu-guest-app.html?hotel=${h.slug} · Admin: admin.html?hotel=${h.slug} · Staf: staff-dashboard.html?hotel=${h.slug}</div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
+            <button class="del-link" style="color:#2C5FA8;" onclick="openAdminFor('${h.slug}')">Hap Admin</button>
+            <button class="del-link" style="color:${h.active === false ? '#2C5FA8' : '#CE9A42'};" onclick="toggleHotelActive('${h.slug}', ${h.active === false})">${h.active === false ? 'Aktivo' : 'Çaktivizo'}</button>
+            <button class="del-link" onclick="deleteHotel('${h.slug}')">Fshi</button>
+          </div>
         </div>
-        <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
-          <button class="del-link" style="color:#2C5FA8;" onclick="openAdminFor('${h.slug}')">Hap Admin</button>
-          <button class="del-link" style="color:${h.active === false ? '#2C5FA8' : '#CE9A42'};" onclick="toggleHotelActive('${h.slug}', ${h.active === false})">${h.active === false ? 'Aktivo' : 'Çaktivizo'}</button>
-          <button class="del-link" onclick="deleteHotel('${h.slug}')">Fshi</button>
-        </div>
+        <div class="theme-swatches" id="theme-swatches-${h.slug}"></div>
       </div>`).join('');
+    hotels.forEach(h => {
+      renderThemeSwatches('theme-swatches-' + h.slug, h.theme || 'teal', (key) => setHotelTheme(h.slug, key));
+    });
   }catch(e){ showToast('Gabim duke ngarkuar hotelet.', true); }
 }
 
@@ -145,7 +200,7 @@ async function createHotel(){
     const res = await fetch(apiBase + '/api/super-admin/hotels', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-super-admin-password': superPassword },
-      body: JSON.stringify({ slug, name, admin_password: adminPass, staff_password: staffPass })
+      body: JSON.stringify({ slug, name, admin_password: adminPass, staff_password: staffPass, theme: selectedNewTheme })
     });
     if(!res.ok){
       const err = await res.json();
@@ -156,8 +211,46 @@ async function createHotel(){
     document.getElementById('new-name').value = '';
     document.getElementById('new-admin-pass').value = '';
     document.getElementById('new-staff-pass').value = '';
+    selectedNewTheme = 'teal';
+    renderThemeSwatches('new-theme-swatches', selectedNewTheme, (key) => { selectedNewTheme = key; });
     loadHotels();
   }catch(e){ showToast(e.message, true); }
+}
+
+async function setHotelTheme(slug, theme){
+  try{
+    await fetch(apiBase + '/api/super-admin/hotels/' + slug, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-super-admin-password': superPassword },
+      body: JSON.stringify({ theme })
+    });
+    showToast('Ngjyrat e ' + slug + ' u ndryshuan.');
+  }catch(e){ showToast('Gabim duke ndryshuar ngjyrat.', true); }
+}
+
+async function loadStats(){
+  try{
+    const res = await fetch(apiBase + '/api/super-admin/stats', { headers: { 'x-super-admin-password': superPassword } });
+    const stats = await res.json();
+    const box = document.getElementById('stats-table-box');
+    if(!box) return;
+    if(stats.length === 0){ box.innerHTML = '<p style="opacity:0.5; font-size:13px;">Ende pa hotele.</p>'; return; }
+    box.innerHTML = `<table class="stats-table">
+      <thead><tr>
+        <th>Hoteli</th><th>Probleme (24h)</th><th>Kërkesa (24h)</th><th>Pa trajtuar</th><th>Vonesa</th><th>Vlerësimi mesatar</th>
+      </tr></thead>
+      <tbody>
+        ${stats.map(s => `<tr>
+          <td>${s.name}</td>
+          <td class="num">${s.issues_24h}</td>
+          <td class="num">${s.requests_24h}</td>
+          <td class="num">${s.pending_count}</td>
+          <td class="num ${s.overdue_count > 0 ? 'overdue' : ''}">${s.overdue_count}</td>
+          <td class="num">${s.avg_rating !== null ? s.avg_rating + ' ★ (' + s.feedback_count + ')' : '—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  }catch(e){ console.warn('Could not load stats', e); }
 }
 
 async function deleteHotel(slug){

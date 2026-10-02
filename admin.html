@@ -150,8 +150,16 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
 
   <div class="card">
     <h2>Shërbimi në dhomë (menu)</h2>
+    <p class="hint">Shto foto për çdo artikull (URL) që klientët ta shohin para se të porosisin.</p>
     <div id="roomservice-list"></div>
     <button class="add-btn" onclick="addRoomServiceItem()">+ Shto artikull</button>
+  </div>
+
+  <div class="card">
+    <h2>Pyetje të shpeshta (FAQ)</h2>
+    <p class="hint">Shfaqen te "Info praktike" i mysafirit. Përdoren gjithashtu për t'u përgjigjur automatikisht në chat kur mesazhi i mysafirit përputhet me një pyetje këtu — para se stafi ta shohë fare.</p>
+    <div id="faq-list"></div>
+    <button class="add-btn" onclick="addFaqItem()">+ Shto pyetje</button>
   </div>
 
   <button class="save-btn" onclick="saveContent()">Ruaj gjithçka lart</button>
@@ -200,7 +208,7 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
         <option value="staff">Staf</option>
       </select>
     </div>
-    <div class="field-row"><label>Fjalëkalimi i ri</label><input type="password" id="pw-new" placeholder="Min. 4 karaktere"></div>
+    <div class="field-row"><label>Fjalëkalimi i ri</label><input type="password" id="pw-new" placeholder="Min. 8 karaktere"></div>
     <button class="save-btn" onclick="changePassword()">Ndrysho fjalëkalimin</button>
   </div>
 
@@ -431,6 +439,7 @@ function renderAll(){
   renderRoomService();
   renderRecommendations();
   renderSectionToggles();
+  renderFaqList();
 }
 
 function langTabsHtml(prefix){
@@ -524,14 +533,36 @@ function renderRoomService(){
         ${['sq','en','it','de'].map(l => `<input data-lang="${l}" data-field="name" style="display:${l==='sq'?'':'none'};" value="${(item.name?.[l]||'').replace(/"/g,'&quot;')}">`).join('')}
       </div></div>
       <div class="field-row"><label>Çmimi (Lekë)</label><input type="number" data-field="price" value="${item.price||0}"></div>
+      <div class="field-row"><label>URL foto</label><input data-field="image_url" placeholder="https://... (opsionale)" value="${(item.image_url||'').replace(/"/g,'&quot;')}"></div>
     </div>`).join('');
 }
 function addRoomServiceItem(){
   content.room_service = content.room_service || [];
-  content.room_service.push({ name:{sq:'',en:'',it:'',de:''}, price:0 });
+  content.room_service.push({ name:{sq:'',en:'',it:'',de:''}, price:0, image_url:'' });
   renderRoomService();
 }
 function removeRoomServiceItem(idx){ content.room_service.splice(idx,1); renderRoomService(); saveContent(); }
+
+function renderFaqList(){
+  const box = document.getElementById('faq-list');
+  box.innerHTML = (content.faq || []).map((item, idx) => `
+    <div class="item-block" data-idx="${idx}">
+      <button class="del-btn" onclick="removeFaqItem(${idx})">Fshi</button>
+      ${langTabsHtml('faq'+idx)}
+      <div class="field-row"><label>Pyetja</label><div style="flex:1;">
+        ${['sq','en','it','de'].map(l => `<input data-lang="${l}" data-field="q" style="display:${l==='sq'?'':'none'};" value="${(item.q?.[l]||'').replace(/"/g,'&quot;')}">`).join('')}
+      </div></div>
+      <div class="field-row"><label>Përgjigja</label><div style="flex:1;">
+        ${['sq','en','it','de'].map(l => `<textarea data-lang="${l}" data-field="a" style="display:${l==='sq'?'':'none'};" rows="2">${(item.a?.[l]||'')}</textarea>`).join('')}
+      </div></div>
+    </div>`).join('');
+}
+function addFaqItem(){
+  content.faq = content.faq || [];
+  content.faq.push({ q:{sq:'',en:'',it:'',de:''}, a:{sq:'',en:'',it:'',de:''} });
+  renderFaqList();
+}
+function removeFaqItem(idx){ content.faq.splice(idx,1); renderFaqList(); saveContent(); }
 
 function renderRecommendations(){
   const box = document.getElementById('recs-list');
@@ -593,8 +624,13 @@ function collectContentFromForm(){
   content.room_service = [...document.querySelectorAll('#roomservice-list .item-block')].map(block => {
     const nameObj = {};
     block.querySelectorAll('[data-lang][data-field="name"]').forEach(el => nameObj[el.getAttribute('data-lang')] = el.value);
-    return { name: nameObj, price: parseFloat(block.querySelector('[data-field="price"]').value) || 0 };
+    return {
+      name: nameObj,
+      price: parseFloat(block.querySelector('[data-field="price"]').value) || 0,
+      image_url: block.querySelector('[data-field="image_url"]').value.trim()
+    };
   });
+  content.faq = [...document.querySelectorAll('#faq-list .item-block')].map(block => collectLangItemsFromBlock(block, ['q','a']));
 }
 
 async function saveContent(){
@@ -720,8 +756,8 @@ async function deleteRoomNote(room){
 async function changePassword(){
   const role = document.getElementById('pw-role').value;
   const newPassword = document.getElementById('pw-new').value;
-  if(!newPassword || newPassword.length < 4){
-    showToast('Fjalëkalimi duhet të ketë të paktën 4 karaktere.', true);
+  if(!newPassword || newPassword.length < 8){
+    showToast('Fjalëkalimi duhet të ketë të paktën 8 karaktere.', true);
     return;
   }
   try{
