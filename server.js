@@ -18,6 +18,11 @@ const {
 } = require('./models');
 
 const app = express();
+// Render (like most hosts) puts the app behind a reverse proxy, which sets
+// X-Forwarded-For. Without telling Express to trust it, express-rate-limit
+// refuses to trust that header and logs a ValidationError on every request
+// (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR) instead of rate-limiting by real IP.
+app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json({ limit: '3mb' })); // room enough for a resized base64 photo on issue reports
 
@@ -603,7 +608,7 @@ app.get('/api/session/verify', (req, res) => {
 
 // ============ HOTEL THEME (the hotel's own admin can change its palette too) ============
 
-const THEME_KEYS = ['teal', 'ocean', 'sunset', 'forest', 'royal', 'rose', 'slate', 'olive', 'amber', 'midnight'];
+const THEME_KEYS = ['teal', 'ocean', 'sunset', 'forest', 'royal', 'rose', 'slate', 'olive', 'amber', 'midnight', 'mono', 'sage', 'stone', 'lavender', 'ice'];
 
 app.put('/api/hotel/theme', requireAdmin, async (req, res) => {
   const { theme } = req.body;

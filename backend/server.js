@@ -608,7 +608,7 @@ app.get('/api/session/verify', (req, res) => {
 
 // ============ HOTEL THEME (the hotel's own admin can change its palette too) ============
 
-const THEME_KEYS = ['teal', 'ocean', 'sunset', 'forest', 'royal', 'rose', 'slate', 'olive', 'amber', 'midnight'];
+const THEME_KEYS = ['teal', 'ocean', 'sunset', 'forest', 'royal', 'rose', 'slate', 'olive', 'amber', 'midnight', 'mono', 'sage', 'stone', 'lavender', 'ice'];
 
 app.put('/api/hotel/theme', requireAdmin, async (req, res) => {
   const { theme } = req.body;
