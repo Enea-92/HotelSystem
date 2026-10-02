@@ -18,11 +18,18 @@ const {
 } = require('./models');
 
 const app = express();
+// Render (like most hosts) puts the app behind a reverse proxy, which sets
+// X-Forwarded-For. Without telling Express to trust it, express-rate-limit
+// refuses to trust that header and logs a ValidationError on every request
+// (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR) instead of rate-limiting by real IP.
+app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json({ limit: '3mb' })); // room enough for a resized base64 photo on issue reports
 
 const FOLLOWUP_HOURS = Number(process.env.FOLLOWUP_HOURS || 2);
+const ESCALATION_MINUTES = Number(process.env.ESCALATION_MINUTES || 15);
 const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD || 'change-me-super-admin';
+const MIN_PASSWORD_LENGTH = 8;
 
 // ============ Web Push (VAPID) setup ============
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
@@ -180,6 +187,44 @@ function verifyGuestSession(req, res, next) {
   next();
 }
 
+// ============ FAQ instant auto-reply ============
+// Very small, dependency-free keyword matcher: normalizes both the guest's
+// message and every stored FAQ question to a set of "significant" words
+// (4+ letters, lowercased, basic diacritics stripped) and picks the FAQ
+// entry with the most overlapping words — if there's a good enough overlap.
+// This runs instantly (no external API), unlike the MyMemory translation
+// calls, so the guest gets an answer the moment they send the message.
+function normalizeWords(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // strip accents
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length >= 4);
+}
+
+async function matchFaq(hotel, lang, text) {
+  const content = await HotelContent.findOne({ hotel });
+  if (!content || !Array.isArray(content.faq) || content.faq.length === 0) return null;
+  const guestWords = new Set(normalizeWords(text));
+  if (guestWords.size === 0) return null;
+
+  let best = null;
+  let bestScore = 0;
+  for (const entry of content.faq) {
+    const question = (entry.q && (entry.q[lang] || entry.q.sq)) || '';
+    const answer = (entry.a && (entry.a[lang] || entry.a.sq)) || '';
+    if (!question || !answer) continue;
+    const qWords = normalizeWords(question);
+    let score = 0;
+    for (const w of qWords) if (guestWords.has(w)) score++;
+    if (score > bestScore) { bestScore = score; best = answer; }
+  }
+  // Require at least 2 shared significant words so a stray match on one
+  // common word (e.g. "room") doesn't fire an irrelevant auto-reply.
+  return bestScore >= 2 ? best : null;
+}
+
 // ============ CHAT ============
 
 app.post('/api/messages', requireHotel, verifyGuestSession, async (req, res) => {
@@ -192,6 +237,15 @@ app.post('/api/messages', requireHotel, verifyGuestSession, async (req, res) => 
 
   if (sender === 'staff') {
     sendPushToRoom(req.hotel, room_number, 'Mesazh nga recepsioni', text).catch(() => {});
+  }
+
+  if (sender === 'guest') {
+    matchFaq(req.hotel, lang || 'sq', text).then(async (answer) => {
+      if (!answer) return;
+      const botDoc = await Message.create({ hotel: req.hotel, room_number, sender: 'bot', text: answer, lang: lang || 'sq', alerted: true });
+      const botMessage = toDTO(botDoc);
+      io.to(roomChannel(req.hotel, room_number)).to(staffChannel(req.hotel)).emit('new_message', botMessage);
+    }).catch(() => {});
   }
 
   res.status(201).json(message);
@@ -318,7 +372,23 @@ app.get('/api/feedback', requireStaff, async (req, res) => {
 
 app.get('/api/hotel-info', requireHotel, async (req, res) => {
   const hotel = await Hotel.findOne({ slug: req.hotel });
-  res.json({ slug: req.hotel, name: hotel ? hotel.name : req.hotel });
+  res.json({ slug: req.hotel, name: hotel ? hotel.name : req.hotel, theme: hotel?.theme || 'teal' });
+});
+
+// ============ AUTH (change admin/staff password) ============
+
+app.put('/api/auth/password', requireAdmin, async (req, res) => {
+  const { role, newPassword } = req.body;
+  if (!['admin', 'staff'].includes(role)) return res.status(400).json({ error: 'role duhet të jetë "admin" ose "staff"' });
+  if (!newPassword || newPassword.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `Fjalëkalimi duhet të ketë të paktën ${MIN_PASSWORD_LENGTH} karaktere.` });
+  }
+  const hash = await bcrypt.hash(newPassword, 10);
+  const hashField = role === 'admin' ? 'admin_password_hash' : 'staff_password_hash';
+  const plainField = role === 'admin' ? 'admin_password_plain' : 'staff_password_plain';
+  await AuthSettings.findOneAndUpdate({ hotel: req.hotel }, { [hashField]: hash, [plainField]: newPassword });
+  authSettingsCache.delete(req.hotel); // force a fresh read next time, picking up the new hash
+  res.json({ ok: true });
 });
 
 // ============ HOTEL CONTENT (editable via admin panel) ============
@@ -536,12 +606,28 @@ app.get('/api/session/verify', (req, res) => {
   res.json({ valid: true, hotel: payload.hotel, room: payload.room, floor: payload.floor, exp: payload.exp });
 });
 
+// ============ HOTEL THEME (the hotel's own admin can change its palette too) ============
+
+const THEME_KEYS = ['teal', 'ocean', 'sunset', 'forest', 'royal', 'rose', 'slate', 'olive', 'amber', 'midnight'];
+
+app.put('/api/hotel/theme', requireAdmin, async (req, res) => {
+  const { theme } = req.body;
+  if (!THEME_KEYS.includes(theme)) return res.status(400).json({ error: 'Paletë e panjohur.' });
+  const hotel = await Hotel.findOneAndUpdate({ slug: req.hotel }, { theme }, { new: true });
+  if (!hotel) return res.status(404).json({ error: 'Hoteli nuk ekziston' });
+  io.emit('content_updated', { hotel: req.hotel });
+  res.json(toDTO(hotel));
+});
+
 // ============ SUPER ADMIN (create/manage hotels) ============
 
 app.post('/api/super-admin/hotels', requireSuperAdmin, async (req, res) => {
-  const { slug, name, admin_password, staff_password } = req.body;
+  const { slug, name, admin_password, staff_password, theme } = req.body;
   if (!slug || !name || !admin_password || !staff_password) {
     return res.status(400).json({ error: 'slug, name, admin_password, staff_password required' });
+  }
+  if (admin_password.length < MIN_PASSWORD_LENGTH || staff_password.length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ error: `Fjalëkalimet duhet të kenë të paktën ${MIN_PASSWORD_LENGTH} karaktere.` });
   }
   const cleanSlug = String(slug).toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
   if (!cleanSlug) return res.status(400).json({ error: 'slug i pavlefshëm' });
@@ -549,10 +635,17 @@ app.post('/api/super-admin/hotels', requireSuperAdmin, async (req, res) => {
   const existing = await Hotel.findOne({ slug: cleanSlug });
   if (existing) return res.status(409).json({ error: 'Ky slug ekziston tashmë' });
 
-  const hotel = await Hotel.create({ slug: cleanSlug, name });
+  const cleanTheme = THEME_KEYS.includes(theme) ? theme : 'teal';
+  const hotel = await Hotel.create({ slug: cleanSlug, name, theme: cleanTheme });
   const adminHash = await bcrypt.hash(admin_password, 10);
   const staffHash = await bcrypt.hash(staff_password, 10);
-  await AuthSettings.create({ hotel: cleanSlug, admin_password_hash: adminHash, staff_password_hash: staffHash });
+  await AuthSettings.create({
+    hotel: cleanSlug,
+    admin_password_hash: adminHash,
+    staff_password_hash: staffHash,
+    admin_password_plain: admin_password,
+    staff_password_plain: staff_password
+  });
   await HotelContent.create({ hotel: cleanSlug });
 
   res.status(201).json(toDTO(hotel));
@@ -560,17 +653,63 @@ app.post('/api/super-admin/hotels', requireSuperAdmin, async (req, res) => {
 
 app.get('/api/super-admin/hotels', requireSuperAdmin, async (req, res) => {
   const docs = await Hotel.find().sort({ created_at: -1 });
-  res.json(docs.map(toDTO));
+  const authDocs = await AuthSettings.find({ hotel: { $in: docs.map(h => h.slug) } });
+  const authBySlug = new Map(authDocs.map(a => [a.hotel, a]));
+  res.json(docs.map(h => {
+    const dto = toDTO(h);
+    const auth = authBySlug.get(h.slug);
+    dto.admin_password = auth?.admin_password_plain || '';
+    dto.staff_password = auth?.staff_password_plain || '';
+    return dto;
+  }));
 });
 
 app.patch('/api/super-admin/hotels/:slug', requireSuperAdmin, async (req, res) => {
-  const hotel = await Hotel.findOneAndUpdate(
-    { slug: req.params.slug },
-    { active: req.body.active !== false },
-    { new: true }
-  );
+  const changes = {};
+  if (req.body.active !== undefined) changes.active = req.body.active !== false;
+  if (req.body.theme !== undefined && THEME_KEYS.includes(req.body.theme)) changes.theme = req.body.theme;
+  const hotel = await Hotel.findOneAndUpdate({ slug: req.params.slug }, changes, { new: true });
   if (!hotel) return res.status(404).json({ error: 'Hoteli nuk ekziston' });
+  // Any guest app currently open for this hotel (including an admin preview
+  // iframe) listens for this event and re-pulls /api/hotel-info, so a theme
+  // change shows up live instead of only after a manual page reload.
+  if (changes.theme !== undefined) {
+    io.emit('content_updated', { hotel: req.params.slug });
+  }
   res.json(toDTO(hotel));
+});
+
+// Comparative stats across every hotel, for the super-admin dashboard: which
+// hotels are getting the most issues/requests, how they're rated, and how
+// many items are currently overdue (escalated) — to spot where attention is needed.
+app.get('/api/super-admin/stats', requireSuperAdmin, async (req, res) => {
+  const hotels = await Hotel.find().sort({ created_at: -1 });
+  const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const stats = await Promise.all(hotels.map(async (h) => {
+    const [issues24h, requests24h, pendingRequests, pendingOrders, overdueMsgs, overdueRequests, overdueOrders, feedbackDocs] = await Promise.all([
+      QuickRequest.countDocuments({ hotel: h.slug, category: 'issue', created_at: { $gte: last24h } }),
+      QuickRequest.countDocuments({ hotel: h.slug, category: 'request', created_at: { $gte: last24h } }),
+      QuickRequest.countDocuments({ hotel: h.slug, status: 'pending' }),
+      RoomServiceOrder.countDocuments({ hotel: h.slug, status: 'pending' }),
+      Message.countDocuments({ hotel: h.slug, alerted: true }),
+      QuickRequest.countDocuments({ hotel: h.slug, alerted: true, status: 'pending' }),
+      RoomServiceOrder.countDocuments({ hotel: h.slug, alerted: true, status: 'pending' }),
+      Feedback.find({ hotel: h.slug })
+    ]);
+    const avgRating = feedbackDocs.length
+      ? (feedbackDocs.reduce((sum, f) => sum + f.rating, 0) / feedbackDocs.length).toFixed(1)
+      : null;
+    return {
+      slug: h.slug, name: h.name, active: h.active !== false,
+      issues_24h: issues24h, requests_24h: requests24h,
+      pending_count: pendingRequests + pendingOrders,
+      overdue_count: overdueMsgs + overdueRequests + overdueOrders,
+      avg_rating: avgRating, feedback_count: feedbackDocs.length
+    };
+  }));
+
+  res.json(stats);
 });
 
 app.delete('/api/super-admin/hotels/:slug', requireSuperAdmin, async (req, res) => {
@@ -631,9 +770,13 @@ async function checkDailyWipe() {
 
     if (hour === 11 && minute === 0 && lastWipeDate !== dateStr) {
       const result = await Message.deleteMany({});
+      // Issue-report photos (base64, stored on QuickRequest) are cleared at the
+      // same daily checkpoint to keep the database small — the request text
+      // itself (what was reported, status, timestamps) is kept for staff records.
+      const photoResult = await QuickRequest.updateMany({ image: { $ne: '' } }, { $set: { image: '' } });
       lastWipeDate = dateStr;
       io.emit('chat_cleared');
-      console.log(`Daily message wipe at 11:00 (Europe/Tirane): deleted ${result.deletedCount} messages across all hotels.`);
+      console.log(`Daily wipe at 11:00 (Europe/Tirane): deleted ${result.deletedCount} messages, cleared ${photoResult.modifiedCount} issue photos, across all hotels.`);
     }
   } catch (err) {
     console.error('Daily wipe check failed:', err.message);
@@ -677,6 +820,55 @@ async function runFollowUpCheck() {
 }
 setInterval(runFollowUpCheck, 5 * 60 * 1000);
 
+// ============ escalation alerts (unanswered guest messages / overdue items) ============
+// If a guest message, request, or order sits unanswered past ESCALATION_MINUTES,
+// nudge the staff dashboard once (socket event + the dashboard's own loud
+// sound/desktop notification) rather than relying on them to notice a quiet
+// queue. Each item is only escalated once (the `alerted` flag), so it won't
+// re-fire every 5 minutes for the same item.
+async function runEscalationCheck() {
+  try {
+    const cutoff = new Date(Date.now() - ESCALATION_MINUTES * 60 * 1000);
+
+    // Unanswered guest messages: the guest's message is still the last word
+    // in that room's thread (no staff/bot message after it) and it's old enough.
+    const staleGuestMsgs = await Message.find({ sender: 'guest', alerted: false, created_at: { $lte: cutoff } });
+    for (const msg of staleGuestMsgs) {
+      const answeredAfter = await Message.exists({
+        hotel: msg.hotel, room_number: msg.room_number, sender: { $ne: 'guest' }, created_at: { $gt: msg.created_at }
+      });
+      msg.alerted = true;
+      await msg.save();
+      if (!answeredAfter) {
+        io.to(staffChannel(msg.hotel)).emit('escalation_alert', {
+          type: 'message', room_number: msg.room_number, text: msg.text, created_at: msg.created_at
+        });
+      }
+    }
+
+    const staleRequests = await QuickRequest.find({ status: 'pending', alerted: false, created_at: { $lte: cutoff } });
+    for (const r of staleRequests) {
+      r.alerted = true;
+      await r.save();
+      io.to(staffChannel(r.hotel)).emit('escalation_alert', {
+        type: r.category === 'issue' ? 'issue' : 'request', room_number: r.room_number, text: r.request_type, created_at: r.created_at
+      });
+    }
+
+    const staleOrders = await RoomServiceOrder.find({ status: 'pending', alerted: false, created_at: { $lte: cutoff } });
+    for (const o of staleOrders) {
+      o.alerted = true;
+      await o.save();
+      io.to(staffChannel(o.hotel)).emit('escalation_alert', {
+        type: 'order', room_number: o.room_number, text: 'Porosi room-service', created_at: o.created_at
+      });
+    }
+  } catch (err) {
+    console.error('Escalation check failed:', err.message);
+  }
+}
+setInterval(runEscalationCheck, 5 * 60 * 1000);
+
 const PORT = process.env.PORT || 3001;
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -691,6 +883,7 @@ mongoose.connect(MONGODB_URI)
     await dropLegacyTtlIndex();
     server.listen(PORT, () => console.log('Hotel platform backend running on port ' + PORT));
     runFollowUpCheck();
+    runEscalationCheck();
     checkDailyWipe();
   })
   .catch((err) => {
