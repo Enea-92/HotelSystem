@@ -9,7 +9,8 @@ const hotelSchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
     name: { type: String, required: true },
-    active: { type: Boolean, default: true } // deactivated hotels block guest access but keep all data
+    active: { type: Boolean, default: true }, // deactivated hotels block guest access but keep all data
+    theme: { type: String, default: 'teal' } // color preset key for the guest app (see THEME_PRESETS client-side)
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
@@ -18,9 +19,10 @@ const messageSchema = new mongoose.Schema(
   {
     hotel: { type: String, required: true, index: true },
     room_number: { type: String, required: true, index: true },
-    sender: { type: String, required: true, enum: ['guest', 'staff'] },
+    sender: { type: String, required: true, enum: ['guest', 'staff', 'bot'] }, // 'bot' = instant FAQ auto-reply
     text: { type: String, required: true },
-    lang: { type: String, default: '' } // language the sender composed it in, for auto-translation on display
+    lang: { type: String, default: '' }, // language the sender composed it in, for auto-translation on display
+    alerted: { type: Boolean, default: false } // true once an unanswered-guest-message escalation has fired for this message
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
@@ -35,8 +37,9 @@ const quickRequestSchema = new mongoose.Schema(
     request_type: { type: String, required: true },
     category: { type: String, enum: ['request', 'issue'], default: 'request' },
     status: { type: String, default: 'pending' },
-    image: { type: String, default: '' }, // optional base64 photo, mainly for issue reports (AC/TV/plumbing/etc.)
-    lang: { type: String, default: '' }
+    image: { type: String, default: '' }, // optional base64 photo, mainly for issue reports (AC/TV/plumbing/etc.) — cleared daily at the 11:00 wipe
+    lang: { type: String, default: '' },
+    alerted: { type: Boolean, default: false } // true once an overdue-response escalation has fired for this item
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
@@ -49,7 +52,8 @@ const roomServiceOrderSchema = new mongoose.Schema(
     total: { type: Number, required: true },
     status: { type: String, default: 'pending' }, // pending | preparing | delivered
     delivered_at: { type: Date, default: null },
-    followed_up: { type: Boolean, default: false }
+    followed_up: { type: Boolean, default: false },
+    alerted: { type: Boolean, default: false } // true once an overdue-response escalation has fired for this order
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );
@@ -88,7 +92,12 @@ const hotelContentSchema = new mongoose.Schema({
   },
   amenities: [{ name: langText, note: langText }],
   locations: [{ name: langText, desc: langText, time: langText }],
-  room_service: [{ name: langText, price: Number }],
+  room_service: [{ name: langText, price: Number, image_url: { type: String, default: '' } }],
+  // Frequently asked questions, editable per hotel. Also doubles as the source
+  // for the guest-chat instant auto-reply bot (see matchFaq() in server.js):
+  // if a guest's message closely matches a question here, the answer is
+  // posted back automatically before staff ever sees it.
+  faq: [{ q: langText, a: langText }],
   // Toggles that let a hotel hide entire sections from the guest app —
   // e.g. no room service if the hotel has no restaurant. Everything
   // defaults to visible so existing hotels are unaffected.
@@ -125,11 +134,16 @@ const recommendationSchema = new mongoose.Schema({
   lng: Number
 });
 
-// --- Auth: admin/staff passwords stored as bcrypt hashes, one pair per hotel ---
+// --- Auth: admin/staff passwords stored as bcrypt hashes, one pair per hotel.
+// The *_plain copies exist only so the super-admin can look a hotel's current
+// credentials back up (e.g. to hand them to hotel staff) — they're never
+// used for login checks, and no non-super-admin endpoint returns them. ---
 const authSettingsSchema = new mongoose.Schema({
   hotel: { type: String, required: true, unique: true },
   admin_password_hash: { type: String, required: true },
-  staff_password_hash: { type: String, required: true }
+  staff_password_hash: { type: String, required: true },
+  admin_password_plain: { type: String, default: '' },
+  staff_password_plain: { type: String, default: '' }
 });
 
 // --- Per-room notes/instructions — admin can apply the same note to one or
