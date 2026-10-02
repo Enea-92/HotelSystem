@@ -197,6 +197,8 @@ async function loadHotels(){
           <span>🔑 Admin: <strong id="cred-admin-${h.slug}">${h.admin_password ? '••••••••' : '—'}</strong></span>
           <span>👤 Staf: <strong id="cred-staff-${h.slug}">${h.staff_password ? '••••••••' : '—'}</strong></span>
           <button type="button" class="del-link" style="color:#2C5FA8;" id="cred-toggle-${h.slug}" onclick="toggleCredVisibility('${h.slug}')">Shfaq fjalëkalimet</button>
+          <button type="button" class="del-link" style="color:#CE9A42;" onclick="resetHotelPassword('${h.slug}', 'admin')">Vendos fjalëkalim admin</button>
+          <button type="button" class="del-link" style="color:#CE9A42;" onclick="resetHotelPassword('${h.slug}', 'staff')">Vendos fjalëkalim staf</button>
         </div>
         <div class="theme-swatches" id="theme-swatches-${h.slug}"></div>
       </div>`).join('');
@@ -218,10 +220,35 @@ function toggleCredVisibility(slug){
     staffEl.textContent = creds.staff ? '••••••••' : '—';
     btn.textContent = 'Shfaq fjalëkalimet';
   } else {
-    adminEl.textContent = creds.admin || '(i panjohur — ndryshoje nga paneli i admin-it)';
-    staffEl.textContent = creds.staff || '(i panjohur — ndryshoje nga paneli i admin-it)';
+    adminEl.textContent = creds.admin || '(i panjohur — vendos një të ri më poshtë)';
+    staffEl.textContent = creds.staff || '(i panjohur — vendos një të ri më poshtë)';
     btn.textContent = 'Fshih fjalëkalimet';
   }
+}
+
+// For a hotel created before credentials were saved in plain text, there's no
+// way to recover the original password (it was only ever stored hashed) —
+// the only option is to set a brand new one. This also works as a quick way
+// to reset a hotel's password without logging into its own admin panel.
+async function resetHotelPassword(slug, role){
+  const roleLabel = role === 'admin' ? 'admin-it' : 'staf-it';
+  const newPassword = prompt('Fjalëkalimi i ri për ' + roleLabel + ' të "' + slug + '" (min. 8 karaktere):');
+  if(newPassword === null) return;
+  if(newPassword.length < 8){
+    showToast('Fjalëkalimi duhet të ketë të paktën 8 karaktere.', true);
+    return;
+  }
+  try{
+    const res = await fetch(apiBase + '/api/auth/password?hotel=' + encodeURIComponent(slug), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': superPassword },
+      body: JSON.stringify({ role, newPassword })
+    });
+    if(!res.ok) throw new Error((await res.json())?.error || 'bad response');
+    if(!hotelCredsMap[slug]) hotelCredsMap[slug] = { admin: '', staff: '' };
+    hotelCredsMap[slug][role] = newPassword;
+    showToast('Fjalëkalimi u ndryshua.');
+  }catch(e){ showToast('Gabim: ' + (e.message || 'provo përsëri'), true); }
 }
 
 async function createHotel(){
