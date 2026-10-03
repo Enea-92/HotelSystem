@@ -477,6 +477,123 @@ app.delete('/api/recommendations/:id', requireAdmin, async (req, res) => {
   res.json({ deleted: true });
 });
 
+// ============ GOOGLE PLACES (admin-only helper to pull in real nearby
+// restaurants/bars instead of typing them by hand) ============
+// Needs a GOOGLE_PLACES_API_KEY env var (Google Cloud Console → enable
+// "Places API", create an API key). Without it these just return a clear
+// error — everything else on the platform keeps working either way.
+const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY || '';
+
+app.get('/api/admin/places-search', requireAdmin, async (req, res) => {
+  if (!GOOGLE_PLACES_API_KEY) {
+    return res.status(503).json({ error: 'Kërkimi nga Google nuk është konfiguruar (mungon GOOGLE_PLACES_API_KEY në server).' });
+  }
+  const query = (req.query.query || '').toString().trim();
+  if (!query) return res.status(400).json({ error: 'query required' });
+  try {
+    const content = await HotelContent.findOne({ hotel: req.hotel });
+    const lat = content?.location?.lat;
+    const lng = content?.location?.lng;
+    const url = new URL('https://maps.googleapis.com/maps/api/place/textsearch/json');
+    url.searchParams.set('query', query);
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      url.searchParams.set('location', `${lat},${lng}`);
+      url.searchParams.set('radius', '6000');
+    }
+    url.searchParams.set('key', GOOGLE_PLACES_API_KEY);
+    const gRes = await fetch(url.toString());
+    const data = await gRes.json();
+    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+      return res.status(502).json({ error: 'Google Places: ' + (data.error_message || data.status) });
+    }
+    const results = (data.results || []).slice(0, 8).map(place => ({
+      place_id: place.place_id,
+      name: place.name,
+      address: place.formatted_address || '',
+      rating: place.rating || null,
+      price_level: typeof place.price_level === 'number' ? place.price_level : null,
+      lat: place.geometry?.location?.lat ?? null,
+      lng: place.geometry?.location?.lng ?? null,
+      photo_reference: place.photos?.[0]?.photo_reference || null
+    }));
+    res.json(results);
+  } catch (err) {
+    console.warn('Google Places search failed:', err.message);
+    res.status(502).json({ error: 'Gabim duke kontaktuar Google Places.' });
+  }
+});
+
+// ============ FREE ALTERNATIVE: OpenStreetMap (Overpass API) ============
+// No API key, no billing, no card required — same free data source already
+// powering the map in the guest app. Coverage/detail is community-sourced
+// so it can be thinner than Google in some areas, and there are no photos
+// or ratings, but it costs nothing and needs zero setup.
+const OSM_CATEGORY_FILTERS = {
+  restorante: '["amenity"="restaurant"]',
+  bare: '["amenity"~"^(bar|pub|cafe)$"]',
+  plazhe: '["natural"="beach"]'
+};
+
+app.get('/api/admin/osm-search', requireAdmin, async (req, res) => {
+  const category = (req.query.category || 'restorante').toString();
+  const query = (req.query.query || '').toString().trim();
+  const filter = OSM_CATEGORY_FILTERS[category];
+  if (!filter) return res.status(400).json({ error: 'category e panjohur' });
+  try {
+    const content = await HotelContent.findOne({ hotel: req.hotel });
+    const lat = content?.location?.lat;
+    const lng = content?.location?.lng;
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+      return res.status(400).json({ error: 'Vendos më parë vendndodhjen e hotelit (lat/lng) te kartela "Vendndodhja".' });
+    }
+    const nameFilter = query ? `["name"~"${query.replace(/["\\]/g, '')}",i]` : '["name"]';
+    const radius = 8000;
+    const overpassQuery = `[out:json][timeout:25];(node${filter}${nameFilter}(around:${radius},${lat},${lng});way${filter}${nameFilter}(around:${radius},${lat},${lng}););out center 15;`;
+    const oRes = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: overpassQuery
+    });
+    if (!oRes.ok) return res.status(502).json({ error: 'OpenStreetMap është i zënë tani, provo sërish pas pak minutash.' });
+    const data = await oRes.json();
+    const seen = new Set();
+    const results = [];
+    for (const el of data.elements || []) {
+      const name = el.tags?.name;
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      const elLat = el.lat ?? el.center?.lat;
+      const elLng = el.lon ?? el.center?.lon;
+      if (typeof elLat !== 'number' || typeof elLng !== 'number') continue;
+      const addrParts = [el.tags?.['addr:street'], el.tags?.['addr:housenumber'], el.tags?.['addr:city']].filter(Boolean);
+      results.push({ name, address: addrParts.join(' '), lat: elLat, lng: elLng });
+      if (results.length >= 12) break;
+    }
+    res.json(results);
+  } catch (err) {
+    console.warn('OSM search failed:', err.message);
+    res.status(502).json({ error: 'Gabim duke kontaktuar OpenStreetMap.' });
+  }
+});
+
+app.get('/api/admin/places-photo', requireAdmin, async (req, res) => {
+  if (!GOOGLE_PLACES_API_KEY) return res.status(503).json({ error: 'Nuk është konfiguruar.' });
+  const ref = (req.query.ref || '').toString().trim();
+  if (!ref) return res.status(400).json({ error: 'ref required' });
+  try {
+    const url = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=640&photoreference=${encodeURIComponent(ref)}&key=${GOOGLE_PLACES_API_KEY}`;
+    const gRes = await fetch(url);
+    if (!gRes.ok) return res.status(502).json({ error: 'Gabim duke marrë foton.' });
+    const contentType = gRes.headers.get('content-type') || 'image/jpeg';
+    const buffer = Buffer.from(await gRes.arrayBuffer());
+    const dataUrl = `data:${contentType};base64,${buffer.toString('base64')}`;
+    res.json({ image_url: dataUrl });
+  } catch (err) {
+    console.warn('Google Places photo fetch failed:', err.message);
+    res.status(502).json({ error: 'Gabim duke marrë foton.' });
+  }
+});
+
 // ============ ROOM NOTES (per-room instructions, editable for 1 or many rooms at once) ============
 
 app.get('/api/room-notes/:room', requireHotel, async (req, res) => {

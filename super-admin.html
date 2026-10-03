@@ -110,7 +110,7 @@ let apiBase = 'https://hotelsystem-lzlm.onrender.com';
 let superPassword = '';
 
 // Color presets a hotel can pick for its guest app — must match THEME_PRESETS
-// in hotel-bregu-guest-app.html. Only the preview dots live here.
+// in hotel-system.html. Only the preview dots live here.
 const THEME_CHOICES = [
   { key:'teal',     label:'Bregu (teal)',  dots:['#0E3A3D','#2C9D93','#CE9A42'] },
   { key:'ocean',    label:'Oqean (blu)',   dots:['#0D3B66','#3B82C4','#E0A458'] },
@@ -188,7 +188,7 @@ async function loadHotels(){
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
           <div>
             <div class="hotel-name">${h.name} <span class="hotel-slug">(${h.slug})</span> ${h.active === false ? '<span style="color:#C1592E; font-size:11px; font-weight:500;">● Çaktivizuar</span>' : '<span style="color:#2C5FA8; font-size:11px; font-weight:500;">● Aktiv</span>'}</div>
-            <div class="hotel-urls">App: hotel-bregu-guest-app.html?hotel=${h.slug} · Admin: admin.html?hotel=${h.slug} · Staf: staff-dashboard.html?hotel=${h.slug}</div>
+            <div class="hotel-urls">App: hotel-system.html?hotel=${h.slug} · Admin: admin.html?hotel=${h.slug} · Staf: staff-dashboard.html?hotel=${h.slug}</div>
           </div>
           <div style="display:flex; gap:10px; align-items:center; flex-shrink:0;">
             <button class="del-link" style="color:#2C5FA8;" onclick="openAdminFor('${h.slug}')">Hap Admin</button>

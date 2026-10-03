@@ -6,7 +6,7 @@
 
 const CACHE_NAME = 'bregu-shell-v2';
 const SHELL_FILES = [
-  'hotel-bregu-guest-app.html',
+  'hotel-system.html',
   'manifest.json',
   'icon-192.png',
   'icon-512.png'
@@ -77,9 +77,9 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsArr) => {
-      const existing = clientsArr.find((c) => c.url.includes('hotel-bregu-guest-app.html'));
+      const existing = clientsArr.find((c) => c.url.includes('hotel-system.html'));
       if (existing) return existing.focus();
-      return self.clients.openWindow('hotel-bregu-guest-app.html');
+      return self.clients.openWindow('hotel-system.html');
     })
   );
 });

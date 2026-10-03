@@ -1,0 +1,2373 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Bregu — Udhërrëfyesi i mysafirit</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0E3A3D">
+<link rel="icon" href="icon-192.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+
+:root{
+  --ink:#12302E;
+  --sea:#0E3A3D;
+  --sea-light:#1C5257;
+  --sand:#F3ECDC;
+  --sand-dim:#E7DEC8;
+  --aqua:#2C9D93;
+  --aqua-dark:#186D66;
+  --gold:#CE9A42;
+  --coral:#C1592E;
+  --line:rgba(18,48,46,0.14);
+  --white:#FFFDF8;
+  --shadow-1:0 2px 10px rgba(18,48,46,0.06);
+  --shadow-2:0 10px 28px rgba(18,48,46,0.14);
+  --surface-translucent:rgba(255,253,248,0.92);
+  --on-sea:#F3ECDC;
+}
+html[data-theme="dark"]{
+  --ink:#F3EFE3;
+  --sea:#123B3D;
+  --sea-light:#1F4F52;
+  --sand:#0E1B19;
+  --sand-dim:#152422;
+  --aqua:#4FC6BA;
+  --aqua-dark:#5CD3C6;
+  --gold:#E8BE78;
+  --coral:#E8916B;
+  --line:rgba(243,239,227,0.16);
+  --white:#1B322F;
+  --shadow-1:0 2px 12px rgba(0,0,0,0.4);
+  --shadow-2:0 14px 36px rgba(0,0,0,0.55);
+  --surface-translucent:rgba(14,27,25,0.92);
+  --on-sea:#F3ECDC;
+}
+/* In dark mode, secondary/muted text elsewhere in the page uses a reduced
+   opacity tuned for light backgrounds; against the near-black dark
+   backgrounds that same opacity reads as a dim, low-contrast grey. Raise the
+   floor specifically in dark mode so every label and description stays
+   legible against its background. */
+html[data-theme="dark"] p.section-sub,
+html[data-theme="dark"] .group-heading,
+html[data-theme="dark"] .keycard-label,
+html[data-theme="dark"] .quick-card .qs,
+html[data-theme="dark"] .loc-desc,
+html[data-theme="dark"] .amenity-note,
+html[data-theme="dark"] .rs-cart-empty,
+html[data-theme="dark"] .cat-tab,
+html[data-theme="dark"] .rec-tip,
+html[data-theme="dark"] .map-note,
+html[data-theme="dark"] .info-item-val,
+html[data-theme="dark"] details.faq p,
+html[data-theme="dark"] .weather-note,
+html[data-theme="dark"] .msg-time,
+html[data-theme="dark"] .tab-btn{
+  opacity:0.82 !important;
+}
+html[data-theme="dark"] .cat-tab.on,
+html[data-theme="dark"] .tab-btn.on{
+  opacity:1 !important;
+}
+*{box-sizing:border-box;}
+html{ color-scheme:light; }
+html[data-theme="dark"]{ color-scheme:dark; }
+body{
+  margin:0;
+  font-family:'Work Sans', sans-serif;
+  background:var(--sand-dim);
+  transition:background-color 0.35s ease, color 0.35s ease;
+  color:var(--ink);
+  display:flex;
+  justify-content:center;
+}
+.app{
+  width:100%;
+  max-width:460px;
+  min-height:100vh;
+  background:var(--sand);
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  box-shadow:0 0 40px rgba(0,0,0,0.08);
+}
+.topbar{
+  background:
+    radial-gradient(circle at 15% -10%, rgba(206,154,66,0.25), transparent 55%),
+    linear-gradient(160deg, var(--sea-light) 0%, var(--sea) 55%);
+  color:var(--on-sea);
+  padding:20px 20px 26px;
+  position:relative;
+  overflow:hidden;
+}
+.topbar::after{
+  content:"";
+  position:absolute;
+  bottom:0; left:0; right:0;
+  height:14px;
+  background:repeating-linear-gradient(115deg, var(--sea) 0 18px, var(--sea-light) 18px 20px);
+  opacity:0.35;
+}
+.top-row{ display:flex; justify-content:space-between; align-items:flex-start; }
+.lang-switch{ display:flex; gap:4px; z-index:1; }
+.theme-toggle{
+  border:0.5px solid rgba(243,236,220,0.35);
+  background:rgba(243,236,220,0.08);
+  color:var(--on-sea);
+  width:26px; height:26px; border-radius:7px;
+  font-size:13px; line-height:1; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background-color 0.2s ease, transform 0.15s ease;
+}
+.theme-toggle:active{ transform:scale(0.9); }
+.lang-btn{
+  border:0.5px solid rgba(243,236,220,0.35);
+  background:rgba(243,236,220,0.08);
+  color:var(--on-sea);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:10.5px;
+  padding:4px 7px;
+  border-radius:5px;
+  cursor:pointer;
+  opacity:0.6;
+}
+.lang-btn.on{ opacity:1; background:var(--gold); border-color:var(--gold); color:var(--ink); font-weight:500; }
+.eyebrow{
+  font-size:11px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--gold);
+  font-weight:500;
+  margin:0 0 6px;
+}
+.hotel-name{
+  font-family:'Fraunces', serif;
+  font-size:28px;
+  font-weight:500;
+  margin:0;
+}
+.room-row{ display:flex; align-items:center; justify-content:space-between; margin-top:14px; flex-wrap:wrap; gap:8px; }
+.room-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:rgba(243,236,220,0.12);
+  border:0.5px solid rgba(243,236,220,0.3);
+  padding:6px 12px;
+  border-radius:6px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:13px;
+}
+.call-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:var(--gold);
+  color:var(--ink);
+  padding:6px 12px;
+  border-radius:6px;
+  font-size:12.5px;
+  font-weight:500;
+  text-decoration:none;
+}
+
+.content{
+  flex:1;
+  padding:20px 18px calc(90px + env(safe-area-inset-bottom, 0px));
+  overflow-y:auto;
+}
+.view{ display:none; }
+.view.active{ display:block; animation:viewFadeIn 0.28s ease; }
+@keyframes viewFadeIn{
+  from{ opacity:0; transform:translateY(6px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+h2.section-title{
+  font-family:'Fraunces', serif;
+  font-size:19px;
+  font-weight:500;
+  margin:0 0 4px;
+}
+p.section-sub{
+  font-size:13px;
+  color:var(--ink);
+  opacity:0.6;
+  margin:0 0 16px;
+}
+.group-heading{
+  font-size:13px; text-transform:uppercase; letter-spacing:0.06em; opacity:0.55; margin:18px 0 4px;
+}
+
+.keycard{
+  background:linear-gradient(135deg, var(--sea-light) 0%, var(--sea) 70%);
+  color:var(--on-sea);
+  border-radius:14px;
+  padding:18px 20px;
+  margin-bottom:18px;
+  position:relative;
+  box-shadow:var(--shadow-2);
+}
+.keycard-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:8px 0;
+  border-bottom:1px dashed rgba(243,236,220,0.25);
+}
+.keycard-row:last-child{ border-bottom:none; }
+.keycard-label{ font-size:11px; letter-spacing:0.08em; text-transform:uppercase; opacity:0.65; }
+.keycard-value{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:500; }
+.copy-btn{
+  background:none;
+  border:0.5px solid rgba(243,236,220,0.4);
+  color:var(--on-sea);
+  border-radius:6px;
+  padding:4px 10px;
+  font-size:11px;
+  cursor:pointer;
+  font-family:inherit;
+}
+.copy-btn:active{ transform:scale(0.96); }
+
+.quick-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:20px;
+}
+.quick-card{
+  background:var(--white);
+  border:0.5px solid var(--line);
+  border-radius:12px;
+  padding:14px;
+  cursor:pointer;
+  text-align:left;
+  box-shadow:var(--shadow-1);
+  transition:transform 0.15s ease, box-shadow 0.15s ease;
+}
+.quick-card:hover{ transform:translateY(-2px); box-shadow:var(--shadow-2); border-color:rgba(44,157,147,0.35); }
+.quick-card:active{ transform:scale(0.98) translateY(0); }
+.quick-card .qi{
+  color:var(--aqua-dark); margin-bottom:10px;
+  width:34px; height:34px; border-radius:9px;
+  background:var(--sand-dim);
+  display:flex; align-items:center; justify-content:center;
+}
+.quick-card .qt{ font-size:13.5px; font-weight:500; margin:0; }
+.quick-card .qs{ font-size:11.5px; color:var(--ink); opacity:0.55; margin:2px 0 0; }
+
+.loc-item{
+  display:flex;
+  gap:14px;
+  padding:14px 0;
+  border-bottom:0.5px solid var(--line);
+}
+.loc-item:last-child{ border-bottom:none; }
+.loc-pin{
+  width:34px; height:34px; flex-shrink:0;
+  border-radius:50%;
+  background:var(--sand-dim);
+  color:var(--aqua-dark);
+  display:flex; align-items:center; justify-content:center;
+}
+.loc-name{ font-size:14.5px; font-weight:500; margin:0 0 2px; }
+.loc-desc{ font-size:13px; color:var(--ink); opacity:0.65; margin:0; line-height:1.5; }
+.loc-time{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--aqua-dark); margin-top:4px; display:inline-block; }
+
+.amenity-item{
+  display:flex; justify-content:space-between; align-items:flex-start;
+  padding:12px 0; border-bottom:0.5px solid var(--line);
+  gap:12px;
+}
+.amenity-item:last-child{ border-bottom:none; }
+.amenity-name{ font-size:14px; font-weight:500; margin:0 0 2px; }
+.amenity-note{ font-size:12.5px; color:var(--ink); opacity:0.6; margin:0; }
+
+.chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+.req-chip{
+  border:0.5px solid var(--line);
+  background:var(--white);
+  color:var(--ink);
+  padding:8px 12px;
+  border-radius:20px;
+  font-size:12.5px;
+  font-weight:500;
+  cursor:pointer;
+  font-family:inherit;
+}
+.req-chip:active{ transform:scale(0.96); background:var(--sand-dim); }
+
+.rs-item{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 0; border-bottom:0.5px solid var(--line); gap:10px;
+}
+.rs-item:last-child{ border-bottom:none; }
+.rs-name{ font-size:14px; font-weight:500; margin:0; }
+.rs-price{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--gold); }
+.rs-add{
+  border:0.5px solid var(--aqua-dark); color:var(--aqua-dark); background:none;
+  border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer; font-family:inherit; flex-shrink:0;
+}
+.rs-add:active{ transform:scale(0.94); }
+.rs-cart{
+  margin-top:14px; background:var(--white); border:0.5px solid var(--line); border-radius:12px; padding:14px 16px;
+}
+.rs-cart-line{ display:flex; justify-content:space-between; font-size:13px; padding:5px 0; }
+.rs-cart-empty{ font-size:12.5px; opacity:0.5; }
+.rs-send{
+  width:100%; margin-top:10px; padding:10px; border:none; border-radius:8px;
+  background:var(--sea); color:var(--on-sea); font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
+}
+.rs-tracker{
+  margin-top:14px; background:var(--white); border:0.5px solid var(--line); border-radius:12px; padding:14px 16px;
+}
+.rs-tracker-steps{ display:flex; justify-content:space-between; align-items:flex-start; gap:4px; }
+.rs-tracker-step{ display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; text-align:center; position:relative; }
+.rs-tracker-step .dot{
+  width:22px; height:22px; border-radius:50%; background:var(--line); border:2px solid var(--line);
+  display:flex; align-items:center; justify-content:center; font-size:11px; color:transparent; transition:all .2s;
+}
+.rs-tracker-step.done .dot{ background:var(--aqua-dark); border-color:var(--aqua-dark); color:#fff; }
+.rs-tracker-step.done .dot::after{ content:'✓'; }
+.rs-tracker-step.current .dot{ background:var(--gold); border-color:var(--gold); color:#fff; }
+.rs-tracker-step span.label{ font-size:10.5px; opacity:0.7; }
+.rs-tracker-step.done span.label, .rs-tracker-step.current span.label{ opacity:1; font-weight:500; }
+.rs-tracker-line{ position:absolute; top:11px; left:-50%; width:100%; height:2px; background:var(--line); z-index:-1; }
+.rs-tracker-step.done .rs-tracker-line{ background:var(--aqua-dark); }
+.announcement-banner{
+  position:sticky; top:0; z-index:50; background:var(--gold); color:var(--ink);
+  padding:10px 16px; font-size:12.5px; display:flex; align-items:center; gap:10px; justify-content:space-between;
+}
+.announcement-banner .ann-text{ flex:1; line-height:1.4; }
+.announcement-banner .ann-close{
+  background:none; border:none; color:inherit; font-size:16px; cursor:pointer; opacity:0.7; flex-shrink:0; padding:0 4px; font-family:inherit;
+}
+.announcement-banner .ann-close:active{ opacity:1; }
+.rs-send:active{ transform:scale(0.98); }
+
+.cat-tabs{ display:flex; gap:8px; margin-bottom:16px; }
+.cat-tab{
+  flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:12.5px; font-weight:500;
+  border:0.5px solid var(--line); background:var(--white); cursor:pointer; color:var(--ink); opacity:0.55;
+}
+.cat-tab.on{ background:var(--sea); color:var(--on-sea); border-color:var(--sea); opacity:1; }
+.rec-card{
+  background:var(--white); border:0.5px solid var(--line); border-radius:12px;
+  padding:14px 16px; margin-bottom:10px; display:none;
+}
+.rec-card.show{ display:block; }
+.rec-top{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.rec-name{ font-family:'Fraunces', serif; font-size:16px; font-weight:500; margin:0; }
+.rec-price{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--gold); }
+.rec-meta{ font-size:11.5px; color:var(--aqua-dark); margin:3px 0 6px; font-weight:500; }
+.rec-tip{ font-size:13px; color:var(--ink); opacity:0.7; margin:0; line-height:1.5; }
+.rec-badge{
+  display:inline-block; margin-top:8px; font-size:10.5px; letter-spacing:0.04em;
+  background:var(--sand-dim); color:var(--sea); padding:3px 8px; border-radius:5px; font-weight:500;
+}
+.map-note{ font-size:11.5px; opacity:0.5; margin:6px 0 18px; text-align:center; }
+
+.info-item{ display:flex; justify-content:space-between; padding:10px 0; border-bottom:0.5px solid var(--line); gap:10px; }
+.info-item:last-child{ border-bottom:none; }
+.info-item-name{ font-size:13.5px; font-weight:500; }
+.info-item-val{ font-size:13px; color:var(--ink); opacity:0.65; text-align:right; }
+.tr-item{ display:flex; gap:14px; padding:12px 0; border-bottom:0.5px solid var(--line); }
+.tr-item:last-child{ border-bottom:none; }
+
+details.faq{ border-bottom:0.5px solid var(--line); padding:11px 0; }
+details.faq summary{ font-size:13.5px; font-weight:500; cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; }
+details.faq summary::-webkit-details-marker{ display:none; }
+details.faq summary::after{ content:"+"; font-size:16px; color:var(--aqua-dark); }
+details.faq[open] summary::after{ content:"–"; }
+details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; }
+
+.weather-card{
+  background:var(--sea); color:var(--on-sea); border-radius:12px; padding:16px 18px;
+  display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;
+}
+.weather-temp{ font-family:'Fraunces', serif; font-size:26px; font-weight:500; }
+.weather-note{ font-size:11px; opacity:0.55; margin:6px 0 18px; }
+.weather-warning{
+  display:none; align-items:flex-start; gap:8px;
+  background:rgba(193,89,46,0.12); border:1px solid rgba(193,89,46,0.4);
+  color:var(--coral); border-radius:10px; padding:10px 12px;
+  font-size:12px; line-height:1.45; margin:-10px 0 18px;
+}
+.weather-warning.show{ display:flex; }
+.weather-warning .wi{ font-size:15px; flex-shrink:0; line-height:1.3; }
+
+.admin-editable{ outline:1.5px dashed rgba(206,154,66,0.55); outline-offset:4px; border-radius:10px; }
+.admin-edit-btn{
+  position:absolute; top:6px; right:6px; z-index:30;
+  background:var(--gold); color:var(--ink); border:none; border-radius:6px;
+  font-size:11px; font-weight:600; padding:5px 9px; cursor:pointer;
+  box-shadow:var(--shadow-1); font-family:'Work Sans', sans-serif;
+}
+.admin-edit-btn:active{ transform:scale(0.95); }
+
+.stars{ display:flex; gap:6px; margin:10px 0 12px; }
+.star-btn{ background:none; border:none; font-size:26px; cursor:pointer; color:var(--line); padding:0; line-height:1; }
+.star-btn.filled{ color:var(--gold); }
+.fb-input{
+  width:100%; border:0.5px solid var(--line); border-radius:8px; padding:10px 12px;
+  font-family:inherit; font-size:13px; resize:none; background:var(--white); outline:none;
+}
+.fb-submit{
+  margin-top:10px; padding:9px 16px; border:none; border-radius:8px;
+  background:var(--sea); color:var(--on-sea); font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
+}
+.fb-thanks{ font-size:14px; font-weight:500; color:var(--aqua-dark); }
+.toast{
+  position:fixed; bottom:76px; left:50%; transform:translateX(-50%);
+  background:var(--ink); color:var(--sand); font-size:12.5px; padding:8px 16px;
+  border-radius:20px; opacity:0; pointer-events:none; transition:opacity 0.25s;
+  z-index:20; max-width:90%; text-align:center;
+}
+.toast.show{ opacity:1; }
+
+.chat-wrap{ display:block; }
+.chat-log{ padding-bottom:8px; }
+.msg{ max-width:78%; margin-bottom:10px; font-size:13.5px; line-height:1.5; scroll-margin-bottom:130px; }
+.msg-in{ background:var(--white); border:0.5px solid var(--line); padding:10px 13px; border-radius:12px 12px 12px 3px; }
+.msg-out{ background:var(--sea); color:var(--on-sea); padding:10px 13px; border-radius:12px 12px 3px 12px; margin-left:auto; }
+.msg-time{ font-size:10px; opacity:0.5; margin-top:4px; }
+.chat-input-row{
+  position:fixed; bottom:calc(56px + env(safe-area-inset-bottom, 0px));
+  left:50%; transform:translateX(-50%);
+  width:100%; max-width:460px; box-sizing:border-box;
+  display:flex; gap:8px;
+  padding:10px 18px;
+  background:var(--surface-translucent); backdrop-filter:blur(8px);
+  border-top:0.5px solid var(--line);
+  z-index:14;
+}
+.chat-input-row input{
+  flex:1; border:0.5px solid var(--line); border-radius:20px; padding:10px 16px;
+  font-size:13.5px; font-family:inherit; outline:none; background:var(--white);
+}
+.chat-input-row input:focus{ border-color:var(--aqua-dark); }
+.send-btn{
+  width:40px; height:40px; border-radius:50%; background:var(--sea); color:var(--on-sea);
+  border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.send-btn:active{ transform:scale(0.94); }
+
+.tabbar{
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:460px;
+  background:var(--surface-translucent); backdrop-filter:blur(8px);
+  border-top:0.5px solid var(--line); display:flex;
+  padding-bottom:env(safe-area-inset-bottom, 0px);
+  z-index:15;
+  box-shadow:0 -6px 18px rgba(18,48,46,0.06);
+}
+.tab-btn{
+  flex:1; border:none; background:none; padding:11px 2px 9px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  font-family:inherit; font-size:10.2px; color:var(--ink); opacity:0.45; cursor:pointer;
+  position:relative; transition:opacity 0.15s ease, color 0.15s ease;
+}
+.tab-btn.on{ opacity:1; color:var(--aqua-dark); }
+.tab-btn.on::before{
+  content:""; position:absolute; top:2px; left:50%; transform:translateX(-50%);
+  width:4px; height:4px; border-radius:50%; background:var(--gold);
+}
+.tab-btn svg{ transition:transform 0.15s ease; }
+.tab-btn.on svg{ transform:translateY(-1px) scale(1.08); }
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <div class="announcement-banner" id="announcement-banner" style="display:none;">
+    <span class="ann-text" id="announcement-text"></span>
+    <button class="ann-close" onclick="dismissAnnouncement()">✕</button>
+  </div>
+
+  <div class="topbar">
+    <div class="top-row">
+      <div>
+        <p class="eyebrow" data-i18n="eyebrow">Udhërrëfyesi i mysafirit</p>
+        <h1 class="hotel-name" id="hotel-name-el">Hotel Bregu</h1>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Ndrysho pamjen">🌙</button>
+        <div class="lang-switch">
+          <button class="lang-btn on" data-lang="sq" onclick="setLang('sq')">SQ</button>
+          <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+          <button class="lang-btn" data-lang="it" onclick="setLang('it')">IT</button>
+          <button class="lang-btn" data-lang="de" onclick="setLang('de')">DE</button>
+          <button class="lang-btn" data-lang="fr" onclick="setLang('fr')">FR</button>
+        </div>
+      </div>
+    </div>
+    <div class="room-row">
+      <div class="room-chip">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-6 9 6v11a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+        <span id="room-chip-text" data-i18n="room.chip">Dhoma 214 · Kati 2</span>
+      </div>
+      <a class="call-chip" href="tel:+355690000000">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 2 .7 3a2 2 0 01-.5 2.1L8 10a16 16 0 006 6l1.2-1.3a2 2 0 012.1-.5c1 .3 2 .5 3 .7a2 2 0 011.7 2z"/></svg>
+        <span data-i18n="call.button">Telefono</span>
+      </a>
+    </div>
+    <p style="font-size:10.5px; opacity:0.55; margin:8px 0 0;" data-i18n="rescan.notice">Sesioni skadon çdo ditë në orën 11:00 — do t'ju duhet të rishkanoni kodin QR.</p>
+  </div>
+
+  <div class="content">
+
+    <!-- HOME -->
+    <div class="view active" id="view-home">
+      <h2 class="section-title" data-i18n="home.title">Mirë se erdhët</h2>
+      <p class="section-sub" data-i18n="home.subtitle">Gjithçka që ju duhet gjatë qëndrimit, në një vend.</p>
+
+      <div id="room-note-card" style="display:none; background:var(--gold); color:var(--ink); border-radius:12px; padding:14px 16px; margin-bottom:16px; font-size:13px; line-height:1.5;"></div>
+
+      <div class="keycard">
+        <div class="keycard-row">
+          <div><div class="keycard-label" data-i18n="keycard.wifi">Wifi</div><div class="keycard-value" id="wifi-ssid">Bregu_Guest</div></div>
+        </div>
+        <div class="keycard-row">
+          <div><div class="keycard-label" data-i18n="keycard.pass">Fjalëkalimi</div><div class="keycard-value" id="wifi-pass">bregu2026sun</div></div>
+          <button class="copy-btn" id="copy-btn" data-i18n="keycard.copy" onclick="copyWifi()">Kopjo</button>
+        </div>
+      </div>
+
+      <div class="quick-grid">
+        <button class="quick-card" onclick="showView('room')">
+          <div class="qi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 9l9-6 9 6v11a1 1 0 01-1 1H4a1 1 0 01-1-1z"/></svg></div>
+          <p class="qt" data-i18n="quick.room.title">Dhoma ime</p>
+          <p class="qs" data-i18n="quick.room.sub">Pajisje, kërkesa, shërbim në dhomë</p>
+        </button>
+        <button class="quick-card" onclick="showView('explore')">
+          <div class="qi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M9 15l2-6 6-2-2 6z"/></svg></div>
+          <p class="qt" data-i18n="quick.explore.title">Zbulo zonën</p>
+          <p class="qs" data-i18n="quick.explore.sub">Restorante, bare, plazhe, harta</p>
+        </button>
+        <button class="quick-card" onclick="showView('info')">
+          <div class="qi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg></div>
+          <p class="qt" data-i18n="quick.info.title">Info praktike</p>
+          <p class="qs" data-i18n="quick.info.sub">Orare, transport, urgjenca, FAQ</p>
+        </button>
+        <button class="quick-card" onclick="showView('chat')">
+          <div class="qi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 11.5a8.5 8.5 0 01-12.9 7.3L3 20l1.4-4.1A8.5 8.5 0 1121 11.5z"/></svg></div>
+          <p class="qt" data-i18n="quick.chat.title">Recepsioni</p>
+          <p class="qs" data-i18n="quick.chat.sub">Shkruani direkt, përgjigjemi shpejt</p>
+        </button>
+      </div>
+    </div>
+
+    <!-- ROOM -->
+    <div class="view" id="view-room">
+      <h2 class="section-title" data-i18n="room.title">Dhoma juaj</h2>
+      <p class="section-sub" data-i18n="room.subtitle">Pajisje dhe orientim brenda hotelit.</p>
+
+      <h3 class="group-heading" id="quick-requests-heading" data-i18n="quick.request.heading">Kërkesa të shpejta</h3>
+      <div class="chip-row">
+        <button class="req-chip" data-section="quick_requests" data-i18n="req.towels" onclick="sendQuickRequest('req.towels')">Peshqirë shtesë</button>
+        <button class="req-chip" data-section="quick_requests" data-i18n="req.cleaning" onclick="sendQuickRequest('req.cleaning')">Pastrim dhome</button>
+        <button class="req-chip" data-section="quick_requests" data-i18n="req.pillows" onclick="sendQuickRequest('req.pillows')">Jastëkë shtesë</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_ac" onclick="reportIssue('req.issue_ac')">Klima s'punon</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_tv" onclick="reportIssue('req.issue_tv')">TV s'punon</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_toilet" onclick="reportIssue('req.issue_toilet')">Tualeti i prishur</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_plumbing" onclick="reportIssue('req.issue_plumbing')">Problem hidraulik</button>
+        <button class="req-chip" data-section="issues" data-i18n="req.issue_electric" onclick="reportIssue('req.issue_electric')">Problem elektrik</button>
+        <button class="req-chip" data-section="issues" onclick="toggleOtherIssueBox()" data-i18n="req.issue_other">+ Problem tjetër</button>
+      </div>
+
+      <div id="other-issue-box" style="display:none; margin-bottom:10px;">
+        <textarea id="other-issue-text" rows="2" data-i18n-ph="issue.otherPlaceholder" placeholder="Përshkruaj problemin..." style="width:100%; border:0.5px solid var(--line); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13px; resize:none; margin-bottom:6px; background:var(--white); color:var(--ink);"></textarea>
+        <button type="button" class="rs-add" onclick="sendOtherIssue()" data-i18n="issue.send">Dërgo</button>
+      </div>
+
+      <input type="file" id="issue-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelected(this)">
+
+      <div id="section-toiletries">
+      <h3 class="group-heading" data-i18n="quick.toiletries.heading">Artikuj higjienikë</h3>
+      <div class="chip-row">
+        <button class="req-chip" data-i18n="req.shampoo" onclick="sendQuickRequest('req.shampoo')">Shampo</button>
+        <button class="req-chip" data-i18n="req.toothbrush" onclick="sendQuickRequest('req.toothbrush')">Brushë dhëmbësh</button>
+        <button class="req-chip" data-i18n="req.slippers" onclick="sendQuickRequest('req.slippers')">Pantofla</button>
+        <button class="req-chip" data-i18n="req.soap" onclick="sendQuickRequest('req.soap')">Sapun / xhel dushi</button>
+      </div>
+      </div>
+
+      <div id="section-dnd">
+      <h3 class="group-heading" data-i18n="dnd.heading">Mos shqetësoni</h3>
+      <p class="section-sub" style="margin-bottom:10px;" data-i18n="dnd.sub">Aktivizoje kur nuk dëshiron të shqetësohesh nga stafi.</p>
+      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--white); border:0.5px solid var(--line); border-radius:12px; padding:12px 16px; margin-bottom:18px;">
+        <span id="dnd-status-label" style="font-size:13.5px; font-weight:500;" data-i18n="dnd.off">Joaktiv</span>
+        <button id="dnd-toggle" onclick="toggleDnd()" style="width:46px; height:26px; border-radius:14px; border:none; background:var(--line); position:relative; cursor:pointer; transition:background 0.2s ease;">
+          <span id="dnd-knob" style="position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background:var(--white); box-shadow:0 1px 3px rgba(0,0,0,0.25); transition:transform 0.2s ease;"></span>
+        </button>
+      </div>
+      </div>
+
+      <div id="section-amenities">
+      <h3 class="group-heading" data-i18n="room.amenitiesHeading">Pajisjet</h3>
+      <div id="amenities-container">
+      <div class="amenity-item"><div><p class="amenity-name" data-i18n="amenity.ac.name">Klima</p><p class="amenity-note" data-i18n="amenity.ac.note">Kontrolli në murin pranë derës së banjës. 18-26°C.</p></div></div>
+      <div class="amenity-item"><div><p class="amenity-name" data-i18n="amenity.safe.name">Kasaforta</p><p class="amenity-note" data-i18n="amenity.safe.note">Në dollap. Vendosni kod 4-shifror, mbyllet automatikisht.</p></div></div>
+      <div class="amenity-item"><div><p class="amenity-name" data-i18n="amenity.minibar.name">Minibar</p><p class="amenity-note" data-i18n="amenity.minibar.note">Ujë falas. Pjesa tjetër faturohet në check-out.</p></div></div>
+      <div class="amenity-item"><div><p class="amenity-name" data-i18n="amenity.dryer.name">Tharëse flokësh</p><p class="amenity-note" data-i18n="amenity.dryer.note">Sirtari i parë i tavolinës së make-up.</p></div></div>
+      </div>
+      </div>
+
+      <div id="section-locations">
+      <h3 class="group-heading" data-i18n="room.whereHeading">Ku ndodhet</h3>
+      <div id="locations-container">
+      <div class="loc-item">
+        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21h16M6 21V9l6-4 6 4v12M10 21v-5h4v5"/></svg></div>
+        <div><p class="loc-name" data-i18n="loc.reception.name">Recepsioni</p><p class="loc-desc" data-i18n="loc.reception.desc">Kati përdhes, tek hyrja kryesore.</p><span class="loc-time" data-i18n="loc.reception.time">~1 min nga dhoma</span></div>
+      </div>
+      <div class="loc-item">
+        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12h20M4 12v6h16v-6M7 12V8a2 2 0 012-2h6a2 2 0 012 2v4"/></svg></div>
+        <div><p class="loc-name" data-i18n="loc.breakfast.name">Mëngjesi</p><p class="loc-desc" data-i18n="loc.breakfast.desc">Sallë me terracë, kati përdhes, në krah të recepsionit. 07:30–10:30.</p><span class="loc-time" data-i18n="loc.breakfast.time">~2 min nga dhoma</span></div>
+      </div>
+      <div class="loc-item">
+        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 16c1.5 1.5 3 1.5 4.5 0s3-1.5 4.5 0 3 1.5 4.5 0 3-1.5 4.5 0M4 12a8 8 0 0116 0"/></svg></div>
+        <div><p class="loc-name" data-i18n="loc.pool.name">Pishina</p><p class="loc-desc" data-i18n="loc.pool.desc">Kati i parë, dalja nga korridori pas ashensorit.</p><span class="loc-time" data-i18n="loc.pool.time">~3 min nga dhoma</span></div>
+      </div>
+      <div class="loc-item">
+        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 6h2"/></svg></div>
+        <div><p class="loc-name" data-i18n="loc.elevator.name">Ashensori</p><p class="loc-desc" data-i18n="loc.elevator.desc">Në fund të korridorit tuaj, majtas.</p><span class="loc-time" data-i18n="loc.elevator.time">~30 sek nga dhoma</span></div>
+      </div>
+      </div>
+      </div>
+
+      <div id="section-roomservice">
+      <h3 class="group-heading" data-i18n="roomservice.heading">Shërbimi në dhomë</h3>
+      <div id="roomservice-container">
+      <div class="rs-item"><p class="rs-name" data-i18n="rs.club.name">Sanduiç Club</p><span class="rs-price">450 L</span><button class="rs-add" data-i18n="roomservice.add" onclick="addRoomService('rs.club.name', 450)">Shto</button></div>
+      <div class="rs-item"><p class="rs-name" data-i18n="rs.greek.name">Sallatë Greke</p><span class="rs-price">400 L</span><button class="rs-add" data-i18n="roomservice.add" onclick="addRoomService('rs.greek.name', 400)">Shto</button></div>
+      <div class="rs-item"><p class="rs-name" data-i18n="rs.water.name">Ujë / Bibitë</p><span class="rs-price">150 L</span><button class="rs-add" data-i18n="roomservice.add" onclick="addRoomService('rs.water.name', 150)">Shto</button></div>
+      <div class="rs-item"><p class="rs-name" data-i18n="rs.wine.name">Verë vendi (gotë)</p><span class="rs-price">350 L</span><button class="rs-add" data-i18n="roomservice.add" onclick="addRoomService('rs.wine.name', 350)">Shto</button></div>
+      </div>
+      <div class="rs-cart" id="rs-cart">
+        <p class="group-heading" style="margin:0 0 8px;" data-i18n="roomservice.cartHeading">Porosia juaj</p>
+        <div id="rs-cart-lines"><p class="rs-cart-empty" data-i18n="roomservice.empty">Nuk keni shtuar ende asgjë.</p></div>
+        <button class="rs-send" data-i18n="roomservice.send" onclick="sendRoomService()">Dërgo porosinë te recepsioni</button>
+      </div>
+      <div class="rs-tracker" id="rs-tracker" style="display:none;">
+        <p class="group-heading" style="margin:0 0 10px;" data-i18n="order.trackingHeading">Porosia juaj</p>
+        <div class="rs-tracker-steps" id="rs-tracker-steps"></div>
+      </div>
+      </div>
+    </div>
+
+    <!-- EXPLORE -->
+    <div class="view" id="view-explore">
+      <h2 class="section-title" data-i18n="explore.title">Zbulo zonën</h2>
+      <p class="section-sub" data-i18n="explore.subtitle">Rekomandime nga stafi ynë, jo reklama.</p>
+
+      <div id="real-map" style="width:100%; height:220px; border-radius:12px; margin-bottom:10px; background:var(--sea);"></div>
+
+      <div class="cat-tabs">
+        <button class="cat-tab on" data-cat="restorante" data-i18n="cat.restaurants" onclick="filterCat('restorante', this)">Restorante</button>
+        <button class="cat-tab" data-cat="bare" data-i18n="cat.bars" onclick="filterCat('bare', this)">Bare</button>
+        <button class="cat-tab" data-cat="plazhe" data-i18n="cat.beaches" onclick="filterCat('plazhe', this)">Plazhe</button>
+      </div>
+
+      <div id="recs-container">
+      <div class="rec-card show" data-cat="restorante">
+        <div class="rec-top"><p class="rec-name">Taverna e Gjelbër</p><span class="rec-price" data-i18n="price.mid">$$</span></div>
+        <p class="rec-meta" data-i18n="rec.tavern.meta">Peshk i freskët · 8 min në këmbë</p>
+        <p class="rec-tip" data-i18n="rec.tavern.tip">Kërkoni tavolinë në oborr në mbrëmje. Rezervoni nga ora 19:00 e tutje, mbushet shpejt.</p>
+        <span class="rec-badge" data-i18n="badge.staffpick">Zgjedhja e stafit</span>
+      </div>
+      <div class="rec-card show" data-cat="restorante">
+        <div class="rec-top"><p class="rec-name">Bujtina Ilira</p><span class="rec-price" data-i18n="price.high">$$$</span></div>
+        <p class="rec-meta" data-i18n="rec.ilira.meta">Kuzhinë tradicionale · 12 min me makinë</p>
+        <p class="rec-tip" data-i18n="rec.ilira.tip">E mirë për darkë romantike. Porosisni qengjin në hell, gatuhet me porosi.</p>
+      </div>
+      <div class="rec-card" data-cat="bare">
+        <div class="rec-top"><p class="rec-name">Molo Bar</p><span class="rec-price" data-i18n="price.mid">$$</span></div>
+        <p class="rec-meta" data-i18n="rec.molo.meta">Koktej mbi det · 5 min në këmbë</p>
+        <p class="rec-tip" data-i18n="rec.molo.tip">Perëndimi më i mirë i diellit në zonë. Shkoni para 20:00 për vend ulur.</p>
+        <span class="rec-badge" data-i18n="badge.staffpick">Zgjedhja e stafit</span>
+      </div>
+      <div class="rec-card" data-cat="bare">
+        <div class="rec-top"><p class="rec-name">Kanto Lounge</p><span class="rec-price" data-i18n="price.mid">$$</span></div>
+        <p class="rec-meta" data-i18n="rec.kanto.meta">Muzikë live e enjte-shtunë · 10 min në këmbë</p>
+        <p class="rec-tip" data-i18n="rec.kanto.tip">Fillon rreth orës 22:00, atmosferë e gjallë deri vonë.</p>
+      </div>
+      <div class="rec-card" data-cat="plazhe">
+        <div class="rec-top"><p class="rec-name">Plazhi i Kaltër</p><span class="rec-price" data-i18n="price.free">Falas</span></div>
+        <p class="rec-meta" data-i18n="rec.blue.meta">Zhavor i imët, ujë i qetë · 6 min në këmbë</p>
+        <p class="rec-tip" data-i18n="rec.blue.tip">Më pak i populluar në orët e para të mëngjesit. Ombrellat me qira në vend.</p>
+        <span class="rec-badge" data-i18n="badge.staffpick">Zgjedhja e stafit</span>
+      </div>
+      <div class="rec-card" data-cat="plazhe">
+        <div class="rec-top"><p class="rec-name">Gjiri i Fshehur</p><span class="rec-price" data-i18n="price.free">Falas</span></div>
+        <p class="rec-meta" data-i18n="rec.hidden.meta">Shkëmbor, ujë i thellë · 15 min në këmbë</p>
+        <p class="rec-tip" data-i18n="rec.hidden.tip">Merrni këpucë uji. Nuk ka hije natyrale, çadër është e nevojshme.</p>
+      </div>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="view" id="view-info">
+      <h2 class="section-title" data-i18n="info.title">Informacione praktike</h2>
+      <p class="section-sub" data-i18n="info.subtitle">Çdo gjë tjetër që mund t'ju duhet.</p>
+
+      <div class="weather-card">
+        <div>
+          <div style="font-size:11px; opacity:0.6;" data-i18n="weather.today">Sot</div>
+          <div class="weather-temp" id="weather-temp">28°C</div>
+        </div>
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#F3ECDC" stroke-width="1.6" id="weather-icon"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+        <span id="weather-icon-emoji" style="font-size:30px; display:none;"></span>
+      </div>
+      <p class="weather-note" id="weather-note" data-i18n="weather.note">Të dhëna shembull — një hotel real do ta lidhte me një shërbim moti të drejtpërdrejtë.</p>
+      <div class="weather-warning" id="weather-warning"><span class="wi">⚠️</span><span id="weather-warning-text"></span></div>
+
+      <div id="section-info_hours">
+      <h3 class="group-heading" data-i18n="info.hoursHeading">Orari</h3>
+      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.checkin.name">Check-in</span><span class="info-item-val" data-i18n="info.hours.checkin.val">Nga ora 14:00</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.checkout.name">Check-out</span><span class="info-item-val" data-i18n="info.hours.checkout.val">Deri në 11:00</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.quiet.name">Ora e qetësisë</span><span class="info-item-val" data-i18n="info.hours.quiet.val">23:00–08:00</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.cleaning.name">Pastrimi i dhomës</span><span class="info-item-val" data-i18n="info.hours.cleaning.val">10:00–13:00</span></div>
+      </div>
+
+      <div id="section-info_transport">
+      <h3 class="group-heading" data-i18n="info.transportHeading">Transporti</h3>
+      <div class="tr-item">
+        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-7a2 2 0 012-1h10a2 2 0 012 1l2 7v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><circle cx="7.5" cy="16.5" r="1"/><circle cx="16.5" cy="16.5" r="1"/></svg></div>
+        <div><p class="loc-name" data-i18n="tr.airport.name">Transferi nga/për aeroportin</p><p class="loc-desc" data-i18n="tr.airport.desc">Kontaktoni recepsionin të paktën 3 orë përpara, organizojmë transfer me makinë private.</p></div>
+      </div>
+      <div class="tr-item">
+        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-7a2 2 0 012-1h10a2 2 0 012 1l2 7v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><circle cx="7.5" cy="16.5" r="1"/><circle cx="16.5" cy="16.5" r="1"/></svg></div>
+        <div><p class="loc-name" data-i18n="tr.taxi.name">Taksi lokal</p><p class="loc-desc" data-i18n="tr.taxi.desc">Në dispozicion 24/7 nga recepsioni.</p></div>
+      </div>
+      <div class="tr-item">
+        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="14" rx="2"/><path d="M4 10h16M8 18v2M16 18v2"/></svg></div>
+        <div><p class="loc-name" data-i18n="tr.bus.name">Autobusi urban</p><p class="loc-desc" data-i18n="tr.bus.desc">Ndalesa më e afërt 5 min në këmbë, linja drejt qendrës çdo 30 min.</p></div>
+      </div>
+      </div>
+
+      <div id="section-info_emergency">
+      <h3 class="group-heading" data-i18n="info.emergencyHeading">Urgjenca</h3>
+      <div class="info-item"><span class="info-item-name" data-i18n="em.reception.name">Recepsioni (24 orë)</span><span class="info-item-val">+355 69 000 0000</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="em.police.name">Policia</span><span class="info-item-val">129</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="em.ambulance.name">Ambulanca</span><span class="info-item-val">127</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="em.pharmacy.name">Farmacia më e afërt</span><span class="info-item-val" data-i18n="em.pharmacy.val">3 min në këmbë</span></div>
+      </div>
+
+      <div id="section-info_faq">
+      <h3 class="group-heading" data-i18n="info.faqHeading">Pyetje të shpeshta</h3>
+      <div id="faq-dynamic-container" style="display:none;"></div>
+      <div id="faq-default-container">
+      <details class="faq"><summary data-i18n="faq.q1">Si e ndez ujin e ngrohtë?</summary><p data-i18n="faq.a1">Çelësi është pranë kokës së dushit, kthejeni majtas dhe prisni rreth 30 sekonda.</p></details>
+      <details class="faq"><summary data-i18n="faq.q2">A ka parking falas?</summary><p data-i18n="faq.a2">Po, parkimi i jashtëm është falas për mysafirët, pranë hyrjes anësore.</p></details>
+      <details class="faq"><summary data-i18n="faq.q3">A pranoni kafshë shtëpiake?</summary><p data-i18n="faq.a3">Pranohen kafshë të vogla me njoftim paraprak në recepsion, me tarifë shtesë.</p></details>
+      <details class="faq"><summary data-i18n="faq.q4">Deri sa orë shërbehet mëngjesi?</summary><p data-i18n="faq.a4">Mëngjesi shërbehet çdo ditë nga ora 07:30 deri në 10:30.</p></details>
+      </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="view" id="view-chat">
+      <h2 class="section-title" data-i18n="chat.title">Recepsioni</h2>
+      <p class="section-sub" data-i18n="chat.subtitle">Zakonisht përgjigjemi brenda pak minutash.</p>
+      <button id="push-optin-btn" onclick="enablePushNotifications()" style="display:none; margin-bottom:14px; border:0.5px solid var(--aqua-dark); background:var(--sand-dim); color:var(--aqua-dark); border-radius:20px; padding:8px 14px; font-size:12.5px; font-weight:500; cursor:pointer; font-family:inherit;" data-i18n="push.enable">🔔 Aktivo njoftimet në telefon</button>
+      <div class="chat-wrap">
+        <div class="chat-log" id="chat-log">
+          <div class="msg msg-in">
+            <span data-i18n="chat.first">Mirë se erdhët në Hotel Bregu! Jam këtu për çdo gjë që ju nevojitet gjatë qëndrimit.</span>
+            <div class="msg-time">09:14</div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input id="chat-text" type="text" data-i18n-ph="chat.placeholder" placeholder="Shkruani mesazhin..." onkeydown="if(event.key==='Enter')sendMsg()">
+          <button class="send-btn" aria-label="Dërgo" onclick="sendMsg()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M3 11l18-8-8 18-2-8z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <h3 class="group-heading" data-i18n="feedback.heading" style="margin-top:22px;">Vlerësoni qëndrimin</h3>
+      <div id="feedback-box" style="padding-bottom:80px;">
+        <div class="stars" id="fb-stars">
+          <button class="star-btn" data-v="1" onclick="rateStay(1)">★</button>
+          <button class="star-btn" data-v="2" onclick="rateStay(2)">★</button>
+          <button class="star-btn" data-v="3" onclick="rateStay(3)">★</button>
+          <button class="star-btn" data-v="4" onclick="rateStay(4)">★</button>
+          <button class="star-btn" data-v="5" onclick="rateStay(5)">★</button>
+        </div>
+        <textarea class="fb-input" id="fb-text" rows="2" data-i18n-ph="feedback.placeholder" placeholder="Shkruani përshtypjet tuaja (opsionale)"></textarea>
+        <button class="fb-submit" data-i18n="feedback.submit" onclick="submitFeedback()">Dërgo vlerësimin</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="tabbar">
+    <button class="tab-btn on" data-view="home" onclick="showView('home')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-6 9 6v11a1 1 0 01-1 1H4a1 1 0 01-1-1z"/></svg>
+      <span data-i18n="tab.home">Kryesore</span>
+    </button>
+    <button class="tab-btn" data-view="room" onclick="showView('room')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 10v10"/></svg>
+      <span data-i18n="tab.room">Dhoma</span>
+    </button>
+    <button class="tab-btn" data-view="explore" onclick="showView('explore')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9 15l2-6 6-2-2 6z"/></svg>
+      <span data-i18n="tab.explore">Zbulo</span>
+    </button>
+    <button class="tab-btn" data-view="info" onclick="showView('info')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg>
+      <span data-i18n="tab.info">Info</span>
+    </button>
+    <button class="tab-btn" data-view="chat" onclick="showView('chat')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 01-12.9 7.3L3 20l1.4-4.1A8.5 8.5 0 1121 11.5z"/></svg>
+      <span data-i18n="tab.chat">Chat</span>
+    </button>
+  </div>
+
+</div>
+
+<div id="issue-photo-modal" style="display:none; position:fixed; inset:0; background:rgba(10,15,14,0.55); z-index:9998; align-items:flex-end; justify-content:center;">
+  <div style="width:100%; max-width:460px; background:var(--sand); border-radius:18px 18px 0 0; padding:24px 22px calc(22px + env(safe-area-inset-bottom, 0px)); box-shadow:var(--shadow-2); animation:viewFadeIn 0.22s ease;">
+    <div id="issue-photo-modal-preview" style="display:none; margin-bottom:14px;">
+      <img src="" style="width:100%; max-height:180px; object-fit:cover; border-radius:10px; border:0.5px solid var(--line);">
+    </div>
+    <h3 style="font-family:'Fraunces',serif; font-weight:500; font-size:17px; margin:0 0 4px; color:var(--ink);" data-i18n="issue.photoPrompt.title">Do shtosh një foto të problemit?</h3>
+    <p style="font-size:13px; opacity:0.75; margin:0 0 18px; color:var(--ink);" data-i18n="issue.photoPrompt.sub">Ndihmon stafin ta kuptojë problemin më shpejt. Nuk është e detyrueshme.</p>
+    <button type="button" onclick="document.getElementById('issue-photo-input').click()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--sea); color:var(--on-sea); border:none; border-radius:10px; padding:13px; font-size:14px; font-weight:500; font-family:inherit; cursor:pointer; margin-bottom:10px;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span data-i18n="issue.photoPrompt.takePhoto">Bëj / zgjidh foto</span>
+    </button>
+    <button type="button" onclick="finalizeIssueSend(false)" style="width:100%; background:none; border:0.5px solid var(--line); color:var(--ink); border-radius:10px; padding:12px; font-size:13.5px; font-family:inherit; cursor:pointer;" data-i18n="issue.photoPrompt.skip">Vazhdo pa foto</button>
+  </div>
+</div>
+
+<div id="tutorial-overlay" style="display:none; position:fixed; inset:0; background:rgba(10,15,14,0.6); z-index:9997; align-items:center; justify-content:center; padding:20px;">
+  <div style="width:100%; max-width:380px; background:var(--sand); border-radius:16px; padding:26px 22px; box-shadow:var(--shadow-2); text-align:center;">
+    <h3 style="font-family:'Fraunces',serif; font-weight:500; font-size:18px; margin:0 0 14px; color:var(--ink);" data-i18n="tutorial.title">Mirë se erdhët!</h3>
+    <div style="text-align:left; display:flex; flex-direction:column; gap:12px; margin-bottom:20px; color:var(--ink);">
+      <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">🏠</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.home">Kryesore</b> — <span data-i18n="tutorial.homeDesc">hyrje e shpejtë tek çdo gjë</span>.</span></div>
+      <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">🛏️</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.room">Dhoma</b> — <span data-i18n="tutorial.roomDesc">wifi, pajisje, kërkesa, probleme</span>.</span></div>
+      <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">🧭</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.explore">Zbulo</b> — <span data-i18n="tutorial.exploreDesc">restorante, bare, plazhe me hartë</span>.</span></div>
+      <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">💬</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.chat">Chat</b> — <span data-i18n="tutorial.chatDesc">shkruaj drejt e te recepsioni</span>.</span></div>
+    </div>
+    <button type="button" onclick="closeTutorial()" style="width:100%; background:var(--sea); color:var(--on-sea); border:none; border-radius:10px; padding:12px; font-size:14px; font-weight:500; font-family:inherit; cursor:pointer;" data-i18n="tutorial.gotIt">E kuptova</button>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+// --- Live backend connection (Hotel Bregu API on Render) ---
+const API_BASE = "https://hotelsystem-lzlm.onrender.com";
+let socket = null;
+try {
+  socket = io(API_BASE, { transports: ['websocket', 'polling'] });
+  socket.on('connect', () => {
+    if(currentHotel) socket.emit('join_room', { hotel: currentHotel, room: currentRoom });
+  });
+  socket.on('new_message', async (msg) => {
+    if (msg.sender !== 'guest' && msg.room_number === currentRoom) {
+      const text = (msg.lang && msg.lang !== currentLang) ? await translateForGuest(msg.text, msg.lang) : msg.text;
+      pushInMsg(text);
+    }
+  });
+  socket.on('content_updated', (payload) => { if (payload?.hotel === currentHotel && typeof loadHotelContent === 'function') loadHotelContent(); });
+  socket.on('chat_cleared', () => {
+    const log = document.getElementById('chat-log');
+    if(log) log.innerHTML = '';
+    try{ localStorage.removeItem('bregu_session'); }catch(e){}
+    if(!document.getElementById('session-locked-overlay')) showSessionLocked();
+  });
+  socket.on('order_updated', (order) => {
+    if (order.room_number !== currentRoom) return;
+    const statusLabels = { preparing: translations[currentLang]['order.preparing'], delivered: translations[currentLang]['order.delivered'] };
+    const label = statusLabels[order.status];
+    if (label) showToast(label);
+    if (typeof renderOrderTracker === 'function' && (order.id === currentRoomServiceOrderId || !currentRoomServiceOrderId)) {
+      currentRoomServiceOrderId = order.id || currentRoomServiceOrderId;
+      renderOrderTracker(order.status);
+    }
+  });
+  socket.on('announcement_updated', (payload) => {
+    if (payload?.hotel === currentHotel && typeof renderAnnouncement === 'function') renderAnnouncement(payload.announcement);
+  });
+} catch (e) { console.warn('Realtime chat unavailable, falling back to local demo mode.', e); }
+
+const translations = {
+  sq: {
+    "eyebrow":"Udhërrëfyesi i mysafirit","room.chip":"Dhoma 214 · Kati 2","call.button":"Telefono",
+    "rescan.notice":"Sesioni skadon çdo ditë në orën 11:00 — do t'ju duhet të rishkanoni kodin QR.",
+    "home.title":"Mirë se erdhët","home.subtitle":"Gjithçka që ju duhet gjatë qëndrimit, në një vend.",
+    "keycard.wifi":"Wifi","keycard.pass":"Fjalëkalimi","keycard.copy":"Kopjo","keycard.copied":"U kopjua",
+    "quick.room.title":"Dhoma ime","quick.room.sub":"Pajisje, kërkesa, shërbim në dhomë",
+    "quick.explore.title":"Zbulo zonën","quick.explore.sub":"Restorante, bare, plazhe, harta",
+    "quick.info.title":"Info praktike","quick.info.sub":"Orare, transport, urgjenca, FAQ",
+    "quick.chat.title":"Recepsioni","quick.chat.sub":"Shkruani direkt, përgjigjemi shpejt",
+    "room.title":"Dhoma juaj","room.subtitle":"Pajisje dhe orientim brenda hotelit.",
+    "quick.request.heading":"Kërkesa të shpejta",
+    "req.towels":"Peshqirë shtesë","req.cleaning":"Pastrim dhome","req.pillows":"Jastëkë shtesë",
+    "quick.toiletries.heading":"Artikuj higjienikë",
+    "req.shampoo":"Shampo","req.toothbrush":"Brushë dhëmbësh","req.slippers":"Pantofla","req.soap":"Sapun / xhel dushi",
+    "dnd.heading":"Mos shqetësoni","dnd.sub":"Aktivizoje kur nuk dëshiron të shqetësohesh nga stafi.",
+    "dnd.on":"Aktiv","dnd.off":"Joaktiv",
+    "dnd.enabledToast":"'Mos shqetësoni' u aktivizua","dnd.disabledToast":"'Mos shqetësoni' u çaktivizua",
+    "dnd.enabledMsg":"Mysafiri aktivizoi 'Mos shqetësoni'.","dnd.disabledMsg":"Mysafiri çaktivizoi 'Mos shqetësoni'.",
+    "push.enable":"🔔 Aktivo njoftimet në telefon","push.enabled":"Njoftimet u aktivizuan!","push.denied":"Leja për njoftime u refuzua.","push.unavailable":"Njoftimet s'janë të disponueshme tani.",
+    "req.issue_ac":"Klima s'punon","req.issue_tv":"TV s'punon","req.issue_toilet":"Tualeti i prishur","req.issue_plumbing":"Problem hidraulik","req.issue_electric":"Problem elektrik",
+    "issue.attachPhoto":"Bashkangjit foto te problemi (opsionale)","issue.removePhoto":"Hiq foton",
+    "req.issue_other":"+ Problem tjetër","issue.otherPlaceholder":"Përshkruaj problemin...","issue.send":"Dërgo",
+    "issue.photoPrompt.title":"Do shtosh një foto të problemit?","issue.photoPrompt.sub":"Ndihmon stafin ta kuptojë problemin më shpejt. Nuk është e detyrueshme.","issue.photoPrompt.takePhoto":"Bëj / zgjidh foto","issue.photoPrompt.skip":"Vazhdo pa foto",
+    "tutorial.title":"Mirë se erdhët!","tutorial.homeDesc":"hyrje e shpejtë tek çdo gjë","tutorial.roomDesc":"wifi, pajisje, kërkesa, probleme","tutorial.exploreDesc":"restorante, bare, plazhe me hartë","tutorial.chatDesc":"shkruaj drejt e te recepsioni","tutorial.gotIt":"E kuptova",
+    "req.sentPrefix":"Kërkesë nga dhoma:","req.confirmToast":"Kërkesa u dërgua te recepsioni",
+    "room.amenitiesHeading":"Pajisjet",
+    "amenity.ac.name":"Klima","amenity.ac.note":"Kontrolli në murin pranë derës së banjës. 18-26°C.",
+    "amenity.safe.name":"Kasaforta","amenity.safe.note":"Në dollap. Vendosni kod 4-shifror, mbyllet automatikisht.",
+    "amenity.minibar.name":"Minibar","amenity.minibar.note":"Ujë falas. Pjesa tjetër faturohet në check-out.",
+    "amenity.dryer.name":"Tharëse flokësh","amenity.dryer.note":"Sirtari i parë i tavolinës së make-up.",
+    "room.whereHeading":"Ku ndodhet",
+    "loc.reception.name":"Recepsioni","loc.reception.desc":"Kati përdhes, tek hyrja kryesore.","loc.reception.time":"~1 min nga dhoma",
+    "loc.breakfast.name":"Mëngjesi","loc.breakfast.desc":"Sallë me terracë, kati përdhes, në krah të recepsionit. 07:30–10:30.","loc.breakfast.time":"~2 min nga dhoma",
+    "loc.pool.name":"Pishina","loc.pool.desc":"Kati i parë, dalja nga korridori pas ashensorit.","loc.pool.time":"~3 min nga dhoma",
+    "loc.elevator.name":"Ashensori","loc.elevator.desc":"Në fund të korridorit tuaj, majtas.","loc.elevator.time":"~30 sek nga dhoma",
+    "roomservice.heading":"Shërbimi në dhomë","roomservice.add":"Shto","roomservice.cartHeading":"Porosia juaj",
+    "roomservice.empty":"Nuk keni shtuar ende asgjë.","roomservice.send":"Dërgo porosinë te recepsioni","roomservice.sentToast":"Porosia u dërgua te recepsioni",
+    "rs.club.name":"Sanduiç Club","rs.greek.name":"Sallatë Greke","rs.water.name":"Ujë / Bibitë","rs.wine.name":"Verë vendi (gotë)",
+    "explore.title":"Zbulo zonën","explore.subtitle":"Rekomandime nga stafi ynë, jo reklama.","explore.empty":"Ende pa rekomandime për këtë hotel.",
+    "map.note":"Harta është ilustruese, jo GPS e saktë. 1 Molo Bar · 2 Taverna e Gjelbër · 3 Plazhi i Kaltër · 4 Kanto Lounge",
+    "cat.restaurants":"Restorante","cat.bars":"Bare","cat.beaches":"Plazhe",
+    "price.mid":"$$","price.high":"$$$","price.free":"Falas",
+    "rec.tavern.meta":"Peshk i freskët · 8 min në këmbë","rec.tavern.tip":"Kërkoni tavolinë në oborr në mbrëmje. Rezervoni nga ora 19:00 e tutje, mbushet shpejt.",
+    "rec.ilira.meta":"Kuzhinë tradicionale · 12 min me makinë","rec.ilira.tip":"E mirë për darkë romantike. Porosisni qengjin në hell, gatuhet me porosi.",
+    "rec.molo.meta":"Koktej mbi det · 5 min në këmbë","rec.molo.tip":"Perëndimi më i mirë i diellit në zonë. Shkoni para 20:00 për vend ulur.",
+    "rec.kanto.meta":"Muzikë live e enjte-shtunë · 10 min në këmbë","rec.kanto.tip":"Fillon rreth orës 22:00, atmosferë e gjallë deri vonë.",
+    "rec.blue.meta":"Zhavor i imët, ujë i qetë · 6 min në këmbë","rec.blue.tip":"Më pak i populluar në orët e para të mëngjesit. Ombrellat me qira në vend.",
+    "rec.hidden.meta":"Shkëmbor, ujë i thellë · 15 min në këmbë","rec.hidden.tip":"Merrni këpucë uji. Nuk ka hije natyrale, çadër është e nevojshme.",
+    "badge.staffpick":"Zgjedhja e stafit",
+    "info.title":"Informacione praktike","info.subtitle":"Çdo gjë tjetër që mund t'ju duhet.",
+    "weather.today":"Sot","weather.note":"Të dhëna shembull — një hotel real do ta lidhte me një shërbim moti të drejtpërdrejtë.","weather.live":"Të dhëna të drejtpërdrejta nga moti aktual.","weather.warning.storm":"Parashikohet stuhi me rrufe sot — kini kujdes me aktivitetet jashtë.","weather.warning.rain":"Parashikohet shi i dendur sot.","weather.warning.snow":"Parashikohen reshje të dendura dëbore sot.","weather.warning.heat":"Nxehtësi ekstreme sot — pini shumë ujë dhe shmangni diellin e fortë.","weather.warning.cold":"Temperatura shumë të ulëta sot — vishuni ngrohtë.",
+    "order.preparing":"Porosia juaj po përgatitet","order.delivered":"Porosia juaj u dorëzua",
+    "order.trackingHeading":"Porosia juaj","order.step.pending":"Pranuar","order.step.preparing":"Në përgatitje","order.step.on_the_way":"Në rrugë","order.step.delivered":"Dorëzuar",
+    "info.hoursHeading":"Orari",
+    "info.hours.checkin.name":"Check-in","info.hours.checkin.val":"Nga ora 14:00",
+    "info.hours.checkout.name":"Check-out","info.hours.checkout.val":"Deri në 11:00",
+    "info.hours.quiet.name":"Ora e qetësisë","info.hours.quiet.val":"23:00–08:00",
+    "info.hours.cleaning.name":"Pastrimi i dhomës","info.hours.cleaning.val":"10:00–13:00",
+    "info.transportHeading":"Transporti",
+    "tr.airport.name":"Transferi nga/për aeroportin","tr.airport.desc":"Kontaktoni recepsionin të paktën 3 orë përpara, organizojmë transfer me makinë private.",
+    "tr.taxi.name":"Taksi lokal","tr.taxi.desc":"Në dispozicion 24/7 nga recepsioni.",
+    "tr.bus.name":"Autobusi urban","tr.bus.desc":"Ndalesa më e afërt 5 min në këmbë, linja drejt qendrës çdo 30 min.",
+    "info.emergencyHeading":"Urgjenca",
+    "em.reception.name":"Recepsioni (24 orë)","em.police.name":"Policia","em.ambulance.name":"Ambulanca",
+    "em.pharmacy.name":"Farmacia më e afërt","em.pharmacy.val":"3 min në këmbë",
+    "info.faqHeading":"Pyetje të shpeshta",
+    "faq.q1":"Si e ndez ujin e ngrohtë?","faq.a1":"Çelësi është pranë kokës së dushit, kthejeni majtas dhe prisni rreth 30 sekonda.",
+    "faq.q2":"A ka parking falas?","faq.a2":"Po, parkimi i jashtëm është falas për mysafirët, pranë hyrjes anësore.",
+    "faq.q3":"A pranoni kafshë shtëpiake?","faq.a3":"Pranohen kafshë të vogla me njoftim paraprak në recepsion, me tarifë shtesë.",
+    "faq.q4":"Deri sa orë shërbehet mëngjesi?","faq.a4":"Mëngjesi shërbehet çdo ditë nga ora 07:30 deri në 10:30.",
+    "chat.title":"Recepsioni","chat.subtitle":"Zakonisht përgjigjemi brenda pak minutash.",
+    "chat.first":"Mirë se erdhët në Hotel Bregu! Jam këtu për çdo gjë që ju nevojitet gjatë qëndrimit.",
+    "chat.placeholder":"Shkruani mesazhin...",
+    "tab.home":"Kryesore","tab.room":"Dhoma","tab.explore":"Zbulo","tab.info":"Info","tab.chat":"Chat",
+    "chat.replies":["Faleminderit! E kemi marrë mesazhin, dikush nga stafi do t'ju kontaktojë brenda pak minutash.","Sigurisht, po e rregullojmë menjëherë. A keni nevojë për ndonjë gjë tjetër?","Po e dërgojmë dikë në dhomën tuaj shpejt. Faleminderit për durimin."],
+    "feedback.heading":"Vlerësoni qëndrimin","feedback.placeholder":"Shkruani përshtypjet tuaja (opsionale)",
+    "feedback.submit":"Dërgo vlerësimin","feedback.thanks":"Faleminderit për vlerësimin tuaj!",
+    "room.chipTemplate":"Dhoma {room} · Kati {floor}"
+  },
+  en: {
+    "eyebrow":"Guest guide","room.chip":"Room 214 · Floor 2","call.button":"Call",
+    "rescan.notice":"The session expires daily at 11:00 — you'll need to re-scan the QR code.",
+    "home.title":"Welcome","home.subtitle":"Everything you need during your stay, in one place.",
+    "keycard.wifi":"Wifi","keycard.pass":"Password","keycard.copy":"Copy","keycard.copied":"Copied",
+    "quick.room.title":"My room","quick.room.sub":"Amenities, requests, room service",
+    "quick.explore.title":"Explore the area","quick.explore.sub":"Restaurants, bars, beaches, map",
+    "quick.info.title":"Practical info","quick.info.sub":"Hours, transport, emergency, FAQ",
+    "quick.chat.title":"Front desk","quick.chat.sub":"Message us directly, we reply fast",
+    "room.title":"Your room","room.subtitle":"Amenities and orientation around the hotel.",
+    "quick.request.heading":"Quick requests",
+    "req.towels":"Extra towels","req.cleaning":"Room cleaning","req.pillows":"Extra pillows",
+    "quick.toiletries.heading":"Toiletries",
+    "req.shampoo":"Shampoo","req.toothbrush":"Toothbrush","req.slippers":"Slippers","req.soap":"Soap / shower gel",
+    "dnd.heading":"Do Not Disturb","dnd.sub":"Turn on when you don't want to be disturbed by staff.",
+    "dnd.on":"On","dnd.off":"Off",
+    "dnd.enabledToast":"Do Not Disturb turned on","dnd.disabledToast":"Do Not Disturb turned off",
+    "dnd.enabledMsg":"The guest turned on Do Not Disturb.","dnd.disabledMsg":"The guest turned off Do Not Disturb.",
+    "push.enable":"🔔 Enable phone notifications","push.enabled":"Notifications enabled!","push.denied":"Notification permission was denied.","push.unavailable":"Notifications aren't available right now.",
+    "req.issue_ac":"AC not working","req.issue_tv":"TV not working","req.issue_toilet":"Broken toilet","req.issue_plumbing":"Plumbing issue","req.issue_electric":"Electrical issue",
+    "issue.attachPhoto":"Attach a photo of the problem (optional)","issue.removePhoto":"Remove photo",
+    "req.issue_other":"+ Other problem","issue.otherPlaceholder":"Describe the problem...","issue.send":"Send",
+    "issue.photoPrompt.title":"Add a photo of the problem?","issue.photoPrompt.sub":"Helps the staff understand the issue faster. It's optional.","issue.photoPrompt.takePhoto":"Take / choose a photo","issue.photoPrompt.skip":"Continue without a photo",
+    "tutorial.title":"Welcome!","tutorial.homeDesc":"a quick way to everything","tutorial.roomDesc":"wifi, amenities, requests, issues","tutorial.exploreDesc":"restaurants, bars, beaches with a map","tutorial.chatDesc":"message the front desk directly","tutorial.gotIt":"Got it",
+    "req.sentPrefix":"Room request:","req.confirmToast":"Request sent to the front desk",
+    "room.amenitiesHeading":"Amenities",
+    "amenity.ac.name":"Air conditioning","amenity.ac.note":"Control panel by the bathroom door. 18-26°C.",
+    "amenity.safe.name":"Safe","amenity.safe.note":"Inside the closet. Set a 4-digit code, locks automatically.",
+    "amenity.minibar.name":"Minibar","amenity.minibar.note":"Water is free. Everything else is billed at check-out.",
+    "amenity.dryer.name":"Hairdryer","amenity.dryer.note":"Top drawer of the vanity desk.",
+    "room.whereHeading":"Where to find things",
+    "loc.reception.name":"Front desk","loc.reception.desc":"Ground floor, at the main entrance.","loc.reception.time":"~1 min from your room",
+    "loc.breakfast.name":"Breakfast","loc.breakfast.desc":"Terrace room, ground floor, next to the front desk. 7:30–10:30 am.","loc.breakfast.time":"~2 min from your room",
+    "loc.pool.name":"Pool","loc.pool.desc":"First floor, exit the hallway past the elevator.","loc.pool.time":"~3 min from your room",
+    "loc.elevator.name":"Elevator","loc.elevator.desc":"End of your hallway, to the left.","loc.elevator.time":"~30 sec from your room",
+    "roomservice.heading":"Room service","roomservice.add":"Add","roomservice.cartHeading":"Your order",
+    "roomservice.empty":"You haven't added anything yet.","roomservice.send":"Send order to the front desk","roomservice.sentToast":"Order sent to the front desk",
+    "rs.club.name":"Club sandwich","rs.greek.name":"Greek salad","rs.water.name":"Water / soft drink","rs.wine.name":"House wine (glass)",
+    "explore.title":"Explore the area","explore.subtitle":"Recommendations from our staff, not ads.","explore.empty":"No recommendations yet for this hotel.",
+    "map.note":"Map is illustrative, not precise GPS. 1 Molo Bar · 2 Taverna e Gjelbër · 3 Blue Beach · 4 Kanto Lounge",
+    "cat.restaurants":"Restaurants","cat.bars":"Bars","cat.beaches":"Beaches",
+    "price.mid":"$$","price.high":"$$$","price.free":"Free",
+    "rec.tavern.meta":"Fresh fish · 8 min walk","rec.tavern.tip":"Ask for a courtyard table in the evening. Book from 7pm onward, it fills up fast.",
+    "rec.ilira.meta":"Traditional cuisine · 12 min by car","rec.ilira.tip":"Great for a romantic dinner. Order the spit-roast lamb, made to order.",
+    "rec.molo.meta":"Cocktails over the sea · 5 min walk","rec.molo.tip":"Best sunset view around. Arrive before 8pm for a seat.",
+    "rec.kanto.meta":"Live music Thu-Sat · 10 min walk","rec.kanto.tip":"Starts around 10pm, lively atmosphere late into the night.",
+    "rec.blue.meta":"Fine gravel, calm water · 6 min walk","rec.blue.tip":"Quieter in the early morning hours. Umbrellas for rent on site.",
+    "rec.hidden.meta":"Rocky, deep water · 15 min walk","rec.hidden.tip":"Bring water shoes. No natural shade, an umbrella is a must.",
+    "badge.staffpick":"Staff pick",
+    "info.title":"Practical info","info.subtitle":"Anything else you might need.",
+    "weather.today":"Today","weather.note":"Sample data — a real hotel would connect this to a live weather service.","weather.live":"Live data from current weather.","weather.warning.storm":"Thunderstorms expected today — plan outdoor activities with care.","weather.warning.rain":"Heavy rain expected today.","weather.warning.snow":"Heavy snowfall expected today.","weather.warning.heat":"Extreme heat today — stay hydrated and avoid strong sun.","weather.warning.cold":"Very low temperatures today — dress warmly.",
+    "order.preparing":"Your order is being prepared","order.delivered":"Your order has been delivered",
+    "order.trackingHeading":"Your order","order.step.pending":"Received","order.step.preparing":"Preparing","order.step.on_the_way":"On the way","order.step.delivered":"Delivered",
+    "info.hoursHeading":"Hours",
+    "info.hours.checkin.name":"Check-in","info.hours.checkin.val":"From 2:00 pm",
+    "info.hours.checkout.name":"Check-out","info.hours.checkout.val":"Until 11:00 am",
+    "info.hours.quiet.name":"Quiet hours","info.hours.quiet.val":"11 pm–8 am",
+    "info.hours.cleaning.name":"Room cleaning","info.hours.cleaning.val":"10 am–1 pm",
+    "info.transportHeading":"Transport",
+    "tr.airport.name":"Airport transfer","tr.airport.desc":"Contact the front desk at least 3 hours ahead, we arrange a private car transfer.",
+    "tr.taxi.name":"Local taxi","tr.taxi.desc":"Available 24/7 through the front desk.",
+    "tr.bus.name":"City bus","tr.bus.desc":"Nearest stop is a 5 min walk, line to the center every 30 min.",
+    "info.emergencyHeading":"Emergency",
+    "em.reception.name":"Front desk (24h)","em.police.name":"Police","em.ambulance.name":"Ambulance",
+    "em.pharmacy.name":"Nearest pharmacy","em.pharmacy.val":"3 min walk",
+    "info.faqHeading":"Frequently asked",
+    "faq.q1":"How do I turn on hot water?","faq.a1":"The valve is next to the showerhead, turn it left and wait about 30 seconds.",
+    "faq.q2":"Is there free parking?","faq.a2":"Yes, outdoor parking is free for guests, next to the side entrance.",
+    "faq.q3":"Do you allow pets?","faq.a3":"Small pets are allowed with advance notice to the front desk, for an extra fee.",
+    "faq.q4":"Until what time is breakfast served?","faq.a4":"Breakfast is served daily from 7:30 to 10:30 am.",
+    "chat.title":"Front desk","chat.subtitle":"We usually reply within a few minutes.",
+    "chat.first":"Welcome to Hotel Bregu! I'm here for anything you need during your stay.",
+    "chat.placeholder":"Type your message...",
+    "tab.home":"Home","tab.room":"Room","tab.explore":"Explore","tab.info":"Info","tab.chat":"Chat",
+    "chat.replies":["Thank you! We've received your message, someone from staff will reach out shortly.","Of course, we'll sort that out right away. Anything else you need?","We're sending someone to your room shortly. Thanks for your patience."],
+    "feedback.heading":"Rate your stay","feedback.placeholder":"Share your thoughts (optional)",
+    "feedback.submit":"Send rating","feedback.thanks":"Thanks for your feedback!",
+    "room.chipTemplate":"Room {room} · Floor {floor}"
+  },
+  it: {
+    "eyebrow":"Guida per gli ospiti","room.chip":"Camera 214 · Piano 2","call.button":"Chiama",
+    "rescan.notice":"La sessione scade ogni giorno alle 11:00 — dovrete scansionare di nuovo il codice QR.",
+    "home.title":"Benvenuti","home.subtitle":"Tutto ciò che vi serve durante il soggiorno, in un unico posto.",
+    "keycard.wifi":"Wifi","keycard.pass":"Password","keycard.copy":"Copia","keycard.copied":"Copiato",
+    "quick.room.title":"La mia camera","quick.room.sub":"Servizi, richieste, room service",
+    "quick.explore.title":"Scopri la zona","quick.explore.sub":"Ristoranti, bar, spiagge, mappa",
+    "quick.info.title":"Info pratiche","quick.info.sub":"Orari, trasporti, emergenze, FAQ",
+    "quick.chat.title":"Reception","quick.chat.sub":"Scriveteci direttamente, rispondiamo in fretta",
+    "room.title":"La vostra camera","room.subtitle":"Servizi e orientamento all'interno dell'hotel.",
+    "quick.request.heading":"Richieste rapide",
+    "req.towels":"Asciugamani extra","req.cleaning":"Pulizia camera","req.pillows":"Cuscini extra",
+    "quick.toiletries.heading":"Articoli da bagno",
+    "req.shampoo":"Shampoo","req.toothbrush":"Spazzolino","req.slippers":"Pantofole","req.soap":"Sapone / gel doccia",
+    "dnd.heading":"Non disturbare","dnd.sub":"Attivalo quando non vuoi essere disturbato dallo staff.",
+    "dnd.on":"Attivo","dnd.off":"Non attivo",
+    "dnd.enabledToast":"'Non disturbare' attivato","dnd.disabledToast":"'Non disturbare' disattivato",
+    "dnd.enabledMsg":"L'ospite ha attivato 'Non disturbare'.","dnd.disabledMsg":"L'ospite ha disattivato 'Non disturbare'.",
+    "push.enable":"🔔 Attiva notifiche sul telefono","push.enabled":"Notifiche attivate!","push.denied":"Il permesso per le notifiche è stato negato.","push.unavailable":"Le notifiche non sono disponibili ora.",
+    "req.issue_ac":"Aria condizionata non funziona","req.issue_tv":"TV non funziona","req.issue_toilet":"WC rotto","req.issue_plumbing":"Problema idraulico","req.issue_electric":"Problema elettrico",
+    "issue.attachPhoto":"Allega una foto del problema (opzionale)","issue.removePhoto":"Rimuovi foto",
+    "req.issue_other":"+ Altro problema","issue.otherPlaceholder":"Descrivi il problema...","issue.send":"Invia",
+    "issue.photoPrompt.title":"Vuoi aggiungere una foto del problema?","issue.photoPrompt.sub":"Aiuta lo staff a capire il problema più in fretta. Non è obbligatorio.","issue.photoPrompt.takePhoto":"Scatta / scegli una foto","issue.photoPrompt.skip":"Continua senza foto",
+    "tutorial.title":"Benvenuti!","tutorial.homeDesc":"accesso rapido a tutto","tutorial.roomDesc":"wifi, servizi, richieste, problemi","tutorial.exploreDesc":"ristoranti, bar, spiagge con mappa","tutorial.chatDesc":"scrivi direttamente alla reception","tutorial.gotIt":"Ho capito",
+    "req.sentPrefix":"Richiesta dalla camera:","req.confirmToast":"Richiesta inviata alla reception",
+    "room.amenitiesHeading":"Servizi",
+    "amenity.ac.name":"Aria condizionata","amenity.ac.note":"Pannello vicino alla porta del bagno. 18-26°C.",
+    "amenity.safe.name":"Cassaforte","amenity.safe.note":"Nell'armadio. Impostate un codice a 4 cifre, si blocca automaticamente.",
+    "amenity.minibar.name":"Minibar","amenity.minibar.note":"L'acqua è gratuita. Il resto viene addebitato al check-out.",
+    "amenity.dryer.name":"Asciugacapelli","amenity.dryer.note":"Primo cassetto della scrivania.",
+    "room.whereHeading":"Dove si trova",
+    "loc.reception.name":"Reception","loc.reception.desc":"Piano terra, all'ingresso principale.","loc.reception.time":"~1 min dalla camera",
+    "loc.breakfast.name":"Colazione","loc.breakfast.desc":"Sala con terrazza, piano terra, accanto alla reception. 7:30–10:30.","loc.breakfast.time":"~2 min dalla camera",
+    "loc.pool.name":"Piscina","loc.pool.desc":"Primo piano, in fondo al corridoio dopo l'ascensore.","loc.pool.time":"~3 min dalla camera",
+    "loc.elevator.name":"Ascensore","loc.elevator.desc":"In fondo al vostro corridoio, a sinistra.","loc.elevator.time":"~30 sec dalla camera",
+    "roomservice.heading":"Servizio in camera","roomservice.add":"Aggiungi","roomservice.cartHeading":"Il vostro ordine",
+    "roomservice.empty":"Non avete ancora aggiunto nulla.","roomservice.send":"Invia l'ordine alla reception","roomservice.sentToast":"Ordine inviato alla reception",
+    "rs.club.name":"Club sandwich","rs.greek.name":"Insalata greca","rs.water.name":"Acqua / bibita","rs.wine.name":"Vino della casa (calice)",
+    "explore.title":"Scopri la zona","explore.subtitle":"Consigli del nostro staff, non pubblicità.","explore.empty":"Ancora nessun consiglio per questo hotel.",
+    "map.note":"La mappa è illustrativa, non un GPS preciso. 1 Molo Bar · 2 Taverna e Gjelbër · 3 Spiaggia Blu · 4 Kanto Lounge",
+    "cat.restaurants":"Ristoranti","cat.bars":"Bar","cat.beaches":"Spiagge",
+    "price.mid":"$$","price.high":"$$$","price.free":"Gratis",
+    "rec.tavern.meta":"Pesce fresco · 8 min a piedi","rec.tavern.tip":"Chiedete un tavolo in cortile la sera. Prenotate dalle 19:00, si riempie in fretta.",
+    "rec.ilira.meta":"Cucina tradizionale · 12 min in auto","rec.ilira.tip":"Ottimo per una cena romantica. Ordinate l'agnello allo spiedo, preparato su richiesta.",
+    "rec.molo.meta":"Cocktail sul mare · 5 min a piedi","rec.molo.tip":"Il tramonto più bello della zona. Arrivate prima delle 20:00 per un posto.",
+    "rec.kanto.meta":"Musica dal vivo gio-sab · 10 min a piedi","rec.kanto.tip":"Inizia verso le 22:00, atmosfera vivace fino a tardi.",
+    "rec.blue.meta":"Ghiaia fine, acqua calma · 6 min a piedi","rec.blue.tip":"Meno affollata nelle prime ore del mattino. Ombrelloni a noleggio sul posto.",
+    "rec.hidden.meta":"Roccioso, acqua profonda · 15 min a piedi","rec.hidden.tip":"Portate scarpe da scoglio. Nessun'ombra naturale, l'ombrellone è indispensabile.",
+    "badge.staffpick":"Consiglio dello staff",
+    "info.title":"Informazioni pratiche","info.subtitle":"Tutto il resto che potrebbe servirvi.",
+    "weather.today":"Oggi","weather.note":"Dati di esempio — un hotel reale li collegherebbe a un servizio meteo in tempo reale.","weather.live":"Dati in tempo reale dal meteo attuale.","weather.warning.storm":"Temporali previsti oggi — attenzione alle attività all'aperto.","weather.warning.rain":"Pioggia intensa prevista oggi.","weather.warning.snow":"Nevicate abbondanti previste oggi.","weather.warning.heat":"Caldo estremo oggi — bevete molta acqua ed evitate il sole forte.","weather.warning.cold":"Temperature molto basse oggi — vestitevi pesante.",
+    "order.preparing":"Il vostro ordine è in preparazione","order.delivered":"Il vostro ordine è stato consegnato",
+    "order.trackingHeading":"Il vostro ordine","order.step.pending":"Ricevuto","order.step.preparing":"In preparazione","order.step.on_the_way":"In arrivo","order.step.delivered":"Consegnato",
+    "info.hoursHeading":"Orari",
+    "info.hours.checkin.name":"Check-in","info.hours.checkin.val":"Dalle 14:00",
+    "info.hours.checkout.name":"Check-out","info.hours.checkout.val":"Entro le 11:00",
+    "info.hours.quiet.name":"Ore di silenzio","info.hours.quiet.val":"23:00–08:00",
+    "info.hours.cleaning.name":"Pulizia camera","info.hours.cleaning.val":"10:00–13:00",
+    "info.transportHeading":"Trasporti",
+    "tr.airport.name":"Transfer da/per l'aeroporto","tr.airport.desc":"Contattate la reception almeno 3 ore prima, organizziamo un transfer con auto privata.",
+    "tr.taxi.name":"Taxi locale","tr.taxi.desc":"Disponibile 24/7 tramite la reception.",
+    "tr.bus.name":"Autobus urbano","tr.bus.desc":"La fermata più vicina è a 5 min a piedi, linea per il centro ogni 30 min.",
+    "info.emergencyHeading":"Emergenze",
+    "em.reception.name":"Reception (24 ore)","em.police.name":"Polizia","em.ambulance.name":"Ambulanza",
+    "em.pharmacy.name":"Farmacia più vicina","em.pharmacy.val":"3 min a piedi",
+    "info.faqHeading":"Domande frequenti",
+    "faq.q1":"Come si accende l'acqua calda?","faq.a1":"La valvola è accanto al soffione della doccia, giratela a sinistra e attendete circa 30 secondi.",
+    "faq.q2":"C'è parcheggio gratuito?","faq.a2":"Sì, il parcheggio esterno è gratuito per gli ospiti, vicino all'ingresso laterale.",
+    "faq.q3":"Accettate animali domestici?","faq.a3":"Gli animali di piccola taglia sono ammessi con preavviso alla reception, con supplemento.",
+    "faq.q4":"Fino a che ora si serve la colazione?","faq.a4":"La colazione è servita ogni giorno dalle 7:30 alle 10:30.",
+    "chat.title":"Reception","chat.subtitle":"Di solito rispondiamo entro pochi minuti.",
+    "chat.first":"Benvenuti all'Hotel Bregu! Sono qui per qualsiasi cosa vi serva durante il soggiorno.",
+    "chat.placeholder":"Scrivete il vostro messaggio...",
+    "tab.home":"Home","tab.room":"Camera","tab.explore":"Scopri","tab.info":"Info","tab.chat":"Chat",
+    "chat.replies":["Grazie! Abbiamo ricevuto il vostro messaggio, un membro dello staff vi contatterà a breve.","Certo, sistemiamo subito. Vi serve altro?","Stiamo mandando qualcuno in camera vostra a breve. Grazie per la pazienza."],
+    "feedback.heading":"Valutate il soggiorno","feedback.placeholder":"Condividete le vostre impressioni (opzionale)",
+    "feedback.submit":"Invia valutazione","feedback.thanks":"Grazie per il vostro feedback!",
+    "room.chipTemplate":"Camera {room} · Piano {floor}"
+  },
+  de: {
+    "eyebrow":"Gästeführer","room.chip":"Zimmer 214 · Etage 2","call.button":"Anrufen",
+    "rescan.notice":"Die Sitzung läuft täglich um 11:00 Uhr ab — Sie müssen den QR-Code erneut scannen.",
+    "home.title":"Willkommen","home.subtitle":"Alles, was Sie während Ihres Aufenthalts brauchen, an einem Ort.",
+    "keycard.wifi":"WLAN","keycard.pass":"Passwort","keycard.copy":"Kopieren","keycard.copied":"Kopiert",
+    "quick.room.title":"Mein Zimmer","quick.room.sub":"Ausstattung, Anfragen, Zimmerservice",
+    "quick.explore.title":"Umgebung entdecken","quick.explore.sub":"Restaurants, Bars, Strände, Karte",
+    "quick.info.title":"Praktische Infos","quick.info.sub":"Zeiten, Transport, Notfälle, FAQ",
+    "quick.chat.title":"Rezeption","quick.chat.sub":"Schreiben Sie uns direkt, wir antworten schnell",
+    "room.title":"Ihr Zimmer","room.subtitle":"Ausstattung und Orientierung im Hotel.",
+    "quick.request.heading":"Schnelle Anfragen",
+    "req.towels":"Zusätzliche Handtücher","req.cleaning":"Zimmerreinigung","req.pillows":"Zusätzliche Kissen",
+    "quick.toiletries.heading":"Pflegeartikel",
+    "req.shampoo":"Shampoo","req.toothbrush":"Zahnbürste","req.slippers":"Hausschuhe","req.soap":"Seife / Duschgel",
+    "dnd.heading":"Bitte nicht stören","dnd.sub":"Aktivieren, wenn Sie vom Personal nicht gestört werden möchten.",
+    "dnd.on":"Aktiv","dnd.off":"Inaktiv",
+    "dnd.enabledToast":"'Bitte nicht stören' aktiviert","dnd.disabledToast":"'Bitte nicht stören' deaktiviert",
+    "dnd.enabledMsg":"Der Gast hat 'Bitte nicht stören' aktiviert.","dnd.disabledMsg":"Der Gast hat 'Bitte nicht stören' deaktiviert.",
+    "push.enable":"🔔 Telefon-Benachrichtigungen aktivieren","push.enabled":"Benachrichtigungen aktiviert!","push.denied":"Die Berechtigung für Benachrichtigungen wurde verweigert.","push.unavailable":"Benachrichtigungen sind momentan nicht verfügbar.",
+    "req.issue_ac":"Klimaanlage funktioniert nicht","req.issue_tv":"TV funktioniert nicht","req.issue_toilet":"Toilette defekt","req.issue_plumbing":"Sanitärproblem","req.issue_electric":"Elektrisches Problem",
+    "issue.attachPhoto":"Foto des Problems anhängen (optional)","issue.removePhoto":"Foto entfernen",
+    "req.issue_other":"+ Anderes Problem","issue.otherPlaceholder":"Problem beschreiben...","issue.send":"Senden",
+    "issue.photoPrompt.title":"Möchten Sie ein Foto des Problems hinzufügen?","issue.photoPrompt.sub":"Hilft dem Personal, das Problem schneller zu verstehen. Optional.","issue.photoPrompt.takePhoto":"Foto aufnehmen / auswählen","issue.photoPrompt.skip":"Ohne Foto fortfahren",
+    "tutorial.title":"Willkommen!","tutorial.homeDesc":"schneller Zugang zu allem","tutorial.roomDesc":"WLAN, Ausstattung, Anfragen, Probleme","tutorial.exploreDesc":"Restaurants, Bars, Strände mit Karte","tutorial.chatDesc":"direkt an die Rezeption schreiben","tutorial.gotIt":"Verstanden",
+    "req.sentPrefix":"Anfrage aus dem Zimmer:","req.confirmToast":"Anfrage an die Rezeption gesendet",
+    "room.amenitiesHeading":"Ausstattung",
+    "amenity.ac.name":"Klimaanlage","amenity.ac.note":"Bedienfeld neben der Badezimmertür. 18-26°C.",
+    "amenity.safe.name":"Safe","amenity.safe.note":"Im Kleiderschrank. 4-stelligen Code einstellen, schließt automatisch.",
+    "amenity.minibar.name":"Minibar","amenity.minibar.note":"Wasser ist kostenlos. Alles andere wird beim Check-out berechnet.",
+    "amenity.dryer.name":"Haartrockner","amenity.dryer.note":"Oberste Schublade am Schminktisch.",
+    "room.whereHeading":"Wo sich alles befindet",
+    "loc.reception.name":"Rezeption","loc.reception.desc":"Erdgeschoss, am Haupteingang.","loc.reception.time":"~1 Min. vom Zimmer",
+    "loc.breakfast.name":"Frühstück","loc.breakfast.desc":"Terrassenraum, Erdgeschoss, neben der Rezeption. 7:30–10:30 Uhr.","loc.breakfast.time":"~2 Min. vom Zimmer",
+    "loc.pool.name":"Pool","loc.pool.desc":"Erster Stock, Ausgang am Ende des Flurs nach dem Aufzug.","loc.pool.time":"~3 Min. vom Zimmer",
+    "loc.elevator.name":"Aufzug","loc.elevator.desc":"Am Ende Ihres Flurs, links.","loc.elevator.time":"~30 Sek. vom Zimmer",
+    "roomservice.heading":"Zimmerservice","roomservice.add":"Hinzufügen","roomservice.cartHeading":"Ihre Bestellung",
+    "roomservice.empty":"Sie haben noch nichts hinzugefügt.","roomservice.send":"Bestellung an die Rezeption senden","roomservice.sentToast":"Bestellung an die Rezeption gesendet",
+    "rs.club.name":"Club Sandwich","rs.greek.name":"Griechischer Salat","rs.water.name":"Wasser / Softdrink","rs.wine.name":"Hauswein (Glas)",
+    "explore.title":"Umgebung entdecken","explore.subtitle":"Empfehlungen unseres Teams, keine Werbung.","explore.empty":"Noch keine Empfehlungen für dieses Hotel.",
+    "map.note":"Die Karte ist illustrativ, kein präzises GPS. 1 Molo Bar · 2 Taverna e Gjelbër · 3 Blauer Strand · 4 Kanto Lounge",
+    "cat.restaurants":"Restaurants","cat.bars":"Bars","cat.beaches":"Strände",
+    "price.mid":"$$","price.high":"$$$","price.free":"Kostenlos",
+    "rec.tavern.meta":"Frischer Fisch · 8 Min. zu Fuß","rec.tavern.tip":"Bitten Sie abends um einen Tisch im Innenhof. Ab 19 Uhr reservieren, wird schnell voll.",
+    "rec.ilira.meta":"Traditionelle Küche · 12 Min. mit dem Auto","rec.ilira.tip":"Toll für ein romantisches Abendessen. Bestellen Sie das Spießlamm, auf Bestellung zubereitet.",
+    "rec.molo.meta":"Cocktails am Meer · 5 Min. zu Fuß","rec.molo.tip":"Der schönste Sonnenuntergang der Gegend. Vor 20 Uhr kommen für einen Platz.",
+    "rec.kanto.meta":"Live-Musik Do-Sa · 10 Min. zu Fuß","rec.kanto.tip":"Beginnt gegen 22 Uhr, lebendige Atmosphäre bis spät in die Nacht.",
+    "rec.blue.meta":"Feiner Kies, ruhiges Wasser · 6 Min. zu Fuß","rec.blue.tip":"Am Morgen weniger überlaufen. Sonnenschirme vor Ort mietbar.",
+    "rec.hidden.meta":"Felsig, tiefes Wasser · 15 Min. zu Fuß","rec.hidden.tip":"Bringen Sie Badeschuhe mit. Kein natürlicher Schatten, ein Schirm ist notwendig.",
+    "badge.staffpick":"Tipp vom Team",
+    "info.title":"Praktische Informationen","info.subtitle":"Alles andere, was Sie brauchen könnten.",
+    "weather.today":"Heute","weather.note":"Beispieldaten — ein echtes Hotel würde dies mit einem Live-Wetterdienst verbinden.","weather.live":"Live-Daten vom aktuellen Wetter.","weather.warning.storm":"Heute werden Gewitter erwartet — Vorsicht bei Outdoor-Aktivitäten.","weather.warning.rain":"Heute wird starker Regen erwartet.","weather.warning.snow":"Heute werden starke Schneefälle erwartet.","weather.warning.heat":"Heute extreme Hitze — viel trinken und starke Sonne meiden.","weather.warning.cold":"Heute sehr niedrige Temperaturen — warm anziehen.",
+    "order.preparing":"Ihre Bestellung wird zubereitet","order.delivered":"Ihre Bestellung wurde geliefert",
+    "order.trackingHeading":"Ihre Bestellung","order.step.pending":"Erhalten","order.step.preparing":"In Zubereitung","order.step.on_the_way":"Unterwegs","order.step.delivered":"Geliefert",
+    "info.hoursHeading":"Öffnungszeiten",
+    "info.hours.checkin.name":"Check-in","info.hours.checkin.val":"Ab 14:00 Uhr",
+    "info.hours.checkout.name":"Check-out","info.hours.checkout.val":"Bis 11:00 Uhr",
+    "info.hours.quiet.name":"Ruhezeiten","info.hours.quiet.val":"23:00–08:00 Uhr",
+    "info.hours.cleaning.name":"Zimmerreinigung","info.hours.cleaning.val":"10:00–13:00 Uhr",
+    "info.transportHeading":"Transport",
+    "tr.airport.name":"Flughafentransfer","tr.airport.desc":"Kontaktieren Sie die Rezeption mindestens 3 Stunden vorher, wir organisieren einen privaten Autotransfer.",
+    "tr.taxi.name":"Örtliches Taxi","tr.taxi.desc":"Rund um die Uhr über die Rezeption verfügbar.",
+    "tr.bus.name":"Stadtbus","tr.bus.desc":"Die nächste Haltestelle ist 5 Gehminuten entfernt, Linie ins Zentrum alle 30 Min.",
+    "info.emergencyHeading":"Notfälle",
+    "em.reception.name":"Rezeption (24 Std.)","em.police.name":"Polizei","em.ambulance.name":"Rettungsdienst",
+    "em.pharmacy.name":"Nächste Apotheke","em.pharmacy.val":"3 Min. zu Fuß",
+    "info.faqHeading":"Häufige Fragen",
+    "faq.q1":"Wie schalte ich das warme Wasser ein?","faq.a1":"Der Hebel befindet sich neben dem Duschkopf, nach links drehen und etwa 30 Sekunden warten.",
+    "faq.q2":"Gibt es kostenlose Parkplätze?","faq.a2":"Ja, der Außenparkplatz ist für Gäste kostenlos, neben dem Seiteneingang.",
+    "faq.q3":"Sind Haustiere erlaubt?","faq.a3":"Kleine Haustiere sind mit vorheriger Ankündigung an der Rezeption gegen Aufpreis erlaubt.",
+    "faq.q4":"Bis wann wird Frühstück serviert?","faq.a4":"Frühstück wird täglich von 7:30 bis 10:30 Uhr serviert.",
+    "chat.title":"Rezeption","chat.subtitle":"Wir antworten meist innerhalb weniger Minuten.",
+    "chat.first":"Willkommen im Hotel Bregu! Ich bin für alles da, was Sie während Ihres Aufenthalts brauchen.",
+    "chat.placeholder":"Nachricht schreiben...",
+    "tab.home":"Start","tab.room":"Zimmer","tab.explore":"Entdecken","tab.info":"Info","tab.chat":"Chat",
+    "chat.replies":["Danke! Wir haben Ihre Nachricht erhalten, jemand vom Team meldet sich gleich bei Ihnen.","Natürlich, wir kümmern uns sofort darum. Brauchen Sie noch etwas?","Wir schicken gleich jemanden auf Ihr Zimmer. Danke für Ihre Geduld."],
+    "feedback.heading":"Bewerten Sie Ihren Aufenthalt","feedback.placeholder":"Teilen Sie uns Ihre Eindrücke mit (optional)",
+    "feedback.submit":"Bewertung senden","feedback.thanks":"Danke für Ihr Feedback!",
+    "room.chipTemplate":"Zimmer {room} · Etage {floor}"
+  },
+  fr: {
+    "eyebrow":"Guide du séjour","room.chip":"Chambre 214 · Étage 2","call.button":"Appeler",
+    "rescan.notice":"La session expire chaque jour à 11h00 — vous devrez rescanner le code QR.",
+    "home.title":"Bienvenue","home.subtitle":"Tout ce dont vous avez besoin pendant votre séjour, au même endroit.",
+    "keycard.wifi":"Wifi","keycard.pass":"Mot de passe","keycard.copy":"Copier","keycard.copied":"Copié",
+    "quick.room.title":"Ma chambre","quick.room.sub":"Équipements, demandes, service en chambre",
+    "quick.explore.title":"Découvrir les environs","quick.explore.sub":"Restaurants, bars, plages, carte",
+    "quick.info.title":"Infos pratiques","quick.info.sub":"Horaires, transport, urgences, FAQ",
+    "quick.chat.title":"Réception","quick.chat.sub":"Écrivez-nous directement, nous répondons rapidement",
+    "room.title":"Votre chambre","room.subtitle":"Équipements et repères dans l'hôtel.",
+    "quick.request.heading":"Demandes rapides",
+    "req.towels":"Serviettes supplémentaires","req.cleaning":"Nettoyage de la chambre","req.pillows":"Oreillers supplémentaires",
+    "quick.toiletries.heading":"Articles de toilette",
+    "req.shampoo":"Shampooing","req.toothbrush":"Brosse à dents","req.slippers":"Chaussons","req.soap":"Savon / Gel douche",
+    "dnd.heading":"Ne pas déranger","dnd.sub":"Activez si vous ne souhaitez pas être dérangé par le personnel.",
+    "dnd.on":"Actif","dnd.off":"Inactif",
+    "dnd.enabledToast":"« Ne pas déranger » activé","dnd.disabledToast":"« Ne pas déranger » désactivé",
+    "dnd.enabledMsg":"Le client a activé « Ne pas déranger ».","dnd.disabledMsg":"Le client a désactivé « Ne pas déranger ».",
+    "push.enable":"🔔 Activer les notifications sur le téléphone","push.enabled":"Notifications activées !","push.denied":"L'autorisation pour les notifications a été refusée.","push.unavailable":"Les notifications ne sont pas disponibles pour le moment.",
+    "req.issue_ac":"La climatisation ne fonctionne pas","req.issue_tv":"La télévision ne fonctionne pas","req.issue_toilet":"Toilettes en panne","req.issue_plumbing":"Problème de plomberie","req.issue_electric":"Problème électrique",
+    "issue.attachPhoto":"Joindre une photo du problème (facultatif)","issue.removePhoto":"Retirer la photo",
+    "req.issue_other":"+ Autre problème","issue.otherPlaceholder":"Décrivez le problème...","issue.send":"Envoyer",
+    "issue.photoPrompt.title":"Voulez-vous ajouter une photo du problème ?","issue.photoPrompt.sub":"Cela aide le personnel à comprendre le problème plus rapidement. Facultatif.","issue.photoPrompt.takePhoto":"Prendre / choisir une photo","issue.photoPrompt.skip":"Continuer sans photo",
+    "tutorial.title":"Bienvenue !","tutorial.homeDesc":"accès rapide à tout","tutorial.roomDesc":"wifi, équipements, demandes, problèmes","tutorial.exploreDesc":"restaurants, bars, plages avec carte","tutorial.chatDesc":"écrire directement à la réception","tutorial.gotIt":"Compris",
+    "req.sentPrefix":"Demande depuis la chambre :","req.confirmToast":"Demande envoyée à la réception",
+    "room.amenitiesHeading":"Équipements",
+    "amenity.ac.name":"Climatisation","amenity.ac.note":"Panneau de commande à côté de la porte de la salle de bain. 18-26°C.",
+    "amenity.safe.name":"Coffre-fort","amenity.safe.note":"Dans l'armoire. Définissez un code à 4 chiffres, se verrouille automatiquement.",
+    "amenity.minibar.name":"Minibar","amenity.minibar.note":"L'eau est gratuite. Tout le reste est facturé au départ.",
+    "amenity.dryer.name":"Sèche-cheveux","amenity.dryer.note":"Tiroir du haut de la coiffeuse.",
+    "room.whereHeading":"Où se trouve tout",
+    "loc.reception.name":"Réception","loc.reception.desc":"Rez-de-chaussée, à l'entrée principale.","loc.reception.time":"~1 min de la chambre",
+    "loc.breakfast.name":"Petit-déjeuner","loc.breakfast.desc":"Salle de la terrasse, rez-de-chaussée, à côté de la réception. 7h30–10h30.","loc.breakfast.time":"~2 min de la chambre",
+    "loc.pool.name":"Piscine","loc.pool.desc":"Premier étage, sortie au bout du couloir après l'ascenseur.","loc.pool.time":"~3 min de la chambre",
+    "loc.elevator.name":"Ascenseur","loc.elevator.desc":"Au bout de votre couloir, à gauche.","loc.elevator.time":"~30 sec de la chambre",
+    "roomservice.heading":"Service en chambre","roomservice.add":"Ajouter","roomservice.cartHeading":"Votre commande",
+    "roomservice.empty":"Vous n'avez encore rien ajouté.","roomservice.send":"Envoyer la commande à la réception","roomservice.sentToast":"Commande envoyée à la réception",
+    "rs.club.name":"Club sandwich","rs.greek.name":"Salade grecque","rs.water.name":"Eau / Boisson gazeuse","rs.wine.name":"Vin de la maison (verre)",
+    "explore.title":"Découvrir les environs","explore.subtitle":"Recommandations de notre équipe, sans publicité.","explore.empty":"Pas encore de recommandations pour cet hôtel.",
+    "map.note":"La carte est illustrative, pas un GPS précis. 1 Molo Bar · 2 Taverna e Gjelbër · 3 Plage Bleue · 4 Kanto Lounge",
+    "cat.restaurants":"Restaurants","cat.bars":"Bars","cat.beaches":"Plages",
+    "price.mid":"$$","price.high":"$$$","price.free":"Gratuit",
+    "rec.tavern.meta":"Poisson frais · 8 min à pied","rec.tavern.tip":"Demandez une table dans la cour le soir. Réservez à partir de 19h, se remplit vite.",
+    "rec.ilira.meta":"Cuisine traditionnelle · 12 min en voiture","rec.ilira.tip":"Idéal pour un dîner romantique. Commandez l'agneau à la broche, préparé sur demande.",
+    "rec.molo.meta":"Cocktails en bord de mer · 5 min à pied","rec.molo.tip":"Le plus beau coucher de soleil de la région. Arrivez avant 20h pour avoir une place.",
+    "rec.kanto.meta":"Musique live jeu-sam · 10 min à pied","rec.kanto.tip":"Commence vers 22h, ambiance animée jusque tard dans la nuit.",
+    "rec.blue.meta":"Galets fins, eau calme · 6 min à pied","rec.blue.tip":"Moins fréquenté le matin. Parasols disponibles à la location sur place.",
+    "rec.hidden.meta":"Rocheux, eau profonde · 15 min à pied","rec.hidden.tip":"Apportez des chaussures d'eau. Pas d'ombre naturelle, un parasol est nécessaire.",
+    "badge.staffpick":"Coup de cœur de l'équipe",
+    "info.title":"Informations pratiques","info.subtitle":"Tout le reste dont vous pourriez avoir besoin.",
+    "weather.today":"Aujourd'hui","weather.note":"Données d'exemple — un vrai hôtel connecterait ceci à un service météo en direct.","weather.live":"Données météo en direct.","weather.warning.storm":"Des orages sont prévus aujourd'hui — soyez prudent pour les activités en extérieur.","weather.warning.rain":"De fortes pluies sont prévues aujourd'hui.","weather.warning.snow":"De fortes chutes de neige sont prévues aujourd'hui.","weather.warning.heat":"Chaleur extrême aujourd'hui — buvez beaucoup d'eau et évitez le soleil fort.","weather.warning.cold":"Températures très basses aujourd'hui — habillez-vous chaudement.",
+    "order.preparing":"Votre commande est en cours de préparation","order.delivered":"Votre commande a été livrée",
+    "order.trackingHeading":"Votre commande","order.step.pending":"Reçue","order.step.preparing":"En préparation","order.step.on_the_way":"En route","order.step.delivered":"Livrée",
+    "info.hoursHeading":"Horaires",
+    "info.hours.checkin.name":"Arrivée","info.hours.checkin.val":"À partir de 14h00",
+    "info.hours.checkout.name":"Départ","info.hours.checkout.val":"Jusqu'à 11h00",
+    "info.hours.quiet.name":"Heures de silence","info.hours.quiet.val":"23h00–08h00",
+    "info.hours.cleaning.name":"Nettoyage de la chambre","info.hours.cleaning.val":"10h00–13h00",
+    "info.transportHeading":"Transport",
+    "tr.airport.name":"Transfert aéroport","tr.airport.desc":"Contactez la réception au moins 3 heures à l'avance, nous organiserons un transfert privé en voiture.",
+    "tr.taxi.name":"Taxi local","tr.taxi.desc":"Disponible 24h/24 via la réception.",
+    "tr.bus.name":"Bus urbain","tr.bus.desc":"L'arrêt le plus proche est à 5 minutes à pied, ligne vers le centre toutes les 30 min.",
+    "info.emergencyHeading":"Urgences",
+    "em.reception.name":"Réception (24h/24)","em.police.name":"Police","em.ambulance.name":"Ambulance",
+    "em.pharmacy.name":"Pharmacie la plus proche","em.pharmacy.val":"3 min à pied",
+    "info.faqHeading":"Questions fréquentes",
+    "faq.q1":"Comment allumer l'eau chaude ?","faq.a1":"Le levier se trouve à côté du pommeau de douche, tournez-le vers la gauche et attendez environ 30 secondes.",
+    "faq.q2":"Y a-t-il un parking gratuit ?","faq.a2":"Oui, le parking extérieur est gratuit pour les clients, à côté de l'entrée latérale.",
+    "faq.q3":"Les animaux de compagnie sont-ils autorisés ?","faq.a3":"Les petits animaux sont autorisés avec un préavis à la réception, moyennant un supplément.",
+    "faq.q4":"Jusqu'à quelle heure le petit-déjeuner est-il servi ?","faq.a4":"Le petit-déjeuner est servi tous les jours de 7h30 à 10h30.",
+    "chat.title":"Réception","chat.subtitle":"Nous répondons généralement en quelques minutes.",
+    "chat.first":"Bienvenue à l'Hôtel Bregu ! Je suis là pour tout ce dont vous avez besoin pendant votre séjour.",
+    "chat.placeholder":"Écrire un message...",
+    "tab.home":"Accueil","tab.room":"Chambre","tab.explore":"Découvrir","tab.info":"Infos","tab.chat":"Chat",
+    "chat.replies":["Merci ! Nous avons bien reçu votre message, quelqu'un de l'équipe vous répondra sous peu.","Bien sûr, nous nous en occupons tout de suite. Avez-vous besoin d'autre chose ?","Nous envoyons quelqu'un dans votre chambre sous peu. Merci de votre patience."],
+    "feedback.heading":"Évaluez votre séjour","feedback.placeholder":"Partagez vos impressions (facultatif)",
+    "feedback.submit":"Envoyer l'avis","feedback.thanks":"Merci pour votre avis !",
+    "room.chipTemplate":"Chambre {room} · Étage {floor}"
+  }
+};
+
+let currentLang = 'sq';
+let rsCart = [];
+let stayRating = 0;
+let currentHotel = null;
+let currentRoom = '214';
+let currentFloor = '2';
+let currentCat = 'restorante';
+let dynamicContent = null;
+let dynamicRecs = [];
+let dynamicRoomService = [];
+let leafletMap = null;
+let isAdminPreview = false;
+
+function escapeHtml(str){
+  return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Translates staff messages into the guest's selected language via the
+// free MyMemory API, with an in-memory cache so repeated phrases are fast.
+const guestTranslateCache = new Map();
+async function translateForGuest(text, fromLang){
+  if(!text || !fromLang || fromLang === currentLang) return text;
+  const key = fromLang + '|' + currentLang + '|' + text;
+  if(guestTranslateCache.has(key)) return guestTranslateCache.get(key);
+  try{
+    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${currentLang}`);
+    const data = await res.json();
+    const translated = data?.responseData?.translatedText || text;
+    guestTranslateCache.set(key, translated);
+    return translated;
+  }catch(e){ return text; }
+}
+
+async function loadHotelContent(){
+  if(!API_BASE || !currentHotel) return;
+  try{
+    const [contentRes, recsRes, infoRes] = await Promise.all([
+      fetch(API_BASE + '/api/content?hotel=' + encodeURIComponent(currentHotel)),
+      fetch(API_BASE + '/api/recommendations?hotel=' + encodeURIComponent(currentHotel)),
+      fetch(API_BASE + '/api/hotel-info?hotel=' + encodeURIComponent(currentHotel))
+    ]);
+    if(contentRes.status === 403){
+      showHotelDeactivated();
+      return;
+    }
+    dynamicContent = await contentRes.json();
+    dynamicRecs = await recsRes.json();
+    dynamicRoomService = dynamicContent.room_service || [];
+    applyEnabledSections(dynamicContent.enabled_sections);
+    const activeCatBtn = document.querySelector('.cat-tab.on');
+    if(activeCatBtn && activeCatBtn.style.display === 'none'){
+      const firstVisible = document.querySelector('.cat-tab:not([style*="display: none"])');
+      if(firstVisible) firstVisible.click();
+    }
+    renderDynamicRoom();
+    renderDynamicRecommendations();
+    renderDynamicFaq();
+    initRealMap();
+    fetchWeather(dynamicContent.location?.lat, dynamicContent.location?.lng);
+    try{
+      const info = await infoRes.json();
+      if(info?.name){
+        const nameEl = document.getElementById('hotel-name-el');
+        if(nameEl) nameEl.textContent = info.name;
+        document.title = info.name + ' — Udhërrëfyesi i mysafirit';
+      }
+      if(info?.theme){
+        currentThemePreset = info.theme;
+        applyPresetColors();
+      }
+    }catch(e){}
+    if(isAdminPreview) enableAdminEditButtons();
+  }catch(e){ console.warn('Could not load hotel content, using example content.', e); }
+  loadRoomNote();
+  loadAnnouncement();
+  loadMyRoomServiceOrder();
+}
+
+// --- Announcement banner (live broadcast from hotel admin) ---
+let currentAnnouncement = null;
+async function loadAnnouncement(){
+  if(!API_BASE || !currentHotel) return;
+  try{
+    const res = await fetch(API_BASE + '/api/announcement?hotel=' + encodeURIComponent(currentHotel));
+    const data = await res.json();
+    renderAnnouncement(data);
+  }catch(e){ /* no announcement, leave banner hidden */ }
+}
+
+function renderAnnouncement(data){
+  currentAnnouncement = data;
+  const banner = document.getElementById('announcement-banner');
+  if(!banner) return;
+  if(!data || !data.active || !data.text?.[currentLang] && !data.text?.sq){
+    banner.style.display = 'none';
+    return;
+  }
+  let dismissedKey = '';
+  try{ dismissedKey = localStorage.getItem('bregu_ann_dismissed') || ''; }catch(e){}
+  const thisKey = currentHotel + '|' + (data.updated_at || data.id || '');
+  if(dismissedKey === thisKey){
+    banner.style.display = 'none';
+    return;
+  }
+  const text = data.text?.[currentLang] || data.text?.sq || '';
+  if(!text){ banner.style.display = 'none'; return; }
+  document.getElementById('announcement-text').textContent = '📢 ' + text;
+  banner.style.display = 'flex';
+}
+
+function dismissAnnouncement(){
+  const banner = document.getElementById('announcement-banner');
+  if(banner) banner.style.display = 'none';
+  try{
+    const thisKey = currentHotel + '|' + (currentAnnouncement?.updated_at || currentAnnouncement?.id || '');
+    localStorage.setItem('bregu_ann_dismissed', thisKey);
+  }catch(e){}
+}
+
+// --- Persistent room-service order status tracker ---
+let currentRoomServiceOrderId = null;
+const ORDER_STEPS = ['pending','preparing','on_the_way','delivered'];
+
+async function loadMyRoomServiceOrder(){
+  if(!API_BASE || !currentHotel || !currentRoom) return;
+  try{
+    const res = await fetch(API_BASE + '/api/room-service/mine?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(currentRoom));
+    const order = await res.json();
+    if(order && order.id){
+      currentRoomServiceOrderId = order.id;
+      renderOrderTracker(order.status);
+    } else {
+      currentRoomServiceOrderId = null;
+      hideOrderTracker();
+    }
+  }catch(e){ /* tracker just stays hidden */ }
+}
+
+function renderOrderTracker(status){
+  const wrap = document.getElementById('rs-tracker');
+  const stepsBox = document.getElementById('rs-tracker-steps');
+  if(!wrap || !stepsBox) return;
+  if(status === 'delivered'){
+    // Show "delivered" briefly then hide, so the tracker doesn't linger forever.
+    stepsBox.innerHTML = buildTrackerStepsHtml(status);
+    wrap.style.display = 'block';
+    setTimeout(() => { hideOrderTracker(); }, 15000);
+    return;
+  }
+  stepsBox.innerHTML = buildTrackerStepsHtml(status);
+  wrap.style.display = 'block';
+}
+
+function buildTrackerStepsHtml(status){
+  const currentIdx = ORDER_STEPS.indexOf(status);
+  return ORDER_STEPS.map((step, idx) => {
+    const done = currentIdx > idx || status === 'delivered' && idx <= currentIdx;
+    const isCurrent = idx === currentIdx;
+    const cls = isCurrent ? 'current' : (idx < currentIdx ? 'done' : '');
+    const label = translations[currentLang]['order.step.' + step] || step;
+    return `<div class="rs-tracker-step ${cls}">${idx>0?'<span class=\"rs-tracker-line\"></span>':''}<span class="dot"></span><span class="label">${label}</span></div>`;
+  }).join('');
+}
+
+function hideOrderTracker(){
+  const wrap = document.getElementById('rs-tracker');
+  if(wrap) wrap.style.display = 'none';
+  currentRoomServiceOrderId = null;
+}
+
+let currentRoomNote = null;
+
+async function loadRoomNote(){
+  if(!API_BASE || !currentRoom || !currentHotel) return;
+  try{
+    const res = await fetch(API_BASE + '/api/room-notes/' + encodeURIComponent(currentRoom) + '?hotel=' + encodeURIComponent(currentHotel));
+    currentRoomNote = await res.json();
+    renderRoomNote();
+  }catch(e){ console.warn('Could not load room note.', e); }
+}
+
+function renderRoomNote(){
+  const box = document.getElementById('room-note-card');
+  if(!box) return;
+  const text = currentRoomNote?.note?.[currentLang] || currentRoomNote?.note?.sq;
+  if(text){
+    box.textContent = text;
+    box.style.display = 'block';
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+let weatherCoords = null;
+let weatherRefreshTimer = null;
+
+function weatherEmoji(code){
+  if(code === 0) return '☀️';
+  if([1,2,3].includes(code)) return '⛅';
+  if([45,48].includes(code)) return '🌫️';
+  if([51,53,55,56,57].includes(code)) return '🌦️';
+  if([61,63,66].includes(code)) return '🌧️';
+  if([65,67,80,81,82].includes(code)) return '🌧️';
+  if([71,73,75,77,85,86].includes(code)) return '❄️';
+  if([95,96,99].includes(code)) return '⛈️';
+  return '🌡️';
+}
+
+function weatherSeverity(code, temp){
+  if([95,96,99].includes(code)) return 'storm';
+  if([65,67,82].includes(code)) return 'rain';
+  if([75,86].includes(code)) return 'snow';
+  if(typeof temp === 'number' && temp >= 38) return 'heat';
+  if(typeof temp === 'number' && temp <= 0) return 'cold';
+  return null;
+}
+
+function renderWeatherWarning(code, temp){
+  const box = document.getElementById('weather-warning');
+  const textEl = document.getElementById('weather-warning-text');
+  if(!box || !textEl) return;
+  const sev = weatherSeverity(code, temp);
+  if(sev){
+    textEl.textContent = translations[currentLang]['weather.warning.' + sev] || '';
+    box.classList.add('show');
+  } else {
+    box.classList.remove('show');
+  }
+}
+
+async function fetchWeather(lat, lng){
+  if(typeof lat === 'number' && typeof lng === 'number'){
+    weatherCoords = { lat, lng };
+  }
+  if(!weatherCoords) return;
+  try{
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${weatherCoords.lat}&longitude=${weatherCoords.lng}&current=temperature_2m,weather_code`);
+    const data = await res.json();
+    const temp = Math.round(data.current.temperature_2m);
+    const code = data.current.weather_code;
+    const tempEl = document.getElementById('weather-temp');
+    const noteEl = document.getElementById('weather-note');
+    const svgEl = document.getElementById('weather-icon');
+    const emojiEl = document.getElementById('weather-icon-emoji');
+    if(tempEl) tempEl.textContent = temp + '°C';
+    if(noteEl) noteEl.textContent = translations[currentLang]['weather.live'] || '';
+    if(svgEl) svgEl.style.display = 'none';
+    if(emojiEl){ emojiEl.textContent = weatherEmoji(code); emojiEl.style.display = 'block'; }
+    renderWeatherWarning(code, temp);
+    if(!weatherRefreshTimer){
+      weatherRefreshTimer = setInterval(() => fetchWeather(), 15 * 60 * 1000);
+    }
+  }catch(e){ console.warn('Weather fetch failed, keeping example data.', e); }
+}
+
+// When this page is embedded as the admin's live preview (loaded with
+// ?preview=1), overlay a small "Edit" button on each editable section so the
+// admin can jump straight to that section's editor without hunting through
+// the panel. Clicking posts a message to the parent window (the admin page),
+// which listens for it and scrolls/highlights the matching card.
+const ADMIN_EDIT_TARGETS = [
+  { selector: '.keycard', section: 'wifi' },
+  { selector: '#section-amenities', section: 'amenities' },
+  { selector: '#section-locations', section: 'locations' },
+  { selector: '#section-roomservice', section: 'room_service' },
+  { selector: '#real-map', section: 'location' },
+  { selector: '#recs-container', section: 'recommendations' },
+  { selector: '#section-info_faq', section: 'faq' }
+];
+function enableAdminEditButtons(){
+  document.querySelectorAll('.admin-edit-btn').forEach(b => b.remove());
+  ADMIN_EDIT_TARGETS.forEach(t => {
+    const el = document.querySelector(t.selector);
+    if(!el) return;
+    el.classList.add('admin-editable');
+    if(!el.style.position) el.style.position = 'relative';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'admin-edit-btn';
+    btn.textContent = '✏️ Edit';
+    btn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      try{ window.parent.postMessage({ type: 'bregu-edit-section', section: t.section }, '*'); }catch(err){}
+    };
+    el.appendChild(btn);
+  });
+}
+
+function applyEnabledSections(sections){
+  if(!sections) return;
+  const wrapperMap = {
+    amenities: 'section-amenities', locations: 'section-locations', room_service: 'section-roomservice',
+    toiletries: 'section-toiletries', dnd: 'section-dnd',
+    info_hours: 'section-info_hours', info_transport: 'section-info_transport',
+    info_emergency: 'section-info_emergency', info_faq: 'section-info_faq'
+  };
+  Object.keys(wrapperMap).forEach(key => {
+    const el = document.getElementById(wrapperMap[key]);
+    if(el) el.style.display = (sections[key] === false) ? 'none' : '';
+  });
+
+  document.querySelectorAll('[data-section="quick_requests"]').forEach(el => {
+    el.style.display = (sections.quick_requests === false) ? 'none' : '';
+  });
+  document.querySelectorAll('[data-section="issues"]').forEach(el => {
+    el.style.display = (sections.issues === false) ? 'none' : '';
+  });
+  const qrHeading = document.getElementById('quick-requests-heading');
+  if(qrHeading) qrHeading.style.display = (sections.quick_requests === false && sections.issues === false) ? 'none' : '';
+
+  const catMap = { restorante: 'restaurants', bare: 'bars', plazhe: 'beaches' };
+  document.querySelectorAll('.cat-tab').forEach(btn => {
+    const key = catMap[btn.dataset.cat];
+    if(key) btn.style.display = (sections[key] === false) ? 'none' : '';
+  });
+}
+
+function renderDynamicRoom(){
+  if(!dynamicContent) return;
+  if(dynamicContent.wifi){
+    const ssidEl = document.getElementById('wifi-ssid');
+    const passEl = document.getElementById('wifi-pass');
+    if(ssidEl && dynamicContent.wifi.ssid) ssidEl.textContent = dynamicContent.wifi.ssid;
+    if(passEl && dynamicContent.wifi.password) passEl.textContent = dynamicContent.wifi.password;
+  }
+  if(Array.isArray(dynamicContent.amenities) && dynamicContent.amenities.length){
+    document.getElementById('amenities-container').innerHTML = dynamicContent.amenities.map(a => `
+      <div class="amenity-item"><div>
+        <p class="amenity-name">${escapeHtml(a.name?.[currentLang] || a.name?.sq || '')}</p>
+        <p class="amenity-note">${escapeHtml(a.note?.[currentLang] || a.note?.sq || '')}</p>
+      </div></div>`).join('');
+  }
+  if(Array.isArray(dynamicContent.locations) && dynamicContent.locations.length){
+    document.getElementById('locations-container').innerHTML = dynamicContent.locations.map(l => `
+      <div class="loc-item">
+        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-4.6-7-10a7 7 0 0114 0c0 5.4-7 10-7 10z"/></svg></div>
+        <div>
+          <p class="loc-name">${escapeHtml(l.name?.[currentLang] || l.name?.sq || '')}</p>
+          <p class="loc-desc">${escapeHtml(l.desc?.[currentLang] || l.desc?.sq || '')}</p>
+          <span class="loc-time">${escapeHtml(l.time?.[currentLang] || l.time?.sq || '')}</span>
+        </div>
+      </div>`).join('');
+  }
+  if(Array.isArray(dynamicRoomService) && dynamicRoomService.length){
+    document.getElementById('roomservice-container').innerHTML = dynamicRoomService.map((item, idx) => `
+      <div class="rs-item" style="${item.image_url ? 'display:flex; align-items:center; gap:10px;' : ''}">
+        ${item.image_url ? `<img src="${escapeHtml(item.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">` : ''}
+        <div style="flex:1;">
+          <p class="rs-name">${escapeHtml(item.name?.[currentLang] || item.name?.sq || '')}</p>
+          <span class="rs-price">${item.price} L</span>
+        </div>
+        <button class="rs-add" onclick="addRoomServiceFromContent(${idx})">${escapeHtml(translations[currentLang]['roomservice.add'])}</button>
+      </div>`).join('');
+  }
+}
+
+function addRoomServiceFromContent(idx){
+  const item = dynamicRoomService[idx];
+  if(!item) return;
+  rsCart.push({ name: item.name?.[currentLang] || item.name?.sq || '', price: item.price });
+  renderCart();
+}
+
+function renderDynamicFaq(){
+  const dynBox = document.getElementById('faq-dynamic-container');
+  const defaultBox = document.getElementById('faq-default-container');
+  if(!dynBox || !defaultBox) return;
+  if(Array.isArray(dynamicContent?.faq) && dynamicContent.faq.length){
+    dynBox.innerHTML = dynamicContent.faq.map(item => `
+      <details class="faq">
+        <summary>${escapeHtml(item.q?.[currentLang] || item.q?.sq || '')}</summary>
+        <p>${escapeHtml(item.a?.[currentLang] || item.a?.sq || '')}</p>
+      </details>`).join('');
+    dynBox.style.display = 'block';
+    defaultBox.style.display = 'none';
+  } else {
+    dynBox.style.display = 'none';
+    defaultBox.style.display = 'block';
+  }
+}
+
+function renderDynamicRecommendations(){
+  const box = document.getElementById('recs-container');
+  if(!dynamicContent) return; // haven't loaded real content yet — leave the static placeholder cards alone
+  if(!dynamicRecs || dynamicRecs.length === 0){
+    // Hotel has no recommendations saved yet — show nothing rather than the
+    // built-in example restaurants (they aren't real places for this hotel).
+    box.innerHTML = `<p class="rs-cart-empty" style="padding:4px 2px;">${escapeHtml(translations[currentLang]['explore.empty'] || '—')}</p>`;
+    return;
+  }
+  box.innerHTML = dynamicRecs.map(rec => `
+    <div class="rec-card ${rec.category===currentCat ? 'show':''}" data-cat="${rec.category}">
+      ${rec.image_url ? `<img src="${escapeHtml(rec.image_url)}" alt="${escapeHtml(rec.name)}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:10px;" onerror="this.style.display='none'">` : ''}
+      <div class="rec-top"><p class="rec-name">${escapeHtml(rec.name)}</p><span class="rec-price">${translations[currentLang]['price.'+rec.price_type]}</span></div>
+      <p class="rec-meta">${escapeHtml(rec.meta?.[currentLang] || rec.meta?.sq || '')}</p>
+      <p class="rec-tip">${escapeHtml(rec.tip?.[currentLang] || rec.tip?.sq || '')}</p>
+      ${rec.staff_pick ? `<span class="rec-badge">${escapeHtml(translations[currentLang]['badge.staffpick'])}</span>` : ''}
+    </div>`).join('');
+}
+
+function initRealMap(){
+  if(typeof L === 'undefined' || !dynamicContent) return;
+  const lat = dynamicContent.location?.lat || 39.7669;
+  const lng = dynamicContent.location?.lng || 19.9903;
+  if(leafletMap){ leafletMap.remove(); }
+  leafletMap = L.map('real-map', { zoomControl: true, attributionControl: true }).setView([lat, lng], 14);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(leafletMap);
+
+  const hotelIcon = L.divIcon({
+    className: '', html: '<div style="background:#CE9A42;width:16px;height:16px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #0E3A3D;"></div>',
+    iconSize: [16,16], iconAnchor: [8,8]
+  });
+  L.marker([lat, lng], { icon: hotelIcon }).addTo(leafletMap).bindPopup('<b>Hotel Bregu</b>');
+
+  dynamicRecs.forEach(rec => {
+    if(typeof rec.lat === 'number' && typeof rec.lng === 'number'){
+      L.marker([rec.lat, rec.lng]).addTo(leafletMap).bindPopup('<b>'+escapeHtml(rec.name)+'</b>');
+    }
+  });
+}
+
+// Picks the language the app should open in: the guest's own earlier choice
+// (remembered on this device), otherwise a best guess from the browser/phone
+// language, otherwise English — never Albanian by default for someone who
+// hasn't chosen it, since most guests aren't Albanian speakers.
+function detectInitialLang(){
+  const supported = ['sq','en','it','de','fr'];
+  try{
+    const saved = localStorage.getItem('bregu_lang');
+    if(saved && supported.includes(saved)) return saved;
+  }catch(e){}
+  const browserLang = (navigator.language || navigator.userLanguage || '').slice(0,2).toLowerCase();
+  if(supported.includes(browserLang)) return browserLang;
+  return 'en';
+}
+
+function setLang(lang){
+  currentLang = lang;
+  try{ localStorage.setItem('bregu_lang', lang); }catch(e){}
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('on', b.dataset.lang===lang));
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(translations[lang][key] !== undefined) el.textContent = translations[lang][key];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const key = el.getAttribute('data-i18n-ph');
+    if(translations[lang][key] !== undefined) el.setAttribute('placeholder', translations[lang][key]);
+  });
+  renderCart();
+  updateRoomChip();
+  renderDynamicRoom();
+  renderDynamicRecommendations();
+  renderDynamicFaq();
+  renderDndToggle();
+  renderRoomNote();
+  if(weatherCoords) fetchWeather();
+  if(currentAnnouncement) renderAnnouncement(currentAnnouncement);
+  if(currentRoomServiceOrderId) loadMyRoomServiceOrder();
+}
+
+function updateRoomChip(){
+  const tpl = translations[currentLang]['room.chipTemplate'];
+  document.getElementById('room-chip-text').textContent = tpl.replace('{room}', currentRoom).replace('{floor}', currentFloor);
+}
+
+let sessionToken = null;
+
+// A "hotel day" runs from 11:00 to 11:00 (Europe/Tirane) — the same moment
+// messages get wiped daily. A session scanned during one hotel day stops
+// being valid once the next one starts, so the guest must re-scan the QR.
+function getHotelDay(){
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Tirane', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false
+  }).formatToParts(new Date());
+  const map = {};
+  parts.forEach(p => { map[p.type] = p.value; });
+  const d = new Date(Date.UTC(parseInt(map.year,10), parseInt(map.month,10)-1, parseInt(map.day,10)));
+  if(parseInt(map.hour,10) < 11) d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0,10);
+}
+
+async function initFromUrl(){
+  setLang(detectInitialLang());
+  const params = new URLSearchParams(window.location.search);
+  const urlHotel = params.get('hotel');
+  const urlToken = params.get('token');
+  const urlRoom = params.get('room');
+  const urlFloor = params.get('floor');
+  isAdminPreview = params.get('preview') === '1';
+  let sessionValid = false;
+
+  if(urlHotel){
+    currentHotel = urlHotel.toLowerCase().trim();
+    try{ localStorage.setItem('bregu_hotel', currentHotel); }catch(e){}
+  } else {
+    try{ currentHotel = localStorage.getItem('bregu_hotel'); }catch(e){}
+  }
+
+  if(!currentHotel){
+    showMissingHotel();
+    return;
+  }
+
+  if(urlToken){
+    // Legacy signed-token link, still supported if one was issued earlier —
+    // the server enforces whatever expiry that specific token was given.
+    try{
+      const res = await fetch(API_BASE + '/api/session/verify?token=' + encodeURIComponent(urlToken));
+      if(res.ok){
+        const data = await res.json();
+        if(data.valid && data.hotel === currentHotel){
+          currentRoom = data.room;
+          currentFloor = data.floor || currentFloor;
+          sessionToken = urlToken;
+          try{ localStorage.setItem('bregu_session', JSON.stringify({ token: urlToken, room: currentRoom, floor: currentFloor, exp: data.exp })); }catch(e){}
+          sessionValid = true;
+        }
+      }
+    }catch(e){ console.warn('Session verification failed', e); }
+  } else if(urlRoom){
+    // Standard QR code link — the code itself never expires, but each scan
+    // is only valid for the current hotel day (until the next 11:00 wipe).
+    currentRoom = urlRoom;
+    currentFloor = urlFloor || currentFloor;
+    try{ localStorage.setItem('bregu_session', JSON.stringify({ room: currentRoom, floor: currentFloor, hotelDay: getHotelDay() })); }catch(e){}
+    sessionValid = true;
+  } else {
+    try{
+      const stored = JSON.parse(localStorage.getItem('bregu_session') || 'null');
+      if(stored && stored.token && stored.exp && Date.now() < stored.exp){
+        currentRoom = stored.room;
+        currentFloor = stored.floor || currentFloor;
+        sessionToken = stored.token;
+        sessionValid = true;
+      } else if(stored && stored.room && !stored.token && stored.hotelDay === getHotelDay()){
+        currentRoom = stored.room;
+        currentFloor = stored.floor || currentFloor;
+        sessionValid = true;
+      }
+    }catch(e){}
+  }
+
+  if(!sessionValid){
+    showSessionLocked();
+    return;
+  }
+
+  updateRoomChip();
+  loadChatHistory();
+  loadHotelContent();
+  loadDndState();
+  if(socket) socket.emit('join_room', { hotel: currentHotel, room: currentRoom });
+  if(!isAdminPreview) showTutorialIfNeeded();
+}
+
+function showTutorialIfNeeded(){
+  try{
+    if(localStorage.getItem('bregu_tutorial_seen')) return;
+  }catch(e){}
+  const overlay = document.getElementById('tutorial-overlay');
+  if(overlay) overlay.style.display = 'flex';
+}
+
+function closeTutorial(){
+  const overlay = document.getElementById('tutorial-overlay');
+  if(overlay) overlay.style.display = 'none';
+  try{ localStorage.setItem('bregu_tutorial_seen', '1'); }catch(e){}
+}
+
+function showMissingHotel(){
+  const overlay = document.createElement('div');
+  overlay.id = 'session-locked-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#0E3A3D;color:#F3ECDC;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;z-index:9999;font-family:"Work Sans",sans-serif;';
+  overlay.innerHTML = `
+    <h1 style="font-family:'Fraunces',serif;font-weight:500;font-size:20px;margin:0 0 10px;">Link jo i vlefshëm</h1>
+    <p style="font-size:14px;opacity:0.75;max-width:320px;line-height:1.6;margin:0;">Këtij linku i mungon identifikuesi i hotelit. Skano kodin QR në dhomën tuaj për të vazhduar.</p>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function showHotelDeactivated(){
+  if(document.getElementById('session-locked-overlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'session-locked-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#0E3A3D;color:#F3ECDC;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;z-index:9999;font-family:"Work Sans",sans-serif;';
+  overlay.innerHTML = `
+    <h1 style="font-family:'Fraunces',serif;font-weight:500;font-size:20px;margin:0 0 10px;">App-i është përkohësisht jo-aktiv</h1>
+    <p style="font-size:14px;opacity:0.75;max-width:320px;line-height:1.6;margin:0;">Ju lutemi kontaktoni recepsionin për asistencë.</p>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function showSessionLocked(){
+  const overlay = document.createElement('div');
+  overlay.id = 'session-locked-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#0E3A3D;color:#F3ECDC;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;z-index:9999;font-family:"Work Sans",sans-serif;';
+  overlay.innerHTML = `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#CE9A42" stroke-width="1.6" style="margin-bottom:18px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z"/></svg>
+    <h1 style="font-family:'Fraunces',serif;font-weight:500;font-size:20px;margin:0 0 10px;">Skano përsëri kodin QR</h1>
+    <p style="font-size:14px;opacity:0.75;max-width:320px;line-height:1.6;margin:0;">Çdo ditë në orën 11:00 (check-out) duhet të skanosh sërish kodin QR në dhomën tuaj për të vazhduar.</p>
+  `;
+  document.body.appendChild(overlay);
+}
+// Color presets a hotel can choose at creation (super-admin) or change later —
+// each one supplies both a light and a dark variant of every themeable
+// variable, so dark mode stays correctly contrasted no matter which preset
+// is active. "teal" matches the :root/dark-mode defaults already in the
+// <style> block above, so hotels that never pick a theme see no difference.
+let currentThemePreset = 'teal';
+const THEME_PRESETS = {
+  teal: {
+    light:{ '--ink':'#12302E','--sea':'#0E3A3D','--sea-light':'#1C5257','--sand':'#F3ECDC','--sand-dim':'#E7DEC8','--aqua':'#2C9D93','--aqua-dark':'#186D66','--gold':'#CE9A42','--coral':'#C1592E','--line':'rgba(18,48,46,0.14)','--white':'#FFFDF8' },
+    dark:{ '--ink':'#F3EFE3','--sea':'#123B3D','--sea-light':'#1F4F52','--sand':'#0E1B19','--sand-dim':'#152422','--aqua':'#4FC6BA','--aqua-dark':'#5CD3C6','--gold':'#E8BE78','--coral':'#E8916B','--line':'rgba(243,239,227,0.16)','--white':'#1B322F' }
+  },
+  ocean: {
+    light:{ '--ink':'#0E2238','--sea':'#0D3B66','--sea-light':'#1C5A8C','--sand':'#EFF4F8','--sand-dim':'#DCE6EE','--aqua':'#3B82C4','--aqua-dark':'#2563A0','--gold':'#E0A458','--coral':'#C1592E','--line':'rgba(14,34,56,0.14)','--white':'#FFFFFF' },
+    dark:{ '--ink':'#E8EFF6','--sea':'#123A5C','--sea-light':'#1E4F78','--sand':'#0B1620','--sand-dim':'#12212E','--aqua':'#5AA6E0','--aqua-dark':'#6FB8EE','--gold':'#F0BE7E','--coral':'#E8916B','--line':'rgba(232,239,246,0.16)','--white':'#17293A' }
+  },
+  sunset: {
+    light:{ '--ink':'#3A1F17','--sea':'#7A3B2E','--sea-light':'#9C5440','--sand':'#FBF0E6','--sand-dim':'#F3DFCB','--aqua':'#D97B4F','--aqua-dark':'#B85F37','--gold':'#EFC88B','--coral':'#C1592E','--line':'rgba(58,31,23,0.14)','--white':'#FFFCF9' },
+    dark:{ '--ink':'#F6E9DE','--sea':'#5C2E24','--sea-light':'#79412F','--sand':'#1C120D','--sand-dim':'#261A13','--aqua':'#E89766','--aqua-dark':'#F0AD7C','--gold':'#F3D29A','--coral':'#E8916B','--line':'rgba(246,233,222,0.16)','--white':'#2A1B14' }
+  },
+  forest: {
+    light:{ '--ink':'#15261B','--sea':'#1F3D2B','--sea-light':'#345A3E','--sand':'#F1F4EC','--sand-dim':'#E1E8D6','--aqua':'#4C8B5A','--aqua-dark':'#357245','--gold':'#C9A14A','--coral':'#C1592E','--line':'rgba(21,38,27,0.14)','--white':'#FEFFFB' },
+    dark:{ '--ink':'#E9F0E4','--sea':'#223F2E','--sea-light':'#315340','--sand':'#0E1810','--sand-dim':'#162419','--aqua':'#6EB47F','--aqua-dark':'#7FC28F','--gold':'#D9BB6E','--coral':'#E8916B','--line':'rgba(233,240,228,0.16)','--white':'#1B2C20' }
+  },
+  royal: {
+    light:{ '--ink':'#241A38','--sea':'#3B2A5E','--sea-light':'#55417F','--sand':'#F4F0FA','--sand-dim':'#E5DCF2','--aqua':'#8A5FB3','--aqua-dark':'#6D4791','--gold':'#D9A441','--coral':'#C1592E','--line':'rgba(36,26,56,0.14)','--white':'#FFFEFF' },
+    dark:{ '--ink':'#EDE6F7','--sea':'#3A2C57','--sea-light':'#4E3C72','--sand':'#160F22','--sand-dim':'#201732','--aqua':'#A985CC','--aqua-dark':'#BB9BDA','--gold':'#E7BE70','--coral':'#E8916B','--line':'rgba(237,230,247,0.16)','--white':'#241A38' }
+  },
+  rose: {
+    light:{ '--ink':'#3A1826','--sea':'#7D2E52','--sea-light':'#9F4A72','--sand':'#FBEEF3','--sand-dim':'#F4DCE6','--aqua':'#D97BA0','--aqua-dark':'#B85683','--gold':'#E3A857','--coral':'#C1592E','--line':'rgba(58,24,38,0.14)','--white':'#FFFCFD' },
+    dark:{ '--ink':'#F6E9EF','--sea':'#5C2440','--sea-light':'#78355A','--sand':'#1C0F16','--sand-dim':'#261620','--aqua':'#E8A0C0','--aqua-dark':'#F0B3CE','--gold':'#F0C27E','--coral':'#E8916B','--line':'rgba(246,233,239,0.16)','--white':'#2A1620' }
+  },
+  slate: {
+    light:{ '--ink':'#1C2630','--sea':'#2E3F4F','--sea-light':'#44596D','--sand':'#F2F4F6','--sand-dim':'#E2E7EB','--aqua':'#5C8AA6','--aqua-dark':'#436C85','--gold':'#C9A24A','--coral':'#C1592E','--line':'rgba(28,38,48,0.14)','--white':'#FFFFFF' },
+    dark:{ '--ink':'#E8EDF1','--sea':'#283744','--sea-light':'#3B4E5E','--sand':'#10161C','--sand-dim':'#192228','--aqua':'#7FA8C2','--aqua-dark':'#93B9D1','--gold':'#D9BB6E','--coral':'#E8916B','--line':'rgba(232,237,241,0.16)','--white':'#1B2630' }
+  },
+  olive: {
+    light:{ '--ink':'#262318','--sea':'#4A4A2E','--sea-light':'#686B3E','--sand':'#F6F4E8','--sand-dim':'#EAE6D1','--aqua':'#8A9B4E','--aqua-dark':'#6F8039','--gold':'#C9A33F','--coral':'#C1592E','--line':'rgba(38,35,24,0.14)','--white':'#FFFEF9' },
+    dark:{ '--ink':'#EFECDB','--sea':'#3B3B22','--sea-light':'#52542F','--sand':'#17160D','--sand-dim':'#201F13','--aqua':'#A8BA6E','--aqua-dark':'#BBCD7F','--gold':'#D9BE6E','--coral':'#E8916B','--line':'rgba(239,236,219,0.16)','--white':'#232210' }
+  },
+  amber: {
+    light:{ '--ink':'#2E220D','--sea':'#8A5A1E','--sea-light':'#AC7736','--sand':'#FCF3E2','--sand-dim':'#F3E3C4','--aqua':'#E0A53D','--aqua-dark':'#C78A25','--gold':'#F0C96B','--coral':'#C1592E','--line':'rgba(46,34,13,0.14)','--white':'#FFFDF7' },
+    dark:{ '--ink':'#F7ECD7','--sea':'#5E3F15','--sea-light':'#7A5724','--sand':'#1E1608','--sand-dim':'#281E0D','--aqua':'#F0BD5E','--aqua-dark':'#F5CC7C','--gold':'#F5D389','--coral':'#E8916B','--line':'rgba(247,236,215,0.16)','--white':'#2C2110' }
+  },
+  midnight: {
+    light:{ '--ink':'#141A2E','--sea':'#1B2444','--sea-light':'#2C3A68','--sand':'#EFF1F8','--sand-dim':'#DEE2EF','--aqua':'#5768B0','--aqua-dark':'#3F4F8F','--gold':'#C9A24A','--coral':'#C1592E','--line':'rgba(20,26,46,0.14)','--white':'#FFFFFF' },
+    dark:{ '--ink':'#E7EAF5','--sea':'#141B33','--sea-light':'#202B4D','--sand':'#090C16','--sand-dim':'#0F1322','--aqua':'#7C8CD6','--aqua-dark':'#95A4E6','--gold':'#D9BB6E','--coral':'#E8916B','--line':'rgba(231,234,245,0.16)','--white':'#121729' }
+  },
+  mono: {
+    light:{ '--ink':'#141414','--sea':'#1A1A1A','--sea-light':'#2E2E2E','--sand':'#FAFAFA','--sand-dim':'#EDEDED','--aqua':'#4A4A4A','--aqua-dark':'#2E2E2E','--gold':'#B8975A','--coral':'#C1592E','--line':'rgba(20,20,20,0.12)','--white':'#FFFFFF' },
+    dark:{ '--ink':'#F2F2F2','--sea':'#1C1C1C','--sea-light':'#2E2E2E','--sand':'#0A0A0A','--sand-dim':'#141414','--aqua':'#9E9E9E','--aqua-dark':'#C2C2C2','--gold':'#D4B480','--coral':'#E8916B','--line':'rgba(242,242,242,0.14)','--white':'#161616' }
+  },
+  sage: {
+    light:{ '--ink':'#273328','--sea':'#4E6B52','--sea-light':'#6B8A6E','--sand':'#F4F6F1','--sand-dim':'#E6EAE0','--aqua':'#8CA889','--aqua-dark':'#6F8C6C','--gold':'#C9AD6C','--coral':'#C1592E','--line':'rgba(39,51,40,0.13)','--white':'#FEFFFC' },
+    dark:{ '--ink':'#E9EEE6','--sea':'#36493A','--sea-light':'#4A5F4E','--sand':'#12170F','--sand-dim':'#1B2317','--aqua':'#A8C2A3','--aqua-dark':'#BBD4B6','--gold':'#D8C185','--coral':'#E8916B','--line':'rgba(233,238,230,0.15)','--white':'#1F281C' }
+  },
+  stone: {
+    light:{ '--ink':'#2E281F','--sea':'#6B5D49','--sea-light':'#8A7B64','--sand':'#F7F3EC','--sand-dim':'#EBE3D4','--aqua':'#B09A77','--aqua-dark':'#8F7C5E','--gold':'#C9A869','--coral':'#C1592E','--line':'rgba(46,40,31,0.13)','--white':'#FFFEFB' },
+    dark:{ '--ink':'#EFE9DD','--sea':'#4A4030','--sea-light':'#605340','--sand':'#17130D','--sand-dim':'#201B13','--aqua':'#C7B18C','--aqua-dark':'#D8C4A0','--gold':'#DEC288','--coral':'#E8916B','--line':'rgba(239,233,221,0.15)','--white':'#221D15' }
+  },
+  lavender: {
+    light:{ '--ink':'#2A2636','--sea':'#55517A','--sea-light':'#726E9B','--sand':'#F6F4FA','--sand-dim':'#E9E5F2','--aqua':'#9389C4','--aqua-dark':'#746AA6','--gold':'#C9A869','--coral':'#C1592E','--line':'rgba(42,38,54,0.13)','--white':'#FFFEFF' },
+    dark:{ '--ink':'#EBE8F3','--sea':'#3C3758','--sea-light':'#504A75','--sand':'#131020','--sand-dim':'#1C1830','--aqua':'#B3A8DD','--aqua-dark':'#C7BEEA','--gold':'#D8C185','--coral':'#E8916B','--line':'rgba(235,232,243,0.15)','--white':'#201C31' }
+  },
+  ice: {
+    light:{ '--ink':'#1C2B33','--sea':'#3C5A68','--sea-light':'#547386','--sand':'#F1F6F8','--sand-dim':'#E1EBEE','--aqua':'#6FA3B8','--aqua-dark':'#4F869C','--gold':'#C9A869','--coral':'#C1592E','--line':'rgba(28,43,51,0.13)','--white':'#FFFFFF' },
+    dark:{ '--ink':'#E6EEF1','--sea':'#243B44','--sea-light':'#34505C','--sand':'#0C1518','--sand-dim':'#141F23','--aqua':'#8FC2D6','--aqua-dark':'#A6D2E3','--gold':'#D8C185','--coral':'#E8916B','--line':'rgba(230,238,241,0.15)','--white':'#182328' }
+  }
+};
+
+function applyPresetColors(){
+  const mode = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const preset = THEME_PRESETS[currentThemePreset] || THEME_PRESETS.teal;
+  const vars = preset[mode];
+  Object.keys(vars).forEach((key) => document.documentElement.style.setProperty(key, vars[key]));
+}
+
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  applyPresetColors();
+  const btn = document.getElementById('theme-toggle');
+  if(btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if(metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#0A1615' : '#0E3A3D');
+}
+
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try{ localStorage.setItem('bregu_theme', next); }catch(e){}
+}
+
+(function initTheme(){
+  let theme = null;
+  try{ theme = localStorage.getItem('bregu_theme'); }catch(e){}
+  if(!theme){
+    theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  applyTheme(theme);
+})();
+
+window.addEventListener('DOMContentLoaded', initFromUrl);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').then(() => {
+      checkPushOptInVisibility();
+    }).catch(() => {});
+  });
+}
+
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for(let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+async function checkPushOptInVisibility(){
+  const btn = document.getElementById('push-optin-btn');
+  if(!btn) return;
+  if(!('serviceWorker' in navigator) || !('PushManager' in window) || !API_BASE) return;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+    if(!existing && Notification.permission !== 'denied'){
+      btn.style.display = 'inline-block';
+    }
+  }catch(e){}
+}
+
+async function enablePushNotifications(){
+  const btn = document.getElementById('push-optin-btn');
+  try{
+    const permission = await Notification.requestPermission();
+    if(permission !== 'granted'){
+      showToast(translations[currentLang]['push.denied']);
+      return;
+    }
+    const keyRes = await fetch(API_BASE + '/api/push/vapid-public-key');
+    const { publicKey } = await keyRes.json();
+    if(!publicKey){
+      showToast(translations[currentLang]['push.unavailable']);
+      return;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    const subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey)
+    });
+    await fetch(API_BASE + '/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, subscription: subscription.toJSON() })
+    });
+    if(btn) btn.style.display = 'none';
+    showToast(translations[currentLang]['push.enabled']);
+  }catch(e){
+    console.warn('Push subscription failed', e);
+    showToast(translations[currentLang]['push.unavailable']);
+  }
+}
+
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('on', b.dataset.view===name));
+  if(name === 'chat'){
+    const log = document.getElementById('chat-log');
+    const lastMsg = log && log.lastElementChild;
+    if(lastMsg) setTimeout(()=>lastMsg.scrollIntoView({ behavior:'auto', block:'end' }), 30);
+  }
+}
+
+function showToast(text){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function copyWifi(){
+  const pass = document.getElementById('wifi-pass').innerText;
+  navigator.clipboard && navigator.clipboard.writeText(pass);
+  const btn = document.getElementById('copy-btn');
+  btn.textContent = translations[currentLang]['keycard.copied'];
+  setTimeout(()=>{ btn.textContent = translations[currentLang]['keycard.copy']; }, 1400);
+}
+
+function filterCat(cat, btn){
+  currentCat = cat;
+  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.rec-card').forEach(c=>{ c.classList.toggle('show', c.dataset.cat===cat); });
+}
+
+function timeNow(){
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+}
+
+function apiPost(path, body){
+  if(!API_BASE) return Promise.resolve(null);
+  const fullBody = { ...body, hotel: currentHotel, lang: currentLang };
+  if(sessionToken) fullBody.session_token = sessionToken;
+  return fetch(API_BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fullBody)
+  }).then(async (res) => {
+    if(res.status === 401){
+      showToast('Sesioni ka skaduar — rifresko dhe skano kodin QR sërish.');
+    } else if(!res.ok){
+      let msg = 'Gabim gjatë dërgimit (' + res.status + ')';
+      try{ const data = await res.clone().json(); if(data.error) msg = data.error; }catch(e){}
+      showToast(msg);
+      console.warn('apiPost failed:', path, res.status, msg);
+    }
+    return res;
+  }).catch(err => { console.warn('API call failed:', err); showToast("S'u lidh dot me serverin."); return null; });
+}
+
+function pushInMsg(text, scrollBehavior){
+  const log = document.getElementById('chat-log');
+  const inMsg = document.createElement('div');
+  inMsg.className = 'msg msg-in';
+  inMsg.innerHTML = text + '<div class="msg-time">'+timeNow()+'</div>';
+  log.appendChild(inMsg);
+  if(scrollBehavior !== false) inMsg.scrollIntoView({ behavior: scrollBehavior || 'smooth', block:'end' });
+  return inMsg;
+}
+
+function pushOutMsg(text, scrollBehavior){
+  const log = document.getElementById('chat-log');
+  const out = document.createElement('div');
+  out.className = 'msg msg-out';
+  out.innerHTML = text + '<div class="msg-time">'+timeNow()+'</div>';
+  log.appendChild(out);
+  if(scrollBehavior !== false) out.scrollIntoView({ behavior: scrollBehavior || 'smooth', block:'end' });
+  return out;
+}
+
+async function loadChatHistory(){
+  if(!API_BASE || !currentHotel) return;
+  try{
+    const res = await fetch(API_BASE + '/api/messages/' + encodeURIComponent(currentRoom) + '?hotel=' + encodeURIComponent(currentHotel));
+    const msgs = await res.json();
+
+    if(msgs.length === 0){
+      // No history yet for this room — ask the server for a real welcome
+      // message (with the hotel's actual name, in this guest's language).
+      document.getElementById('chat-log').innerHTML = ''; // remove the static placeholder bubble
+      try{
+        const wRes = await fetch(API_BASE + '/api/messages/welcome', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, lang: currentLang })
+        });
+        const wData = await wRes.json();
+        if(wData?.sent && wData.message) pushInMsg(wData.message.text, 'auto');
+      }catch(e){ console.warn('Welcome message failed', e); }
+      return;
+    }
+
+    document.getElementById('chat-log').innerHTML = ''; // remove the static placeholder bubble
+    let lastEl = null;
+    for(const m of msgs){
+      if(m.sender === 'guest'){
+        lastEl = pushOutMsg(m.text, false);
+      } else {
+        const text = (m.lang && m.lang !== currentLang) ? await translateForGuest(m.text, m.lang) : m.text;
+        lastEl = pushInMsg(text, false);
+      }
+    }
+    if(lastEl) lastEl.scrollIntoView({ behavior:'auto', block:'end' });
+  }catch(e){ console.warn('Could not load chat history', e); }
+}
+
+function sendMsg(){
+  const input = document.getElementById('chat-text');
+  const text = input.value.trim();
+  if(!text) return;
+  pushOutMsg(text);
+  input.value = '';
+  apiPost('/api/messages', { room_number: currentRoom, sender: 'guest', text });
+}
+
+let pendingIssuePhoto = null;
+let pendingIssueContext = null; // { key } for a predefined chip, or { text } for free-text issues
+
+function sendQuickRequest(key, category){
+  // Non-issue quick requests (towels, cleaning, pillows, toiletries...) send immediately.
+  // Issue reports go through reportIssue() instead, so they can offer the photo/skip prompt.
+  const label = translations[currentLang][key];
+  const prefix = translations[currentLang]['req.sentPrefix'];
+  pushOutMsg(prefix + ' ' + label);
+  showToast(translations[currentLang]['req.confirmToast']);
+  showView('chat');
+  apiPost('/api/quick-requests', { room_number: currentRoom, request_type: label, category: category || 'request' });
+}
+
+function reportIssue(key){
+  pendingIssueContext = { key };
+  openIssuePhotoModal();
+}
+
+function toggleOtherIssueBox(){
+  const box = document.getElementById('other-issue-box');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  if(box.style.display === 'block') document.getElementById('other-issue-text').focus();
+}
+
+function sendOtherIssue(){
+  const textEl = document.getElementById('other-issue-text');
+  const text = textEl.value.trim();
+  if(!text) return;
+  pendingIssueContext = { text };
+  document.getElementById('other-issue-box').style.display = 'none';
+  openIssuePhotoModal();
+}
+
+function openIssuePhotoModal(){
+  pendingIssuePhoto = null;
+  const modal = document.getElementById('issue-photo-modal');
+  const preview = document.getElementById('issue-photo-modal-preview');
+  preview.style.display = 'none';
+  modal.style.display = 'flex';
+}
+
+function closeIssuePhotoModal(){
+  document.getElementById('issue-photo-modal').style.display = 'none';
+  pendingIssuePhoto = null;
+  pendingIssueContext = null;
+}
+
+function handlePhotoSelected(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxWidth = 900;
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      pendingIssuePhoto = canvas.toDataURL('image/jpeg', 0.7);
+      const preview = document.getElementById('issue-photo-modal-preview');
+      if(preview){
+        preview.style.display = 'block';
+        preview.querySelector('img').src = pendingIssuePhoto;
+      }
+      // A photo was explicitly chosen for this report — send right away.
+      finalizeIssueSend(true);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function finalizeIssueSend(){
+  if(!pendingIssueContext) return;
+  const text = pendingIssueContext.key ? translations[currentLang][pendingIssueContext.key] : pendingIssueContext.text;
+  const prefix = translations[currentLang]['req.sentPrefix'];
+  pushOutMsg(prefix + ' ' + text);
+  showToast(translations[currentLang]['req.confirmToast']);
+  showView('chat');
+  const body = { room_number: currentRoom, request_type: text, category: 'issue' };
+  if(pendingIssuePhoto) body.image = pendingIssuePhoto;
+  apiPost('/api/quick-requests', body);
+  if(pendingIssueContext.text){
+    const textEl = document.getElementById('other-issue-text');
+    if(textEl) textEl.value = '';
+  }
+  document.getElementById('issue-photo-modal').style.display = 'none';
+  pendingIssuePhoto = null;
+  pendingIssueContext = null;
+}
+
+let dndOn = false;
+
+function dndStorageKey(){ return 'bregu_dnd_' + currentRoom; }
+
+function renderDndToggle(){
+  const toggle = document.getElementById('dnd-toggle');
+  const knob = document.getElementById('dnd-knob');
+  const label = document.getElementById('dnd-status-label');
+  if(!toggle) return;
+  toggle.style.background = dndOn ? 'var(--aqua-dark)' : 'var(--line)';
+  knob.style.transform = dndOn ? 'translateX(20px)' : 'translateX(0)';
+  label.textContent = translations[currentLang][dndOn ? 'dnd.on' : 'dnd.off'];
+}
+
+function loadDndState(){
+  try{ dndOn = localStorage.getItem(dndStorageKey()) === '1'; }catch(e){ dndOn = false; }
+  renderDndToggle();
+}
+
+function toggleDnd(){
+  dndOn = !dndOn;
+  try{ localStorage.setItem(dndStorageKey(), dndOn ? '1' : '0'); }catch(e){}
+  renderDndToggle();
+  showToast(translations[currentLang][dndOn ? 'dnd.enabledToast' : 'dnd.disabledToast']);
+  const msg = translations[currentLang][dndOn ? 'dnd.enabledMsg' : 'dnd.disabledMsg'];
+  apiPost('/api/quick-requests', { room_number: currentRoom, request_type: msg });
+}
+
+function addRoomService(nameKey, price){
+  rsCart.push({nameKey, price});
+  renderCart();
+}
+
+function renderCart(){
+  const box = document.getElementById('rs-cart-lines');
+  if(rsCart.length === 0){
+    box.innerHTML = '<p class="rs-cart-empty" data-i18n="roomservice.empty">'+translations[currentLang]['roomservice.empty']+'</p>';
+    return;
+  }
+  let total = 0;
+  box.innerHTML = rsCart.map(item=>{
+    total += item.price;
+    return '<div class="rs-cart-line"><span>'+translations[currentLang][item.nameKey]+'</span><span>'+item.price+' L</span></div>';
+  }).join('') + '<div class="rs-cart-line" style="font-weight:500; border-top:0.5px solid var(--line); padding-top:8px; margin-top:4px;"><span>Total</span><span>'+total+' L</span></div>';
+}
+
+function sendRoomService(){
+  if(rsCart.length === 0) return;
+  const items = rsCart.map(item => ({ name: translations[currentLang][item.nameKey], price: item.price }));
+  const lines = items.map(i => i.name).join(', ');
+  pushOutMsg((translations[currentLang]['roomservice.heading'])+': '+lines);
+  showToast(translations[currentLang]['roomservice.sentToast']);
+  rsCart = [];
+  renderCart();
+  showView('chat');
+  apiPost('/api/room-service', { room_number: currentRoom, items }).then(async (res) => {
+    if(!res || !res.ok) return;
+    try{
+      const order = await res.clone().json();
+      if(order && order.id){
+        currentRoomServiceOrderId = order.id;
+        renderOrderTracker(order.status || 'pending');
+      }
+    }catch(e){ /* ignore — tracker will pick it up on next load */ }
+  });
+}
+
+function rateStay(v){
+  stayRating = v;
+  document.querySelectorAll('.star-btn').forEach(b=>{
+    b.classList.toggle('filled', parseInt(b.dataset.v) <= v);
+  });
+}
+
+function submitFeedback(){
+  const comment = document.getElementById('fb-text').value.trim();
+  const box = document.getElementById('feedback-box');
+  box.innerHTML = '<p class="fb-thanks">'+translations[currentLang]['feedback.thanks']+'</p>';
+  apiPost('/api/feedback', { room_number: currentRoom, rating: stayRating || 5, comment });
+}
+</script>
+
+</body>
+</html>
