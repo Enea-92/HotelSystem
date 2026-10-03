@@ -509,7 +509,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-6 9 6v11a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
         <span id="room-chip-text" data-i18n="room.chip">Dhoma 214 · Kati 2</span>
       </div>
-      <a class="call-chip" href="tel:+355690000000">
+      <a class="call-chip" id="call-chip-link" href="tel:+355690000000">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 2 .7 3a2 2 0 01-.5 2.1L8 10a16 16 0 006 6l1.2-1.3a2 2 0 012.1-.5c1 .3 2 .5 3 .7a2 2 0 011.7 2z"/></svg>
         <span data-i18n="call.button">Telefono</span>
       </a>
@@ -726,34 +726,23 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
 
       <div id="section-info_hours">
       <h3 class="group-heading" data-i18n="info.hoursHeading">Orari</h3>
-      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.checkin.name">Check-in</span><span class="info-item-val" data-i18n="info.hours.checkin.val">Nga ora 14:00</span></div>
-      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.checkout.name">Check-out</span><span class="info-item-val" data-i18n="info.hours.checkout.val">Deri në 11:00</span></div>
-      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.quiet.name">Ora e qetësisë</span><span class="info-item-val" data-i18n="info.hours.quiet.val">23:00–08:00</span></div>
-      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.cleaning.name">Pastrimi i dhomës</span><span class="info-item-val" data-i18n="info.hours.cleaning.val">10:00–13:00</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.checkin.name">Check-in</span><span class="info-item-val" id="hours-checkin-val" data-i18n="info.hours.checkin.val">Nga ora 14:00</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.checkout.name">Check-out</span><span class="info-item-val" id="hours-checkout-val" data-i18n="info.hours.checkout.val">Deri në 11:00</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.quiet.name">Ora e qetësisë</span><span class="info-item-val" id="hours-quiet-val" data-i18n="info.hours.quiet.val">23:00–08:00</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="info.hours.cleaning.name">Pastrimi i dhomës</span><span class="info-item-val" id="hours-cleaning-val" data-i18n="info.hours.cleaning.val">10:00–13:00</span></div>
       </div>
 
       <div id="section-info_transport">
       <h3 class="group-heading" data-i18n="info.transportHeading">Transporti</h3>
-      <div class="tr-item">
-        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-7a2 2 0 012-1h10a2 2 0 012 1l2 7v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><circle cx="7.5" cy="16.5" r="1"/><circle cx="16.5" cy="16.5" r="1"/></svg></div>
-        <div><p class="loc-name" data-i18n="tr.airport.name">Transferi nga/për aeroportin</p><p class="loc-desc" data-i18n="tr.airport.desc">Kontaktoni recepsionin të paktën 3 orë përpara, organizojmë transfer me makinë private.</p></div>
-      </div>
-      <div class="tr-item">
-        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-7a2 2 0 012-1h10a2 2 0 012 1l2 7v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><circle cx="7.5" cy="16.5" r="1"/><circle cx="16.5" cy="16.5" r="1"/></svg></div>
-        <div><p class="loc-name" data-i18n="tr.taxi.name">Taksi lokal</p><p class="loc-desc" data-i18n="tr.taxi.desc">Në dispozicion 24/7 nga recepsioni.</p></div>
-      </div>
-      <div class="tr-item">
-        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="14" rx="2"/><path d="M4 10h16M8 18v2M16 18v2"/></svg></div>
-        <div><p class="loc-name" data-i18n="tr.bus.name">Autobusi urban</p><p class="loc-desc" data-i18n="tr.bus.desc">Ndalesa më e afërt 5 min në këmbë, linja drejt qendrës çdo 30 min.</p></div>
-      </div>
+      <div id="transport-container"><p class="rs-cart-empty" style="padding:4px 2px;" data-i18n="transport.empty">Ende pa opsione transporti për këtë hotel.</p></div>
       </div>
 
       <div id="section-info_emergency">
       <h3 class="group-heading" data-i18n="info.emergencyHeading">Urgjenca</h3>
-      <div class="info-item"><span class="info-item-name" data-i18n="em.reception.name">Recepsioni (24 orë)</span><span class="info-item-val">+355 69 000 0000</span></div>
-      <div class="info-item"><span class="info-item-name" data-i18n="em.police.name">Policia</span><span class="info-item-val">129</span></div>
-      <div class="info-item"><span class="info-item-name" data-i18n="em.ambulance.name">Ambulanca</span><span class="info-item-val">127</span></div>
-      <div class="info-item"><span class="info-item-name" data-i18n="em.pharmacy.name">Farmacia më e afërt</span><span class="info-item-val" data-i18n="em.pharmacy.val">3 min në këmbë</span></div>
+      <div class="info-item" id="em-reception-row" style="display:none;"><span class="info-item-name" data-i18n="em.reception.name">Recepsioni (24 orë)</span><span class="info-item-val" id="em-reception-val"></span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="em.police.name">Policia</span><span class="info-item-val" id="em-police-val">129</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="em.ambulance.name">Ambulanca</span><span class="info-item-val" id="em-ambulance-val">127</span></div>
+      <div class="info-item"><span class="info-item-name" data-i18n="em.pharmacy.name">Farmacia më e afërt</span><span class="info-item-val" id="em-pharmacy-val" data-i18n="em.pharmacy.val">3 min në këmbë</span></div>
       </div>
 
       <div id="section-info_faq">
@@ -958,7 +947,7 @@ const translations = {
     "info.hours.checkout.name":"Check-out","info.hours.checkout.val":"Deri në 11:00",
     "info.hours.quiet.name":"Ora e qetësisë","info.hours.quiet.val":"23:00–08:00",
     "info.hours.cleaning.name":"Pastrimi i dhomës","info.hours.cleaning.val":"10:00–13:00",
-    "info.transportHeading":"Transporti",
+    "info.transportHeading":"Transporti","transport.empty":"Ende pa opsione transporti për këtë hotel.",
     "tr.airport.name":"Transferi nga/për aeroportin","tr.airport.desc":"Kontaktoni recepsionin të paktën 3 orë përpara, organizojmë transfer me makinë private.",
     "tr.taxi.name":"Taksi lokal","tr.taxi.desc":"Në dispozicion 24/7 nga recepsioni.",
     "tr.bus.name":"Autobusi urban","tr.bus.desc":"Ndalesa më e afërt 5 min në këmbë, linja drejt qendrës çdo 30 min.",
@@ -1037,7 +1026,7 @@ const translations = {
     "info.hours.checkout.name":"Check-out","info.hours.checkout.val":"Until 11:00 am",
     "info.hours.quiet.name":"Quiet hours","info.hours.quiet.val":"11 pm–8 am",
     "info.hours.cleaning.name":"Room cleaning","info.hours.cleaning.val":"10 am–1 pm",
-    "info.transportHeading":"Transport",
+    "info.transportHeading":"Transport","transport.empty":"No transport options yet for this hotel.",
     "tr.airport.name":"Airport transfer","tr.airport.desc":"Contact the front desk at least 3 hours ahead, we arrange a private car transfer.",
     "tr.taxi.name":"Local taxi","tr.taxi.desc":"Available 24/7 through the front desk.",
     "tr.bus.name":"City bus","tr.bus.desc":"Nearest stop is a 5 min walk, line to the center every 30 min.",
@@ -1116,7 +1105,7 @@ const translations = {
     "info.hours.checkout.name":"Check-out","info.hours.checkout.val":"Entro le 11:00",
     "info.hours.quiet.name":"Ore di silenzio","info.hours.quiet.val":"23:00–08:00",
     "info.hours.cleaning.name":"Pulizia camera","info.hours.cleaning.val":"10:00–13:00",
-    "info.transportHeading":"Trasporti",
+    "info.transportHeading":"Trasporti","transport.empty":"Ancora nessuna opzione di trasporto per questo hotel.",
     "tr.airport.name":"Transfer da/per l'aeroporto","tr.airport.desc":"Contattate la reception almeno 3 ore prima, organizziamo un transfer con auto privata.",
     "tr.taxi.name":"Taxi locale","tr.taxi.desc":"Disponibile 24/7 tramite la reception.",
     "tr.bus.name":"Autobus urbano","tr.bus.desc":"La fermata più vicina è a 5 min a piedi, linea per il centro ogni 30 min.",
@@ -1195,7 +1184,7 @@ const translations = {
     "info.hours.checkout.name":"Check-out","info.hours.checkout.val":"Bis 11:00 Uhr",
     "info.hours.quiet.name":"Ruhezeiten","info.hours.quiet.val":"23:00–08:00 Uhr",
     "info.hours.cleaning.name":"Zimmerreinigung","info.hours.cleaning.val":"10:00–13:00 Uhr",
-    "info.transportHeading":"Transport",
+    "info.transportHeading":"Transport","transport.empty":"Noch keine Transportoptionen für dieses Hotel.",
     "tr.airport.name":"Flughafentransfer","tr.airport.desc":"Kontaktieren Sie die Rezeption mindestens 3 Stunden vorher, wir organisieren einen privaten Autotransfer.",
     "tr.taxi.name":"Örtliches Taxi","tr.taxi.desc":"Rund um die Uhr über die Rezeption verfügbar.",
     "tr.bus.name":"Stadtbus","tr.bus.desc":"Die nächste Haltestelle ist 5 Gehminuten entfernt, Linie ins Zentrum alle 30 Min.",
@@ -1274,7 +1263,7 @@ const translations = {
     "info.hours.checkout.name":"Départ","info.hours.checkout.val":"Jusqu'à 11h00",
     "info.hours.quiet.name":"Heures de silence","info.hours.quiet.val":"23h00–08h00",
     "info.hours.cleaning.name":"Nettoyage de la chambre","info.hours.cleaning.val":"10h00–13h00",
-    "info.transportHeading":"Transport",
+    "info.transportHeading":"Transport","transport.empty":"Pas encore d'options de transport pour cet hôtel.",
     "tr.airport.name":"Transfert aéroport","tr.airport.desc":"Contactez la réception au moins 3 heures à l'avance, nous organiserons un transfert privé en voiture.",
     "tr.taxi.name":"Taxi local","tr.taxi.desc":"Disponible 24h/24 via la réception.",
     "tr.bus.name":"Bus urbain","tr.bus.desc":"L'arrêt le plus proche est à 5 minutes à pied, ligne vers le centre toutes les 30 min.",
@@ -1354,6 +1343,7 @@ async function loadHotelContent(){
     renderDynamicRoom();
     renderDynamicRecommendations();
     renderDynamicFaq();
+    renderPracticalInfo();
     initRealMap();
     fetchWeather(dynamicContent.location?.lat, dynamicContent.location?.lng);
     try{
@@ -1564,6 +1554,9 @@ const ADMIN_EDIT_TARGETS = [
   { selector: '#section-roomservice', section: 'room_service' },
   { selector: '#real-map', section: 'location' },
   { selector: '#recs-container', section: 'recommendations' },
+  { selector: '#section-info_hours', section: 'practical' },
+  { selector: '#section-info_transport', section: 'practical' },
+  { selector: '#section-info_emergency', section: 'practical' },
   { selector: '#section-info_faq', section: 'faq' }
 ];
 function enableAdminEditButtons(){
@@ -1661,6 +1654,61 @@ function addRoomServiceFromContent(idx){
   renderCart();
 }
 
+// --- Hotel-specific practical info: call button, hours, transport, emergency.
+// Each piece only overrides the generic default once the hotel's admin has
+// actually set it — a blank phone number hides its row/button instead of
+// showing a number that doesn't belong to this hotel.
+function renderPracticalInfo(){
+  if(!dynamicContent) return;
+
+  const callLink = document.getElementById('call-chip-link');
+  if(callLink){
+    if(dynamicContent.call_phone){
+      callLink.href = 'tel:' + dynamicContent.call_phone;
+      callLink.style.display = '';
+    } else {
+      callLink.style.display = 'none';
+    }
+  }
+
+  const hours = dynamicContent.hours || {};
+  ['checkin','checkout','quiet','cleaning'].forEach(key => {
+    const el = document.getElementById('hours-' + key + '-val');
+    const val = hours[key]?.[currentLang] || hours[key]?.sq;
+    if(el && val) el.textContent = val;
+  });
+
+  const em = dynamicContent.emergency || {};
+  const receptionRow = document.getElementById('em-reception-row');
+  const receptionVal = document.getElementById('em-reception-val');
+  if(em.reception_phone){
+    if(receptionVal) receptionVal.textContent = em.reception_phone;
+    if(receptionRow) receptionRow.style.display = '';
+  } else if(receptionRow){
+    receptionRow.style.display = 'none';
+  }
+  const policeVal = document.getElementById('em-police-val');
+  if(policeVal && em.police_phone) policeVal.textContent = em.police_phone;
+  const ambulanceVal = document.getElementById('em-ambulance-val');
+  if(ambulanceVal && em.ambulance_phone) ambulanceVal.textContent = em.ambulance_phone;
+  const pharmacyVal = document.getElementById('em-pharmacy-val');
+  const pharmacyText = em.pharmacy_distance?.[currentLang] || em.pharmacy_distance?.sq;
+  if(pharmacyVal && pharmacyText) pharmacyVal.textContent = pharmacyText;
+
+  const transportBox = document.getElementById('transport-container');
+  if(transportBox){
+    if(Array.isArray(dynamicContent.transport) && dynamicContent.transport.length){
+      transportBox.innerHTML = dynamicContent.transport.map(t => `
+        <div class="tr-item">
+          <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 13l2-7a2 2 0 012-1h10a2 2 0 012 1l2 7v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><circle cx="7.5" cy="16.5" r="1"/><circle cx="16.5" cy="16.5" r="1"/></svg></div>
+          <div><p class="loc-name">${escapeHtml(t.name?.[currentLang] || t.name?.sq || '')}</p><p class="loc-desc">${escapeHtml(t.desc?.[currentLang] || t.desc?.sq || '')}</p></div>
+        </div>`).join('');
+    } else {
+      transportBox.innerHTML = `<p class="rs-cart-empty" style="padding:4px 2px;">${escapeHtml(translations[currentLang]['transport.empty'] || '—')}</p>`;
+    }
+  }
+}
+
 function renderDynamicFaq(){
   const dynBox = document.getElementById('faq-dynamic-container');
   const defaultBox = document.getElementById('faq-default-container');
@@ -1754,6 +1802,7 @@ function setLang(lang){
   renderDynamicRoom();
   renderDynamicRecommendations();
   renderDynamicFaq();
+  renderPracticalInfo();
   renderDndToggle();
   renderRoomNote();
   if(weatherCoords) fetchWeather();

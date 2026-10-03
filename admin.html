@@ -223,6 +223,28 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
     <button class="save-btn" style="margin-top:14px;" onclick="saveContent()">Ruaj shërbimin në dhomë</button>
   </div>
 
+  <div class="card" id="card-practical">
+    <h2>Info praktike (telefoni, urgjenca, oraret, transporti)</h2>
+    <p class="hint">Këto janë specifike për hotelin tënd. Lëri bosh fushat e telefonave që s'i ke ende — butoni "Telefono" dhe rreshti i recepsionit te app-i i mysafirit fshihen vetë nëse janë bosh, në vend që të shfaqin një numër që s'është i vërtetë.</p>
+
+    <div class="field-row"><label>Telefoni (buton "Telefono" lart)</label><input id="pi-call-phone" placeholder="+355 69 000 0000"></div>
+    <div class="field-row"><label>Telefoni i recepsionit</label><input id="pi-reception-phone" placeholder="+355 69 000 0000"></div>
+    <div class="field-row"><label>Policia</label><input id="pi-police-phone" placeholder="129"></div>
+    <div class="field-row"><label>Ambulanca</label><input id="pi-ambulance-phone" placeholder="127"></div>
+
+    <p class="hint" style="margin:16px 0 6px; font-weight:500; opacity:0.8;">Distanca deri te farmacia më e afërt</p>
+    <div class="item-block" id="pharmacy-block"></div>
+
+    <p class="hint" style="margin:16px 0 6px; font-weight:500; opacity:0.8;">Oraret</p>
+    <div class="item-block" id="hours-block"></div>
+
+    <p class="hint" style="margin:16px 0 6px; font-weight:500; opacity:0.8;">Transporti (transferi nga aeroporti, taksi, autobusi, etj.)</p>
+    <div id="transport-list"></div>
+    <button class="add-btn" onclick="addTransportItem()">+ Shto opsion transporti</button>
+
+    <button class="save-btn" style="margin-top:14px;" onclick="savePracticalInfo()">Ruaj info praktike</button>
+  </div>
+
   <div class="card" id="card-faq">
     <h2>Pyetje të shpeshta (FAQ)</h2>
     <p class="hint">Shfaqen te "Info praktike" i mysafirit. Përdoren gjithashtu për t'u përgjigjur automatikisht në chat kur mesazhi i mysafirit përputhet me një pyetje këtu — para se stafi ta shohë fare.</p>
@@ -330,6 +352,7 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
     <button class="jump-btn" onclick="jumpToSection('card-amenities')">Pajisjet</button>
     <button class="jump-btn" onclick="jumpToSection('card-locations')">Ku ndodhet</button>
     <button class="jump-btn" onclick="jumpToSection('card-roomservice')">Shërbimi në dhomë</button>
+    <button class="jump-btn" onclick="jumpToSection('card-practical')">Info praktike</button>
     <button class="jump-btn" onclick="jumpToSection('card-faq')">FAQ</button>
     <button class="jump-btn" onclick="jumpToSection('card-recommendations')">Rekomandime</button>
     <button class="jump-btn" onclick="jumpToSection('card-roomnotes')">Shënime dhome</button>
@@ -551,6 +574,7 @@ const PREVIEW_SECTION_TO_CARD = {
   room_service: 'card-roomservice',
   location: 'card-location',
   recommendations: 'card-recommendations',
+  practical: 'card-practical',
   faq: 'card-faq'
 };
 window.addEventListener('message', (e) => {
@@ -783,6 +807,46 @@ function renderAll(){
   renderRecommendations();
   renderSectionToggles();
   renderFaqList();
+  renderPracticalInfoForm();
+}
+
+// --- Info praktike (telefoni, urgjenca, oraret, transporti) ---
+function renderPracticalInfoForm(){
+  document.getElementById('pi-call-phone').value = content.call_phone || '';
+  document.getElementById('pi-reception-phone').value = content.emergency?.reception_phone || '';
+  document.getElementById('pi-police-phone').value = content.emergency?.police_phone || '';
+  document.getElementById('pi-ambulance-phone').value = content.emergency?.ambulance_phone || '';
+
+  const pharmacy = content.emergency?.pharmacy_distance || {};
+  document.getElementById('pharmacy-block').innerHTML = `
+    ${langTabsHtml('pharmacy')}
+    <div class="field-row"><label>Teksti</label><div style="flex:1;">
+      ${['sq','en','it','de','fr'].map(l => `<input data-lang="${l}" data-field="pharmacy_distance" style="display:${l==='sq'?'':'none'};" placeholder="p.sh. 3 min në këmbë" value="${(pharmacy[l]||'').replace(/"/g,'&quot;')}">`).join('')}
+    </div></div>`;
+
+  const hours = content.hours || {};
+  const hoursFields = [['checkin','Check-in','p.sh. Nga ora 14:00'],['checkout','Check-out','p.sh. Deri në 11:00'],['quiet','Ora e qetësisë','p.sh. 23:00–08:00'],['cleaning','Pastrimi i dhomës','p.sh. 10:00–13:00']];
+  document.getElementById('hours-block').innerHTML = `
+    ${langTabsHtml('hours')}
+    ${hoursFields.map(([field,label,ph]) => `
+      <div class="field-row"><label>${label}</label><div style="flex:1;">
+        ${['sq','en','it','de','fr'].map(l => `<input data-lang="${l}" data-field="${field}" style="display:${l==='sq'?'':'none'};" placeholder="${ph}" value="${(hours[field]?.[l]||'').replace(/"/g,'&quot;')}">`).join('')}
+      </div></div>`).join('')}`;
+
+  renderLangItems('transport-list', content.transport, ['name','desc'], removeTransportItem);
+}
+
+function addTransportItem(){
+  content.transport = content.transport || [];
+  content.transport.push({ name:{sq:'',en:'',it:'',de:'',fr:''}, desc:{sq:'',en:'',it:'',de:'',fr:''} });
+  renderLangItems('transport-list', content.transport, ['name','desc'], removeTransportItem);
+}
+function removeTransportItem(idx){ content.transport.splice(idx,1); renderLangItems('transport-list', content.transport, ['name','desc'], removeTransportItem); }
+
+async function savePracticalInfo(){
+  // collectContentFromForm() (called inside saveContent) already gathers
+  // call_phone/emergency/hours/transport along with everything else.
+  await saveContent();
 }
 
 function langTabsHtml(prefix){
@@ -1091,6 +1155,16 @@ function collectContentFromForm(){
     };
   });
   content.faq = [...document.querySelectorAll('#faq-list .item-block')].map(block => collectLangItemsFromBlock(block, ['q','a']));
+
+  content.call_phone = document.getElementById('pi-call-phone').value.trim();
+  content.emergency = {
+    reception_phone: document.getElementById('pi-reception-phone').value.trim(),
+    police_phone: document.getElementById('pi-police-phone').value.trim(),
+    ambulance_phone: document.getElementById('pi-ambulance-phone').value.trim(),
+    pharmacy_distance: collectLangItemsFromBlock(document.getElementById('pharmacy-block'), ['pharmacy_distance']).pharmacy_distance
+  };
+  content.hours = collectLangItemsFromBlock(document.getElementById('hours-block'), ['checkin','checkout','quiet','cleaning']);
+  content.transport = [...document.querySelectorAll('#transport-list .item-block')].map(block => collectLangItemsFromBlock(block, ['name','desc']));
 }
 
 async function saveContent(){

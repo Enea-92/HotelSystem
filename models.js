@@ -98,6 +98,28 @@ const hotelContentSchema = new mongoose.Schema({
   // if a guest's message closely matches a question here, the answer is
   // posted back automatically before staff ever sees it.
   faq: [{ q: langText, a: langText }],
+  // The phone number dialed by the "Call" button at the top of the guest
+  // app. Left blank, the button hides itself rather than showing a fake
+  // number a guest might actually dial.
+  call_phone: { type: String, default: '' },
+  // Hotel-specific practical info — editable so a real hotel's own numbers/
+  // hours/transport options replace the generic placeholders.
+  emergency: {
+    reception_phone: { type: String, default: '' }, // hides its row if blank
+    police_phone: { type: String, default: '' },     // falls back to Albania's 129 if blank
+    ambulance_phone: { type: String, default: '' },  // falls back to Albania's 127 if blank
+    pharmacy_distance: langText
+  },
+  hours: {
+    checkin: langText,
+    checkout: langText,
+    quiet: langText,
+    cleaning: langText
+  },
+  // Local transport options (airport transfer, taxi, bus...). Empty by
+  // default for a new hotel — shows nothing rather than another hotel's
+  // made-up transport details.
+  transport: [{ name: langText, desc: langText }],
   // Toggles that let a hotel hide entire sections from the guest app —
   // e.g. no room service if the hotel has no restaurant. Everything
   // defaults to visible so existing hotels are unaffected.

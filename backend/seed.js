@@ -1,7 +1,23 @@
-// One-time seed script — populates the editable hotel content and the
-// example recommendations, using the same placeholder text that was
-// hardcoded in the guest app before. Run once after connecting a fresh
-// database:  node seed.js
+// One-time seed script.
+//
+// Usage:
+//   node seed.js                          → sets up the "bregu" DEMO hotel,
+//                                            with full example content/recommendations
+//                                            (safe: this is the intentional showcase hotel)
+//   node seed.js <slug> "<Hotel Name>"     → creates a brand-new REAL hotel with
+//                                            just a name, login, and empty content —
+//                                            NO fake example data, so the admin
+//                                            starts from a clean slate and fills
+//                                            in their own wifi/amenities/recommendations.
+//
+// IMPORTANT: earlier versions of this script always used the Bregu demo
+// content/name for ANY slug you passed in — if you ran e.g. `node seed.js
+// seaview` before this fix, that hotel got stuck with the name "Hotel Bregu"
+// and 6 fake example recommendations as if they were real data. Fix that by
+// renaming the hotel from super-admin and deleting the fake recommendations
+// from its admin panel (Rekomandime → Fshi on each one) — this script can't
+// safely do that for you since it can't tell real content from leftover junk.
+//
 // Safe to re-run: it skips seeding anything that already exists.
 
 require('dotenv').config();
@@ -10,8 +26,9 @@ const { Hotel, HotelContent, Recommendation, AuthSettings } = require('./models'
 
 const lt = (sq, en, it, de) => ({ sq, en, it, de });
 
-// Usage: node seed.js [hotel-slug]  (defaults to "bregu")
 const HOTEL_SLUG = process.argv[2] || 'bregu';
+const IS_DEMO = HOTEL_SLUG === 'bregu';
+const HOTEL_NAME = process.argv[3] || (IS_DEMO ? 'Hotel Bregu' : HOTEL_SLUG);
 
 async function seed() {
   await mongoose.connect(process.env.MONGODB_URI);
@@ -19,8 +36,8 @@ async function seed() {
 
   let hotel = await Hotel.findOne({ slug: HOTEL_SLUG });
   if (!hotel) {
-    hotel = await Hotel.create({ slug: HOTEL_SLUG, name: 'Hotel Bregu' });
-    console.log('Created Hotel registry entry for', HOTEL_SLUG);
+    hotel = await Hotel.create({ slug: HOTEL_SLUG, name: HOTEL_NAME });
+    console.log('Created Hotel registry entry for', HOTEL_SLUG, 'with name', HOTEL_NAME);
   }
 
   const existingAuth = await AuthSettings.findOne({ hotel: HOTEL_SLUG });
@@ -35,6 +52,12 @@ async function seed() {
   const existingContent = await HotelContent.findOne({ hotel: HOTEL_SLUG });
   if (existingContent) {
     console.log('HotelContent already exists — skipping content seed.');
+  } else if (!IS_DEMO) {
+    // Real hotel: start with a genuinely empty content document (just the
+    // required hotel field) so nothing fake ever reaches its guest app.
+    // The admin fills in wifi/amenities/location themselves from admin.html.
+    await HotelContent.create({ hotel: HOTEL_SLUG });
+    console.log('Created empty HotelContent for', HOTEL_SLUG, '— fill it in from admin.html.');
   } else {
     await HotelContent.create({
       hotel: HOTEL_SLUG,
@@ -77,6 +100,8 @@ async function seed() {
   const existingRecs = await Recommendation.countDocuments({ hotel: HOTEL_SLUG });
   if (existingRecs > 0) {
     console.log('Recommendations already exist — skipping recommendations seed.');
+  } else if (!IS_DEMO) {
+    console.log('Real hotel — skipping example recommendations. Add real ones from admin.html (manually, or via the Google/OpenStreetMap search).');
   } else {
     await Recommendation.insertMany([
       {
