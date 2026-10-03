@@ -50,8 +50,9 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
 
 .chat-col{ grid-column:1 / -1; }
 .chat-room-list{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
-.room-pill{ border:0.5px solid var(--line); background:var(--sand-dim); border-radius:14px; padding:5px 12px; font-size:12px; cursor:pointer; font-family:'IBM Plex Mono',monospace; }
+.room-pill{ border:0.5px solid var(--line); background:var(--sand-dim); border-radius:14px; padding:5px 12px; font-size:12px; cursor:pointer; font-family:'IBM Plex Mono',monospace; position:relative; display:inline-flex; align-items:center; gap:6px; }
 .room-pill.on{ background:var(--sea); color:var(--sand); }
+.room-unread-badge{ background:var(--coral); color:#fff; border-radius:999px; font-family:'Inter',sans-serif; font-size:10.5px; font-weight:700; line-height:1; padding:3px 6px; min-width:16px; text-align:center; }
 .chat-thread{ max-height:280px; overflow-y:auto; border:0.5px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px; }
 .msg{ max-width:70%; margin-bottom:8px; font-size:13px; padding:8px 12px; border-radius:10px; line-height:1.5; }
 .msg.guest{ background:var(--sand-dim); }
@@ -143,6 +144,10 @@ let currentHotel = '';
 let hotelDisplayName = '';
 let activeRoom = null;
 let knownRooms = new Set();
+// How many new guest messages have arrived per room since staff last opened
+// that room's chat — shown as a small badge on the room pill, like an
+// unread-message count in Instagram/Messenger. Resets to 0 on openRoom().
+let unreadCounts = {};
 let allMessages = [];
 let soundOn = true;
 let staffLang = localStorage.getItem('bregu_staff_lang') || 'sq';
@@ -302,12 +307,16 @@ async function connect(){
   socket.on('chat_cleared', () => {
     allMessages = [];
     knownRooms = new Set();
+    unreadCounts = {};
     activeRoom = null;
     renderRoomList();
     document.getElementById('chat-thread').innerHTML = '<p class="empty">Zgjidhni një dhomë për të parë bisedën.</p>';
   });
   socket.on('new_message', (msg) => {
     knownRooms.add(msg.room_number);
+    if(msg.sender === 'guest' && msg.room_number !== activeRoom){
+      unreadCounts[msg.room_number] = (unreadCounts[msg.room_number] || 0) + 1;
+    }
     renderRoomList();
     if(msg.room_number === activeRoom){
       allMessages.push(msg);
@@ -474,11 +483,16 @@ async function exportCsv(type){
 
 function renderRoomList(){
   const box = document.getElementById('room-list');
-  box.innerHTML = [...knownRooms].sort().map(r => `<button class="room-pill ${r===activeRoom?'on':''}" onclick="openRoom('${r}')">Dhoma ${r}</button>`).join('');
+  box.innerHTML = [...knownRooms].sort().map(r => {
+    const unread = unreadCounts[r] || 0;
+    const badge = unread > 0 ? `<span class="room-unread-badge">${unread > 9 ? '9+' : unread}</span>` : '';
+    return `<button class="room-pill ${r===activeRoom?'on':''}" onclick="openRoom('${r}')">Dhoma ${r}${badge}</button>`;
+  }).join('');
 }
 
 async function openRoom(room){
   activeRoom = room;
+  unreadCounts[room] = 0;
   renderRoomList();
   socket.emit('join_room', { hotel: currentHotel, room });
   const res = await fetch(apiUrl('/api/messages/' + room));
