@@ -488,16 +488,53 @@ async function openRoom(room){
 
 function renderThread(){
   const box = document.getElementById('chat-thread');
-  box.innerHTML = allMessages.map((m, idx) => `<div class="msg ${m.sender}" id="msg-${idx}">${m.sender === 'bot' ? '🤖 <em>Automatik:</em> ' : ''}${escapeHtmlStaff(m.text)}</div>`).join('');
+  box.innerHTML = allMessages.map((m, idx) => `<div class="msg ${m.sender}" id="msg-${idx}"><span id="msg-text-${idx}">${m.sender === 'bot' ? '🤖 <em>Automatik:</em> ' : ''}${escapeHtmlStaff(m.text)}</span></div>`).join('');
   box.scrollTop = box.scrollHeight;
 
   allMessages.forEach(async (m, idx) => {
     if((m.sender !== 'guest' && m.sender !== 'bot') || !m.lang || m.lang === staffLang) return;
     const translated = await translateForStaff(m.text, m.lang);
     const el = document.getElementById('msg-' + idx);
+    const textEl = document.getElementById('msg-text-' + idx);
+    if(!el || !textEl) return;
     const prefix = m.sender === 'bot' ? '🤖 <em>Automatik:</em> ' : '';
-    if(el) el.innerHTML = prefix + escapeHtmlStaff(translated) + ` <span style="opacity:0.5; font-size:10.5px; display:block; margin-top:3px;">(${m.lang.toUpperCase()}: ${escapeHtmlStaff(m.text)})</span>`;
+    // Keep both versions on the element itself so the toggle below can
+    // switch between them without re-fetching or re-translating.
+    el.dataset.original = m.text;
+    el.dataset.translated = translated;
+    el.dataset.prefix = prefix;
+    el.dataset.lang = m.lang;
+    el.dataset.showing = 'translated';
+    textEl.innerHTML = prefix + escapeHtmlStaff(translated);
+    if(!el.querySelector('.msg-toggle')){
+      const toggle = document.createElement('span');
+      toggle.className = 'msg-toggle';
+      toggle.style.cssText = 'display:block; margin-top:3px; font-size:10.5px; opacity:0.6; text-decoration:underline; cursor:pointer;';
+      toggle.textContent = `Shfaq origjinalin (${m.lang.toUpperCase()})`;
+      toggle.onclick = () => toggleMsgOriginal(idx);
+      el.appendChild(toggle);
+    }
   });
+}
+
+// Lets staff flip a translated guest message back to exactly what the guest
+// typed, in case the auto-translation reads oddly or they just want to see
+// the original wording — then back to the translation with the same click.
+function toggleMsgOriginal(idx){
+  const el = document.getElementById('msg-' + idx);
+  const textEl = document.getElementById('msg-text-' + idx);
+  const toggle = el && el.querySelector('.msg-toggle');
+  if(!el || !textEl || !toggle) return;
+  const prefix = el.dataset.prefix || '';
+  if(el.dataset.showing === 'translated'){
+    textEl.innerHTML = prefix + escapeHtmlStaff(el.dataset.original);
+    toggle.textContent = 'Shfaq përkthimin';
+    el.dataset.showing = 'original';
+  } else {
+    textEl.innerHTML = prefix + escapeHtmlStaff(el.dataset.translated);
+    toggle.textContent = `Shfaq origjinalin (${(el.dataset.lang || '').toUpperCase()})`;
+    el.dataset.showing = 'translated';
+  }
 }
 
 async function sendReply(){
