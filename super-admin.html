@@ -93,7 +93,10 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
   </div>
 
   <div class="card">
-    <h2>Statistika krahasuese</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <h2 style="margin:0;">Statistika krahasuese</h2>
+      <button type="button" class="del-link" style="color:#2C5FA8;" onclick="exportStatsCsv()">⬇ Eksporto CSV</button>
+    </div>
     <p class="hint">Cilat hotele kanë më shumë probleme/kërkesa, si vlerësohen, dhe sa artikuj janë ende pa u trajtuar (vonesë mbi 15 min).</p>
     <div id="stats-table-box"><p style="opacity:0.5; font-size:13px;">Duke ngarkuar...</p></div>
   </div>
@@ -315,6 +318,19 @@ async function loadStats(){
       </tbody>
     </table>`;
   }catch(e){ console.warn('Could not load stats', e); }
+}
+
+async function exportStatsCsv(){
+  try{
+    const res = await fetch(apiBase + '/api/super-admin/stats/export', { headers: { 'x-super-admin-password': superPassword } });
+    if(!res.ok) throw new Error('bad response');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'statistika-hotelet.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(e){ showToast('Gabim duke eksportuar CSV.', true); }
 }
 
 async function deleteHotel(slug){

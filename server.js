@@ -14,7 +14,7 @@ const bcrypt = require('bcryptjs');
 const webpush = require('web-push');
 const {
   Hotel, Message, QuickRequest, RoomServiceOrder, Feedback,
-  HotelContent, Recommendation, AuthSettings, RoomNote, PushSubscription, GeneratedQr, toDTO
+  HotelContent, Recommendation, AuthSettings, RoomNote, PushSubscription, GeneratedQr, Announcement, toDTO
 } = require('./models');
 
 const app = express();
@@ -339,6 +339,16 @@ app.get('/api/room-service', requireStaff, async (req, res) => {
   res.json(docs.map(toDTO));
 });
 
+// Lets the guest's own app look up their most recent active order, so a
+// status tracker can be shown/restored (e.g. after a page reload) without
+// needing any staff-level access — scoped to their own hotel+room only.
+app.get('/api/room-service/mine', requireHotel, async (req, res) => {
+  const room_number = (req.query.room || '').toString();
+  if (!room_number) return res.status(400).json({ error: 'room required' });
+  const doc = await RoomServiceOrder.findOne({ hotel: req.hotel, room_number, status: { $ne: 'delivered' } }).sort({ created_at: -1 });
+  res.json(doc ? toDTO(doc) : null);
+});
+
 app.patch('/api/room-service/:id', requireStaff, async (req, res) => {
   const changes = { status: req.body.status };
   if (req.body.status === 'delivered') changes.delivered_at = new Date();
@@ -346,7 +356,11 @@ app.patch('/api/room-service/:id', requireStaff, async (req, res) => {
   const order = toDTO(doc);
   io.to(roomChannel(req.hotel, order.room_number)).to(staffChannel(req.hotel)).emit('order_updated', order);
 
-  const statusText = { preparing: 'Porosia juaj po përgatitet.', delivered: 'Porosia juaj u dorëzua. Shijoni!' };
+  const statusText = {
+    preparing: 'Porosia juaj po përgatitet.',
+    on_the_way: 'Porosia juaj është në rrugë drejt dhomës suaj.',
+    delivered: 'Porosia juaj u dorëzua. Shijoni!'
+  };
   if (statusText[order.status]) {
     sendPushToRoom(req.hotel, order.room_number, 'Përditësim porosie', statusText[order.status]).catch(() => {});
   }
@@ -366,6 +380,34 @@ app.post('/api/feedback', requireHotel, verifyGuestSession, async (req, res) => 
 app.get('/api/feedback', requireStaff, async (req, res) => {
   const docs = await Feedback.find({ hotel: req.hotel }).sort({ created_at: -1 }).limit(100);
   res.json(docs.map(toDTO));
+});
+
+// ============ ANNOUNCEMENTS (admin broadcast banner, live to every guest) ============
+
+app.get('/api/announcement', requireHotel, async (req, res) => {
+  const doc = await Announcement.findOne({ hotel: req.hotel });
+  if (!doc || !doc.active || (doc.expires_at && doc.expires_at < new Date())) {
+    return res.json(null);
+  }
+  res.json(toDTO(doc));
+});
+
+app.put('/api/announcement', requireAdmin, async (req, res) => {
+  const { text, hours } = req.body;
+  const expires_at = hours ? new Date(Date.now() + Number(hours) * 3600 * 1000) : null;
+  const doc = await Announcement.findOneAndUpdate(
+    { hotel: req.hotel },
+    { text, active: true, expires_at },
+    { new: true, upsert: true }
+  );
+  io.emit('announcement_updated', { hotel: req.hotel, announcement: toDTO(doc) });
+  res.json(toDTO(doc));
+});
+
+app.delete('/api/announcement', requireAdmin, async (req, res) => {
+  await Announcement.findOneAndUpdate({ hotel: req.hotel }, { active: false });
+  io.emit('announcement_updated', { hotel: req.hotel, announcement: null });
+  res.json({ ok: true });
 });
 
 // ============ HOTEL INFO (public display name) ============
@@ -682,11 +724,11 @@ app.patch('/api/super-admin/hotels/:slug', requireSuperAdmin, async (req, res) =
 // Comparative stats across every hotel, for the super-admin dashboard: which
 // hotels are getting the most issues/requests, how they're rated, and how
 // many items are currently overdue (escalated) — to spot where attention is needed.
-app.get('/api/super-admin/stats', requireSuperAdmin, async (req, res) => {
+async function computeHotelStats() {
   const hotels = await Hotel.find().sort({ created_at: -1 });
   const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const stats = await Promise.all(hotels.map(async (h) => {
+  return Promise.all(hotels.map(async (h) => {
     const [issues24h, requests24h, pendingRequests, pendingOrders, overdueMsgs, overdueRequests, overdueOrders, feedbackDocs] = await Promise.all([
       QuickRequest.countDocuments({ hotel: h.slug, category: 'issue', created_at: { $gte: last24h } }),
       QuickRequest.countDocuments({ hotel: h.slug, category: 'request', created_at: { $gte: last24h } }),
@@ -708,8 +750,29 @@ app.get('/api/super-admin/stats', requireSuperAdmin, async (req, res) => {
       avg_rating: avgRating, feedback_count: feedbackDocs.length
     };
   }));
+}
 
-  res.json(stats);
+app.get('/api/super-admin/stats', requireSuperAdmin, async (req, res) => {
+  res.json(await computeHotelStats());
+});
+
+app.get('/api/super-admin/stats/export', requireSuperAdmin, async (req, res) => {
+  const stats = await computeHotelStats();
+  const rows = stats.map((s) => ({
+    Hoteli: s.name,
+    Slug: s.slug,
+    Aktiv: s.active ? 'Po' : 'Jo',
+    'Probleme (24h)': s.issues_24h,
+    'Kerkesa (24h)': s.requests_24h,
+    'Pa trajtuar': s.pending_count,
+    Vonesa: s.overdue_count,
+    'Vleresimi mesatar': s.avg_rating ?? '',
+    'Nr vleresimeve': s.feedback_count
+  }));
+  const csv = toCsv(rows, ['Hoteli', 'Slug', 'Aktiv', 'Probleme (24h)', 'Kerkesa (24h)', 'Pa trajtuar', 'Vonesa', 'Vleresimi mesatar', 'Nr vleresimeve']);
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="statistika-hotelet.csv"');
+  res.send(csv);
 });
 
 app.delete('/api/super-admin/hotels/:slug', requireSuperAdmin, async (req, res) => {
@@ -724,7 +787,8 @@ app.delete('/api/super-admin/hotels/:slug', requireSuperAdmin, async (req, res) 
     Feedback.deleteMany({ hotel }),
     Recommendation.deleteMany({ hotel }),
     RoomNote.deleteMany({ hotel }),
-    PushSubscription.deleteMany({ hotel })
+    PushSubscription.deleteMany({ hotel }),
+    Announcement.deleteOne({ hotel })
   ]);
   authSettingsCache.delete(hotel);
   res.json({ deleted: true });

@@ -424,6 +424,8 @@ async function markRequestDone(id){
   loadRequests();
 }
 
+const ORDER_STATUS_LABELS = { pending: 'Pranuar', preparing: 'Në përgatitje', on_the_way: 'Në rrugë', delivered: 'Dorëzuar' };
+
 async function loadOrders(){
   const res = await fetch(apiUrl('/api/room-service'), { headers: authHeaders() });
   const orders = await res.json();
@@ -433,9 +435,10 @@ async function loadOrders(){
   box.innerHTML = orders.length === 0 ? '<p class="empty">Asnjë porosi pezull.</p>' : orders.map(o => `
     <div class="card">
       <div class="card-top"><span class="card-room">Dhoma ${o.room_number}</span><span class="card-time">${o.total} L</span></div>
-      <div class="card-body">${o.items.map(i=>i.name).join(', ')} <span class="badge">${o.status}</span></div>
+      <div class="card-body">${o.items.map(i=>i.name).join(', ')} <span class="badge">${ORDER_STATUS_LABELS[o.status] || o.status}</span></div>
       <div class="card-btns">
         ${o.status === 'pending' ? `<button class="card-btn secondary" onclick="updateOrderStatus('${o.id}','preparing')">Po përgatitet</button>` : ''}
+        ${o.status === 'preparing' ? `<button class="card-btn secondary" onclick="updateOrderStatus('${o.id}','on_the_way')">Në rrugë</button>` : ''}
         <button class="card-btn" onclick="updateOrderStatus('${o.id}','delivered')">Shëno si dorëzuar</button>
       </div>
     </div>`).join('');

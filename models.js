@@ -78,7 +78,7 @@ function toDTO(doc) {
 }
 
 // --- Editable hotel content (one document per hotel) ---
-const langText = { sq: String, en: String, it: String, de: String };
+const langText = { sq: String, en: String, it: String, de: String, fr: String };
 
 const hotelContentSchema = new mongoose.Schema({
   hotel: { type: String, required: true, unique: true },
@@ -189,6 +189,19 @@ const generatedQrSchema = new mongoose.Schema(
 );
 generatedQrSchema.index({ hotel: 1, room_number: 1 }, { unique: true });
 
+// --- Announcement: one active banner per hotel, broadcast live to every
+// guest currently in the app (e.g. "Pool closed today for maintenance").
+// Only one is kept per hotel — setting a new one replaces the old one.
+const announcementSchema = new mongoose.Schema(
+  {
+    hotel: { type: String, required: true, unique: true },
+    text: langText,
+    active: { type: Boolean, default: false },
+    expires_at: { type: Date, default: null }
+  },
+  { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
+);
+
 module.exports = {
   Hotel: mongoose.model('Hotel', hotelSchema),
   Message: mongoose.model('Message', messageSchema),
@@ -201,5 +214,6 @@ module.exports = {
   RoomNote: mongoose.model('RoomNote', roomNoteSchema),
   PushSubscription: mongoose.model('PushSubscription', pushSubscriptionSchema),
   GeneratedQr: mongoose.model('GeneratedQr', generatedQrSchema),
+  Announcement: mongoose.model('Announcement', announcementSchema),
   toDTO
 };
