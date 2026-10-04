@@ -42,22 +42,84 @@ if (pushEnabled) {
   console.warn('VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY not set — push notifications to guests are disabled.');
 }
 
+async function pushOne(sub, title, body) {
+  try {
+    await webpush.sendNotification({ endpoint: sub.endpoint, keys: sub.keys }, JSON.stringify({ title, body }));
+  } catch (err) {
+    if (err.statusCode === 404 || err.statusCode === 410) {
+      await PushSubscription.deleteOne({ _id: sub._id });
+    } else {
+      console.warn('Push send failed:', err.message);
+    }
+  }
+}
+
+// Sends the exact same already-localized title/body to every device
+// subscribed to a room — use only when the text is already correct for
+// every guest device (e.g. the welcome message, built in the one language
+// the guest had selected at the moment it was sent).
 async function sendPushToRoom(hotel, room_number, title, body) {
   if (!pushEnabled) return;
   const subs = await PushSubscription.find({ hotel, room_number });
-  const payload = JSON.stringify({ title, body });
+  await Promise.all(subs.map((sub) => pushOne(sub, title, body)));
+}
+
+// Sends a notification to every device subscribed to a room, picking the
+// title/body for EACH device's own saved language — so a French guest gets
+// a French notification and an English guest gets an English one from the
+// very same event, instead of everyone getting whatever language staff (or
+// the hotel's default) happens to use. `resolve(lang)` returns
+// {title, body} for that device's language, or null to skip it.
+async function sendPushToRoomLocalized(hotel, room_number, resolve) {
+  if (!pushEnabled) return;
+  const subs = await PushSubscription.find({ hotel, room_number });
   await Promise.all(subs.map(async (sub) => {
-    try {
-      await webpush.sendNotification({ endpoint: sub.endpoint, keys: sub.keys }, payload);
-    } catch (err) {
-      if (err.statusCode === 404 || err.statusCode === 410) {
-        await PushSubscription.deleteOne({ _id: sub._id });
-      } else {
-        console.warn('Push send failed:', err.message);
-      }
-    }
+    const lang = sub.lang || 'en';
+    const payload = await resolve(lang);
+    if (payload) await pushOne(sub, payload.title, payload.body);
   }));
 }
+
+// Translates free text (e.g. whatever staff just typed) server-side using
+// Google Translate's free web endpoint (no API key), with an in-memory
+// cache and a MyMemory fallback — same approach used client-side in the
+// admin panel and staff dashboard, so quality/behavior stays consistent.
+const serverTranslateCache = new Map();
+async function translateServerText(text, fromLang, toLang) {
+  if (!text || !toLang || !fromLang || fromLang === toLang) return text;
+  const key = fromLang + '|' + toLang + '|' + text;
+  if (serverTranslateCache.has(key)) return serverTranslateCache.get(key);
+  try {
+    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${toLang}&dt=t&q=${encodeURIComponent(text)}`);
+    const data = await res.json();
+    const translated = Array.isArray(data?.[0]) ? data[0].map((part) => part[0]).join('') : '';
+    if (!translated) throw new Error('empty translation');
+    serverTranslateCache.set(key, translated);
+    return translated;
+  } catch (e) {
+    try {
+      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`);
+      const data = await res.json();
+      const translated = data?.responseData?.translatedText || text;
+      serverTranslateCache.set(key, translated);
+      return translated;
+    } catch (e2) { return text; }
+  }
+}
+
+// Fixed, hand-translated notification titles/bodies — used instead of a
+// live translation call for canned system text, which is faster and more
+// reliable than round-tripping every "Order update" through a translate API.
+const PUSH_TITLE_CHAT = { sq: 'Mesazh nga recepsioni', en: 'Message from reception', it: 'Messaggio dalla reception', de: 'Nachricht von der Rezeption', fr: 'Message de la réception' };
+const PUSH_TITLE_REQUEST_DONE = { sq: 'Kërkesa juaj u përmbush', en: 'Your request has been fulfilled', it: 'La tua richiesta è stata soddisfatta', de: 'Ihre Anfrage wurde erfüllt', fr: 'Votre demande a été satisfaite' };
+const PUSH_TITLE_ORDER_UPDATE = { sq: 'Përditësim porosie', en: 'Order update', it: 'Aggiornamento ordine', de: 'Bestellupdate', fr: 'Mise à jour de la commande' };
+const ORDER_STATUS_TEXT = {
+  sq: { preparing: 'Porosia juaj po përgatitet.', on_the_way: 'Porosia juaj është në rrugë drejt dhomës suaj.', delivered: 'Porosia juaj u dorëzua. Shijoni!' },
+  en: { preparing: 'Your order is being prepared.', on_the_way: 'Your order is on its way to your room.', delivered: 'Your order has been delivered. Enjoy!' },
+  it: { preparing: 'Il tuo ordine è in preparazione.', on_the_way: 'Il tuo ordine è in arrivo nella tua camera.', delivered: 'Il tuo ordine è stato consegnato. Buon appetito!' },
+  de: { preparing: 'Ihre Bestellung wird zubereitet.', on_the_way: 'Ihre Bestellung ist unterwegs zu Ihrem Zimmer.', delivered: 'Ihre Bestellung wurde geliefert. Guten Appetit!' },
+  fr: { preparing: 'Votre commande est en préparation.', on_the_way: 'Votre commande est en route vers votre chambre.', delivered: 'Votre commande a été livrée. Bon appétit !' }
+};
 
 // ============ Signed room-session tokens (optional expiring QR codes) ============
 const SESSION_SECRET = process.env.SESSION_SECRET || 'bregu-dev-secret-change-me';
@@ -236,7 +298,11 @@ app.post('/api/messages', requireHotel, verifyGuestSession, async (req, res) => 
   io.to(roomChannel(req.hotel, room_number)).to(staffChannel(req.hotel)).emit('new_message', message);
 
   if (sender === 'staff') {
-    sendPushToRoom(req.hotel, room_number, 'Mesazh nga recepsioni', text).catch(() => {});
+    const staffLang = lang || 'sq';
+    sendPushToRoomLocalized(req.hotel, room_number, async (guestLang) => ({
+      title: PUSH_TITLE_CHAT[guestLang] || PUSH_TITLE_CHAT.en,
+      body: await translateServerText(text, staffLang, guestLang)
+    })).catch(() => {});
   }
 
   if (sender === 'guest') {
@@ -314,7 +380,12 @@ app.patch('/api/quick-requests/:id', requireStaff, async (req, res) => {
   io.to(staffChannel(req.hotel)).emit('request_updated', item);
 
   if (item.status === 'done') {
-    sendPushToRoom(req.hotel, item.room_number, 'Kërkesa juaj u përmbush', item.request_type).catch(() => {});
+    // item.request_type is already the exact label the guest tapped/typed in
+    // their own language, so only the notification title needs localizing.
+    sendPushToRoomLocalized(req.hotel, item.room_number, async (guestLang) => ({
+      title: PUSH_TITLE_REQUEST_DONE[guestLang] || PUSH_TITLE_REQUEST_DONE.en,
+      body: item.request_type
+    })).catch(() => {});
   }
 
   res.json(item);
@@ -356,14 +427,11 @@ app.patch('/api/room-service/:id', requireStaff, async (req, res) => {
   const order = toDTO(doc);
   io.to(roomChannel(req.hotel, order.room_number)).to(staffChannel(req.hotel)).emit('order_updated', order);
 
-  const statusText = {
-    preparing: 'Porosia juaj po përgatitet.',
-    on_the_way: 'Porosia juaj është në rrugë drejt dhomës suaj.',
-    delivered: 'Porosia juaj u dorëzua. Shijoni!'
-  };
-  if (statusText[order.status]) {
-    sendPushToRoom(req.hotel, order.room_number, 'Përditësim porosie', statusText[order.status]).catch(() => {});
-  }
+  sendPushToRoomLocalized(req.hotel, order.room_number, async (guestLang) => {
+    const body = (ORDER_STATUS_TEXT[guestLang] || ORDER_STATUS_TEXT.en)[order.status];
+    if (!body) return null;
+    return { title: PUSH_TITLE_ORDER_UPDATE[guestLang] || PUSH_TITLE_ORDER_UPDATE.en, body };
+  }).catch(() => {});
 
   res.json(order);
 });
@@ -702,13 +770,14 @@ app.get('/api/push/vapid-public-key', (req, res) => {
 });
 
 app.post('/api/push/subscribe', requireHotel, async (req, res) => {
-  const { room_number, subscription } = req.body;
+  const { room_number, subscription, lang } = req.body;
   if (!room_number || !subscription || !subscription.endpoint || !subscription.keys) {
     return res.status(400).json({ error: 'room_number and subscription required' });
   }
+  const supportedLangs = ['sq', 'en', 'it', 'de', 'fr'];
   await PushSubscription.findOneAndUpdate(
     { endpoint: subscription.endpoint },
-    { hotel: req.hotel, room_number, endpoint: subscription.endpoint, keys: subscription.keys },
+    { hotel: req.hotel, room_number, endpoint: subscription.endpoint, keys: subscription.keys, lang: supportedLangs.includes(lang) ? lang : 'en' },
     { upsert: true }
   );
   res.status(201).json({ ok: true });

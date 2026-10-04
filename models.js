@@ -194,7 +194,11 @@ const pushSubscriptionSchema = new mongoose.Schema(
     keys: {
       p256dh: { type: String, required: true },
       auth: { type: String, required: true }
-    }
+    },
+    // The language the guest's app was set to when they enabled notifications
+    // — lets a staff reply's push notification arrive translated into the
+    // guest's own language instead of always in whatever language staff typed it.
+    lang: { type: String, default: 'en' }
   },
   { timestamps: { createdAt: 'created_at', updatedAt: false } }
 );

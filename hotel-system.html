@@ -496,8 +496,8 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
         <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Ndrysho pamjen">🌙</button>
         <div class="lang-switch">
-          <button class="lang-btn on" data-lang="sq" onclick="setLang('sq')">SQ</button>
-          <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+          <button class="lang-btn" data-lang="sq" onclick="setLang('sq')">SQ</button>
+          <button class="lang-btn on" data-lang="en" onclick="setLang('en')">EN</button>
           <button class="lang-btn" data-lang="it" onclick="setLang('it')">IT</button>
           <button class="lang-btn" data-lang="de" onclick="setLang('de')">DE</button>
           <button class="lang-btn" data-lang="fr" onclick="setLang('fr')">FR</button>
@@ -981,7 +981,7 @@ const translations = {
     "tab.home":"Kryesore","tab.room":"Dhoma","tab.explore":"Zbulo","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Faleminderit! E kemi marrë mesazhin, dikush nga stafi do t'ju kontaktojë brenda pak minutash.","Sigurisht, po e rregullojmë menjëherë. A keni nevojë për ndonjë gjë tjetër?","Po e dërgojmë dikë në dhomën tuaj shpejt. Faleminderit për durimin."],
     "feedback.heading":"Vlerësoni qëndrimin","feedback.placeholder":"Shkruani përshtypjet tuaja (opsionale)",
-    "feedback.submit":"Dërgo vlerësimin","feedback.thanks":"Faleminderit për vlerësimin tuaj!",
+    "feedback.submit":"Dërgo vlerësimin","feedback.thanks":"Faleminderit për vlerësimin tuaj!","feedback.googlePrompt":"⭐ Na ndihmoni — lini po këtë vlerësim edhe në Google",
     "room.chipTemplate":"Dhoma {room} · Kati {floor}"
   },
   en: {
@@ -1060,7 +1060,7 @@ const translations = {
     "tab.home":"Home","tab.room":"Room","tab.explore":"Explore","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Thank you! We've received your message, someone from staff will reach out shortly.","Of course, we'll sort that out right away. Anything else you need?","We're sending someone to your room shortly. Thanks for your patience."],
     "feedback.heading":"Rate your stay","feedback.placeholder":"Share your thoughts (optional)",
-    "feedback.submit":"Send rating","feedback.thanks":"Thanks for your feedback!",
+    "feedback.submit":"Send rating","feedback.thanks":"Thanks for your feedback!","feedback.googlePrompt":"⭐ Help us out — leave the same rating on Google too",
     "room.chipTemplate":"Room {room} · Floor {floor}"
   },
   it: {
@@ -1139,7 +1139,7 @@ const translations = {
     "tab.home":"Home","tab.room":"Camera","tab.explore":"Scopri","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Grazie! Abbiamo ricevuto il vostro messaggio, un membro dello staff vi contatterà a breve.","Certo, sistemiamo subito. Vi serve altro?","Stiamo mandando qualcuno in camera vostra a breve. Grazie per la pazienza."],
     "feedback.heading":"Valutate il soggiorno","feedback.placeholder":"Condividete le vostre impressioni (opzionale)",
-    "feedback.submit":"Invia valutazione","feedback.thanks":"Grazie per il vostro feedback!",
+    "feedback.submit":"Invia valutazione","feedback.thanks":"Grazie per il vostro feedback!","feedback.googlePrompt":"⭐ Aiutaci — lascia la stessa valutazione anche su Google",
     "room.chipTemplate":"Camera {room} · Piano {floor}"
   },
   de: {
@@ -1218,7 +1218,7 @@ const translations = {
     "tab.home":"Start","tab.room":"Zimmer","tab.explore":"Entdecken","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Danke! Wir haben Ihre Nachricht erhalten, jemand vom Team meldet sich gleich bei Ihnen.","Natürlich, wir kümmern uns sofort darum. Brauchen Sie noch etwas?","Wir schicken gleich jemanden auf Ihr Zimmer. Danke für Ihre Geduld."],
     "feedback.heading":"Bewerten Sie Ihren Aufenthalt","feedback.placeholder":"Teilen Sie uns Ihre Eindrücke mit (optional)",
-    "feedback.submit":"Bewertung senden","feedback.thanks":"Danke für Ihr Feedback!",
+    "feedback.submit":"Bewertung senden","feedback.thanks":"Danke für Ihr Feedback!","feedback.googlePrompt":"⭐ Helfen Sie uns — hinterlassen Sie dieselbe Bewertung auch bei Google",
     "room.chipTemplate":"Zimmer {room} · Etage {floor}"
   },
   fr: {
@@ -1297,7 +1297,7 @@ const translations = {
     "tab.home":"Accueil","tab.room":"Chambre","tab.explore":"Découvrir","tab.info":"Infos","tab.chat":"Chat",
     "chat.replies":["Merci ! Nous avons bien reçu votre message, quelqu'un de l'équipe vous répondra sous peu.","Bien sûr, nous nous en occupons tout de suite. Avez-vous besoin d'autre chose ?","Nous envoyons quelqu'un dans votre chambre sous peu. Merci de votre patience."],
     "feedback.heading":"Évaluez votre séjour","feedback.placeholder":"Partagez vos impressions (facultatif)",
-    "feedback.submit":"Envoyer l'avis","feedback.thanks":"Merci pour votre avis !",
+    "feedback.submit":"Envoyer l'avis","feedback.thanks":"Merci pour votre avis !","feedback.googlePrompt":"⭐ Aidez-nous — laissez la même note sur Google aussi",
     "room.chipTemplate":"Chambre {room} · Étage {floor}"
   }
 };
@@ -1313,6 +1313,10 @@ let dynamicContent = null;
 let dynamicRecs = [];
 let dynamicRoomService = [];
 let leafletMap = null;
+// Lets tapping a recommendation card jump straight to its pin on the map
+// above, instead of the guest having to find it themselves — keyed by each
+// recommendation's own id, filled in once in initRealMap().
+let recMarkers = {};
 let isAdminPreview = false;
 let currentHotelName = 'Hotel';
 
@@ -1798,7 +1802,7 @@ function renderDynamicRecommendations(){
     return;
   }
   box.innerHTML = dynamicRecs.map(rec => `
-    <div class="rec-card ${rec.category===currentCat ? 'show':''}" data-cat="${rec.category}">
+    <div class="rec-card ${rec.category===currentCat ? 'show':''}" data-cat="${rec.category}" ${typeof rec.lat==='number' && typeof rec.lng==='number' ? `onclick="focusRecOnMap('${rec.id}')" style="cursor:pointer;"` : ''}>
       ${rec.image_url ? `<img src="${escapeHtml(rec.image_url)}" alt="${escapeHtml(rec.name)}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:10px;" onerror="this.style.display='none'">` : ''}
       <div class="rec-top"><p class="rec-name">${escapeHtml(rec.name)}</p><span class="rec-price">${translations[currentLang]['price.'+rec.price_type]}</span></div>
       <p class="rec-meta">${escapeHtml(rec.meta?.[currentLang] || rec.meta?.sq || '')}</p>
@@ -1824,25 +1828,45 @@ function initRealMap(){
   });
   L.marker([lat, lng], { icon: hotelIcon }).addTo(leafletMap).bindPopup('<b>' + escapeHtml(currentHotelName) + '</b>');
 
+  recMarkers = {};
   dynamicRecs.forEach(rec => {
     if(typeof rec.lat === 'number' && typeof rec.lng === 'number'){
-      L.marker([rec.lat, rec.lng]).addTo(leafletMap).bindPopup('<b>'+escapeHtml(rec.name)+'</b>');
+      const marker = L.marker([rec.lat, rec.lng]).addTo(leafletMap).bindPopup('<b>'+escapeHtml(rec.name)+'</b>');
+      if(rec.id) recMarkers[rec.id] = marker;
     }
   });
+}
+
+// Tapping a recommendation card pans/zooms the map straight to its pin and
+// pops its label open, instead of the guest having to scan the map
+// themselves to find which dot is which place.
+function focusRecOnMap(id){
+  const marker = recMarkers[id];
+  if(!marker || !leafletMap) return;
+  leafletMap.setView(marker.getLatLng(), 16, { animate: true });
+  marker.openPopup();
+  const mapEl = document.getElementById('real-map');
+  if(mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Leaflet mis-sizes itself if its container was resized/scrolled while
+  // hidden or mid-animation — nudging it after the scroll keeps the tiles
+  // and the popup position correct.
+  setTimeout(() => { if(leafletMap) leafletMap.invalidateSize(); }, 300);
 }
 
 // Picks the language the app should open in: the guest's own earlier choice
 // (remembered on this device), otherwise a best guess from the browser/phone
 // language, otherwise English — never Albanian by default for someone who
 // hasn't chosen it, since most guests aren't Albanian speakers.
+// Default is always English unless this guest already picked a language on
+// this device — deliberately NOT auto-matched to the phone's own system
+// language, since the hotel wants English as the safe default for guests it
+// hasn't set a language preference for yet.
 function detectInitialLang(){
   const supported = ['sq','en','it','de','fr'];
   try{
     const saved = localStorage.getItem('bregu_lang');
     if(saved && supported.includes(saved)) return saved;
   }catch(e){}
-  const browserLang = (navigator.language || navigator.userLanguage || '').slice(0,2).toLowerCase();
-  if(supported.includes(browserLang)) return browserLang;
   return 'en';
 }
 
@@ -1870,6 +1894,26 @@ function setLang(lang){
   if(weatherCoords) fetchWeather();
   if(currentAnnouncement) renderAnnouncement(currentAnnouncement);
   if(currentRoomServiceOrderId) loadMyRoomServiceOrder();
+  syncPushLang();
+}
+
+// If the guest already enabled notifications and then switches language
+// (e.g. picked Albanian by mistake, or changes their mind mid-stay), keep
+// their push subscription's saved language in sync so future notifications
+// switch too — without this they'd be stuck getting notifications in
+// whatever language was active the moment they first tapped "Enable".
+async function syncPushLang(){
+  if(!('serviceWorker' in navigator) || !('PushManager' in window) || !API_BASE || !currentHotel || !currentRoom) return;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+    if(!existing) return;
+    await fetch(API_BASE + '/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, subscription: existing.toJSON(), lang: currentLang })
+    });
+  }catch(e){ /* best-effort — next enable/relaunch will still pick it up */ }
 }
 
 function updateRoomChip(){
@@ -2200,7 +2244,7 @@ async function enablePushNotifications(){
     await fetch(API_BASE + '/api/push/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, subscription: subscription.toJSON() })
+      body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, subscription: subscription.toJSON(), lang: currentLang })
     });
     if(btn) btn.style.display = 'none';
     showToast(translations[currentLang]['push.enabled']);
@@ -2504,9 +2548,20 @@ function rateStay(v){
 
 function submitFeedback(){
   const comment = document.getElementById('fb-text').value.trim();
+  const rating = stayRating || 5;
   const box = document.getElementById('feedback-box');
-  box.innerHTML = '<p class="fb-thanks">'+translations[currentLang]['feedback.thanks']+'</p>';
-  apiPost('/api/feedback', { room_number: currentRoom, rating: stayRating || 5, comment });
+  const reviewUrl = dynamicContent?.google_review_url || '';
+  // Guests who rate 4-5 stars in-app are invited to post the same rating
+  // publicly on Google — a lower rating stays private here instead, so the
+  // hotel can follow up directly rather than it becoming a public review.
+  if(rating >= 4 && reviewUrl){
+    box.innerHTML = `
+      <p class="fb-thanks">${escapeHtml(translations[currentLang]['feedback.thanks'])}</p>
+      <a href="${escapeHtml(reviewUrl)}" target="_blank" rel="noopener" class="fb-submit" style="display:block; text-align:center; text-decoration:none; margin-top:10px;">${escapeHtml(translations[currentLang]['feedback.googlePrompt'])}</a>`;
+  } else {
+    box.innerHTML = '<p class="fb-thanks">'+translations[currentLang]['feedback.thanks']+'</p>';
+  }
+  apiPost('/api/feedback', { room_number: currentRoom, rating, comment });
 }
 </script>
 
