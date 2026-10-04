@@ -911,15 +911,26 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
 // --- Live backend connection (Hotel Bregu API on Render) ---
 const API_BASE = "https://hotelsystem-lzlm.onrender.com";
 let socket = null;
+// On iOS especially, installing the app to the Home Screen and then
+// backgrounding it (switching apps, locking the phone) suspends the page's
+// JS and drops the socket connection — push notifications still arrive
+// (those go through the OS, not this page), but any chat message sent
+// while disconnected is a 'new_message' event this page was never around to
+// receive. Track past-the-first connect so a later reconnect (as opposed to
+// the very first connect on load) triggers a catch-up refetch of the thread.
+let hasConnectedOnce = false;
 try {
   socket = io(API_BASE, { transports: ['websocket', 'polling'] });
   socket.on('connect', () => {
     if(currentHotel) socket.emit('join_room', { hotel: currentHotel, room: currentRoom });
+    if(hasConnectedOnce && currentRoom && typeof loadChatHistory === 'function') loadChatHistory();
+    hasConnectedOnce = true;
   });
   socket.on('new_message', async (msg) => {
     if (msg.sender !== 'guest' && msg.room_number === currentRoom) {
-      const text = (msg.lang && msg.lang !== currentLang) ? await translateForGuest(msg.text, msg.lang) : msg.text;
-      pushInMsg(text);
+      const wasTranslated = msg.lang && msg.lang !== currentLang;
+      const text = wasTranslated ? await translateForGuest(msg.text, msg.lang) : msg.text;
+      pushInMsg(text, undefined, wasTranslated ? msg.text : null, msg.lang);
     }
   });
   socket.on('content_updated', (payload) => { if (payload?.hotel === currentHotel && typeof loadHotelContent === 'function') loadHotelContent(); });
@@ -1016,7 +1027,7 @@ const translations = {
     "faq.q3":"A pranoni kafshë shtëpiake?","faq.a3":"Pranohen kafshë të vogla me njoftim paraprak në recepsion, me tarifë shtesë.",
     "faq.q4":"Deri sa orë shërbehet mëngjesi?","faq.a4":"Mëngjesi shërbehet çdo ditë nga ora 07:30 deri në 10:30.",
     "chat.title":"Recepsioni","chat.subtitle":"Zakonisht përgjigjemi brenda pak minutash.",
-    "chat.firstTemplate":"Mirë se erdhët në {hotel}! Jam këtu për çdo gjë që ju nevojitet gjatë qëndrimit.",
+    "chat.firstTemplate":"Mirë se erdhët në {hotel}! Jam këtu për çdo gjë që ju nevojitet gjatë qëndrimit.","chat.showOriginal":"Shfaq origjinalin","chat.showTranslation":"Shfaq përkthimin",
     "chat.placeholder":"Shkruani mesazhin...",
     "tab.home":"Kryesore","tab.room":"Dhoma","tab.explore":"Zbulo","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Faleminderit! E kemi marrë mesazhin, dikush nga stafi do t'ju kontaktojë brenda pak minutash.","Sigurisht, po e rregullojmë menjëherë. A keni nevojë për ndonjë gjë tjetër?","Po e dërgojmë dikë në dhomën tuaj shpejt. Faleminderit për durimin."],
@@ -1095,7 +1106,7 @@ const translations = {
     "faq.q3":"Do you allow pets?","faq.a3":"Small pets are allowed with advance notice to the front desk, for an extra fee.",
     "faq.q4":"Until what time is breakfast served?","faq.a4":"Breakfast is served daily from 7:30 to 10:30 am.",
     "chat.title":"Front desk","chat.subtitle":"We usually reply within a few minutes.",
-    "chat.firstTemplate":"Welcome to {hotel}! I'm here for anything you need during your stay.",
+    "chat.firstTemplate":"Welcome to {hotel}! I'm here for anything you need during your stay.","chat.showOriginal":"Show original","chat.showTranslation":"Show translation",
     "chat.placeholder":"Type your message...",
     "tab.home":"Home","tab.room":"Room","tab.explore":"Explore","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Thank you! We've received your message, someone from staff will reach out shortly.","Of course, we'll sort that out right away. Anything else you need?","We're sending someone to your room shortly. Thanks for your patience."],
@@ -1174,7 +1185,7 @@ const translations = {
     "faq.q3":"Accettate animali domestici?","faq.a3":"Gli animali di piccola taglia sono ammessi con preavviso alla reception, con supplemento.",
     "faq.q4":"Fino a che ora si serve la colazione?","faq.a4":"La colazione è servita ogni giorno dalle 7:30 alle 10:30.",
     "chat.title":"Reception","chat.subtitle":"Di solito rispondiamo entro pochi minuti.",
-    "chat.firstTemplate":"Benvenuti in {hotel}! Sono qui per qualsiasi cosa vi serva durante il soggiorno.",
+    "chat.firstTemplate":"Benvenuti in {hotel}! Sono qui per qualsiasi cosa vi serva durante il soggiorno.","chat.showOriginal":"Mostra originale","chat.showTranslation":"Mostra traduzione",
     "chat.placeholder":"Scrivete il vostro messaggio...",
     "tab.home":"Home","tab.room":"Camera","tab.explore":"Scopri","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Grazie! Abbiamo ricevuto il vostro messaggio, un membro dello staff vi contatterà a breve.","Certo, sistemiamo subito. Vi serve altro?","Stiamo mandando qualcuno in camera vostra a breve. Grazie per la pazienza."],
@@ -1253,7 +1264,7 @@ const translations = {
     "faq.q3":"Sind Haustiere erlaubt?","faq.a3":"Kleine Haustiere sind mit vorheriger Ankündigung an der Rezeption gegen Aufpreis erlaubt.",
     "faq.q4":"Bis wann wird Frühstück serviert?","faq.a4":"Frühstück wird täglich von 7:30 bis 10:30 Uhr serviert.",
     "chat.title":"Rezeption","chat.subtitle":"Wir antworten meist innerhalb weniger Minuten.",
-    "chat.firstTemplate":"Willkommen bei {hotel}! Ich bin für alles da, was Sie während Ihres Aufenthalts brauchen.",
+    "chat.firstTemplate":"Willkommen bei {hotel}! Ich bin für alles da, was Sie während Ihres Aufenthalts brauchen.","chat.showOriginal":"Original anzeigen","chat.showTranslation":"Übersetzung anzeigen",
     "chat.placeholder":"Nachricht schreiben...",
     "tab.home":"Start","tab.room":"Zimmer","tab.explore":"Entdecken","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Danke! Wir haben Ihre Nachricht erhalten, jemand vom Team meldet sich gleich bei Ihnen.","Natürlich, wir kümmern uns sofort darum. Brauchen Sie noch etwas?","Wir schicken gleich jemanden auf Ihr Zimmer. Danke für Ihre Geduld."],
@@ -1332,7 +1343,7 @@ const translations = {
     "faq.q3":"Les animaux de compagnie sont-ils autorisés ?","faq.a3":"Les petits animaux sont autorisés avec un préavis à la réception, moyennant un supplément.",
     "faq.q4":"Jusqu'à quelle heure le petit-déjeuner est-il servi ?","faq.a4":"Le petit-déjeuner est servi tous les jours de 7h30 à 10h30.",
     "chat.title":"Réception","chat.subtitle":"Nous répondons généralement en quelques minutes.",
-    "chat.firstTemplate":"Bienvenue à {hotel} ! Je suis là pour tout ce dont vous avez besoin pendant votre séjour.",
+    "chat.firstTemplate":"Bienvenue à {hotel} ! Je suis là pour tout ce dont vous avez besoin pendant votre séjour.","chat.showOriginal":"Afficher l'original","chat.showTranslation":"Afficher la traduction",
     "chat.placeholder":"Écrire un message...",
     "tab.home":"Accueil","tab.room":"Chambre","tab.explore":"Découvrir","tab.info":"Infos","tab.chat":"Chat",
     "chat.replies":["Merci ! Nous avons bien reçu votre message, quelqu'un de l'équipe vous répondra sous peu.","Bien sûr, nous nous en occupons tout de suite. Avez-vous besoin d'autre chose ?","Nous envoyons quelqu'un dans votre chambre sous peu. Merci de votre patience."],
@@ -1364,20 +1375,31 @@ function escapeHtml(str){
   return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// Translates staff messages into the guest's selected language via the
-// free MyMemory API, with an in-memory cache so repeated phrases are fast.
+// Translates staff messages into the guest's selected language using Google
+// Translate's free web endpoint (no API key), with a MyMemory fallback and
+// an in-memory cache — same approach used in the admin panel and staff
+// dashboard, for consistent quality everywhere in the app.
 const guestTranslateCache = new Map();
 async function translateForGuest(text, fromLang){
   if(!text || !fromLang || fromLang === currentLang) return text;
   const key = fromLang + '|' + currentLang + '|' + text;
   if(guestTranslateCache.has(key)) return guestTranslateCache.get(key);
   try{
-    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${currentLang}`);
+    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${currentLang}&dt=t&q=${encodeURIComponent(text)}`);
     const data = await res.json();
-    const translated = data?.responseData?.translatedText || text;
+    const translated = Array.isArray(data?.[0]) ? data[0].map(part => part[0]).join('') : '';
+    if(!translated) throw new Error('empty translation');
     guestTranslateCache.set(key, translated);
     return translated;
-  }catch(e){ return text; }
+  }catch(e){
+    try{
+      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${currentLang}`);
+      const data = await res.json();
+      const translated = data?.responseData?.translatedText || text;
+      guestTranslateCache.set(key, translated);
+      return translated;
+    }catch(e2){ return text; }
+  }
 }
 
 async function loadHotelContent(){
@@ -2222,6 +2244,17 @@ function toggleTheme(){
 
 window.addEventListener('DOMContentLoaded', initFromUrl);
 
+// Second safety net for the same "installed app was backgrounded" problem:
+// even when socket.io itself doesn't notice a disconnect/reconnect (e.g. the
+// OS merely paused timers without dropping the TCP connection), refetching
+// the thread whenever the page becomes visible again guarantees any message
+// that arrived while the guest wasn't looking shows up the moment they are.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && currentRoom && typeof loadChatHistory === 'function'){
+    loadChatHistory();
+  }
+});
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('service-worker.js').then(() => {
@@ -2361,14 +2394,45 @@ function apiPost(path, body){
   }).catch(err => { console.warn('API call failed:', err); showToast("S'u lidh dot me serverin."); return null; });
 }
 
-function pushInMsg(text, scrollBehavior){
+// `original`/`origLang` are only passed when this message was auto-
+// translated from staff's language into the guest's — they let the guest
+// flip back to exactly what staff typed, in case the translation reads
+// oddly, the same "show original" toggle the staff dashboard has for
+// guest messages.
+function pushInMsg(text, scrollBehavior, original, origLang){
   const log = document.getElementById('chat-log');
   const inMsg = document.createElement('div');
   inMsg.className = 'msg msg-in';
-  inMsg.innerHTML = text + '<div class="msg-time">'+timeNow()+'</div>';
+  const showToggle = original && original !== text;
+  const safeText = escapeHtml(text);
+  const safeOriginal = showToggle ? escapeHtml(original) : '';
+  inMsg.innerHTML = '<span class="msg-text">' + safeText + '</span>' +
+    (showToggle ? `<span class="msg-toggle" style="display:block; margin-top:4px; font-size:11px; opacity:0.6; text-decoration:underline; cursor:pointer;" onclick="toggleGuestMsgOriginal(this)">${escapeHtml(translations[currentLang]['chat.showOriginal'] || 'Show original')}</span>` : '') +
+    '<div class="msg-time">'+timeNow()+'</div>';
+  if(showToggle){
+    inMsg.dataset.translated = safeText;
+    inMsg.dataset.original = safeOriginal;
+    inMsg.dataset.origLang = origLang || '';
+    inMsg.dataset.showing = 'translated';
+  }
   log.appendChild(inMsg);
   if(scrollBehavior !== false) inMsg.scrollIntoView({ behavior: scrollBehavior || 'smooth', block:'end' });
   return inMsg;
+}
+
+function toggleGuestMsgOriginal(toggleEl){
+  const bubble = toggleEl.closest('.msg-in');
+  const textEl = bubble && bubble.querySelector('.msg-text');
+  if(!bubble || !textEl) return;
+  if(bubble.dataset.showing === 'translated'){
+    textEl.innerHTML = bubble.dataset.original;
+    toggleEl.textContent = translations[currentLang]['chat.showTranslation'] || 'Show translation';
+    bubble.dataset.showing = 'original';
+  } else {
+    textEl.innerHTML = bubble.dataset.translated;
+    toggleEl.textContent = translations[currentLang]['chat.showOriginal'] || 'Show original';
+    bubble.dataset.showing = 'translated';
+  }
 }
 
 function pushOutMsg(text, scrollBehavior){
@@ -2408,8 +2472,9 @@ async function loadChatHistory(){
       if(m.sender === 'guest'){
         lastEl = pushOutMsg(m.text, false);
       } else {
-        const text = (m.lang && m.lang !== currentLang) ? await translateForGuest(m.text, m.lang) : m.text;
-        lastEl = pushInMsg(text, false);
+        const wasTranslated = m.lang && m.lang !== currentLang;
+        const text = wasTranslated ? await translateForGuest(m.text, m.lang) : m.text;
+        lastEl = pushInMsg(text, false, wasTranslated ? m.text : null, m.lang);
       }
     }
     if(lastEl) lastEl.scrollIntoView({ behavior:'auto', block:'end' });
