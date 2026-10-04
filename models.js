@@ -102,6 +102,9 @@ const hotelContentSchema = new mongoose.Schema({
   // app. Left blank, the button hides itself rather than showing a fake
   // number a guest might actually dial.
   call_phone: { type: String, default: '' },
+  // Custom first chat message. Left blank, the guest app builds a generic
+  // one using the hotel's real name instead of a hardcoded "Hotel Bregu".
+  chat_welcome: langText,
   // Hotel-specific practical info — editable so a real hotel's own numbers/
   // hours/transport options replace the generic placeholders.
   emergency: {

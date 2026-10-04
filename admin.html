@@ -242,6 +242,9 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
     <div id="transport-list"></div>
     <button class="add-btn" onclick="addTransportItem()">+ Shto opsion transporti</button>
 
+    <p class="hint" style="margin:16px 0 6px; font-weight:500; opacity:0.8;">Mesazhi i parë i chat-it (bosh = përdor automatikisht emrin e hotelit)</p>
+    <div class="item-block" id="chat-welcome-block"></div>
+
     <button class="save-btn" style="margin-top:14px;" onclick="savePracticalInfo()">Ruaj info praktike</button>
   </div>
 
@@ -834,6 +837,13 @@ function renderPracticalInfoForm(){
       </div></div>`).join('')}`;
 
   renderLangItems('transport-list', content.transport, ['name','desc'], removeTransportItem);
+
+  const welcome = content.chat_welcome || {};
+  document.getElementById('chat-welcome-block').innerHTML = `
+    ${langTabsHtml('chatwelcome')}
+    <div class="field-row"><label>Teksti</label><div style="flex:1;">
+      ${['sq','en','it','de','fr'].map(l => `<textarea data-lang="${l}" data-field="chat_welcome" style="display:${l==='sq'?'':'none'};" rows="2" placeholder="p.sh. Mirë se erdhët! Jam këtu për çdo gjë që ju nevojitet.">${(welcome[l]||'')}</textarea>`).join('')}
+    </div></div>`;
 }
 
 function addTransportItem(){
@@ -1165,6 +1175,7 @@ function collectContentFromForm(){
   };
   content.hours = collectLangItemsFromBlock(document.getElementById('hours-block'), ['checkin','checkout','quiet','cleaning']);
   content.transport = [...document.querySelectorAll('#transport-list .item-block')].map(block => collectLangItemsFromBlock(block, ['name','desc']));
+  content.chat_welcome = collectLangItemsFromBlock(document.getElementById('chat-welcome-block'), ['chat_welcome']).chat_welcome;
 }
 
 async function saveContent(){

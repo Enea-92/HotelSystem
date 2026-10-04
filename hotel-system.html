@@ -765,7 +765,7 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
       <div class="chat-wrap">
         <div class="chat-log" id="chat-log">
           <div class="msg msg-in">
-            <span data-i18n="chat.first">Mirë se erdhët në Hotel Bregu! Jam këtu për çdo gjë që ju nevojitet gjatë qëndrimit.</span>
+            <span id="chat-first-msg">Mirë se erdhët! Jam këtu për çdo gjë që ju nevojitet gjatë qëndrimit.</span>
             <div class="msg-time">09:14</div>
           </div>
         </div>
@@ -914,21 +914,21 @@ const translations = {
     "issue.photoPrompt.title":"Do shtosh një foto të problemit?","issue.photoPrompt.sub":"Ndihmon stafin ta kuptojë problemin më shpejt. Nuk është e detyrueshme.","issue.photoPrompt.takePhoto":"Bëj / zgjidh foto","issue.photoPrompt.skip":"Vazhdo pa foto",
     "tutorial.title":"Mirë se erdhët!","tutorial.homeDesc":"hyrje e shpejtë tek çdo gjë","tutorial.roomDesc":"wifi, pajisje, kërkesa, probleme","tutorial.exploreDesc":"restorante, bare, plazhe me hartë","tutorial.chatDesc":"shkruaj drejt e te recepsioni","tutorial.gotIt":"E kuptova",
     "req.sentPrefix":"Kërkesë nga dhoma:","req.confirmToast":"Kërkesa u dërgua te recepsioni",
-    "room.amenitiesHeading":"Pajisjet",
+    "room.amenitiesHeading":"Pajisjet","amenities.empty":"Ende pa pajisje të shtuara për këtë dhomë.",
     "amenity.ac.name":"Klima","amenity.ac.note":"Kontrolli në murin pranë derës së banjës. 18-26°C.",
     "amenity.safe.name":"Kasaforta","amenity.safe.note":"Në dollap. Vendosni kod 4-shifror, mbyllet automatikisht.",
     "amenity.minibar.name":"Minibar","amenity.minibar.note":"Ujë falas. Pjesa tjetër faturohet në check-out.",
     "amenity.dryer.name":"Tharëse flokësh","amenity.dryer.note":"Sirtari i parë i tavolinës së make-up.",
-    "room.whereHeading":"Ku ndodhet",
+    "room.whereHeading":"Ku ndodhet","locations.empty":"Ende pa drejtime të shtuara për këtë hotel.",
     "loc.reception.name":"Recepsioni","loc.reception.desc":"Kati përdhes, tek hyrja kryesore.","loc.reception.time":"~1 min nga dhoma",
     "loc.breakfast.name":"Mëngjesi","loc.breakfast.desc":"Sallë me terracë, kati përdhes, në krah të recepsionit. 07:30–10:30.","loc.breakfast.time":"~2 min nga dhoma",
     "loc.pool.name":"Pishina","loc.pool.desc":"Kati i parë, dalja nga korridori pas ashensorit.","loc.pool.time":"~3 min nga dhoma",
     "loc.elevator.name":"Ashensori","loc.elevator.desc":"Në fund të korridorit tuaj, majtas.","loc.elevator.time":"~30 sek nga dhoma",
-    "roomservice.heading":"Shërbimi në dhomë","roomservice.add":"Shto","roomservice.cartHeading":"Porosia juaj",
+    "roomservice.heading":"Shërbimi në dhomë","roomservice.add":"Shto","roomservice.cartHeading":"Porosia juaj","roomservice.menuEmpty":"Ende pa artikuj në menynë e shërbimit në dhomë.",
     "roomservice.empty":"Nuk keni shtuar ende asgjë.","roomservice.send":"Dërgo porosinë te recepsioni","roomservice.sentToast":"Porosia u dërgua te recepsioni",
     "rs.club.name":"Sanduiç Club","rs.greek.name":"Sallatë Greke","rs.water.name":"Ujë / Bibitë","rs.wine.name":"Verë vendi (gotë)",
     "explore.title":"Zbulo zonën","explore.subtitle":"Rekomandime nga stafi ynë, jo reklama.","explore.empty":"Ende pa rekomandime për këtë hotel.",
-    "map.note":"Harta është ilustruese, jo GPS e saktë. 1 Molo Bar · 2 Taverna e Gjelbër · 3 Plazhi i Kaltër · 4 Kanto Lounge",
+    "map.note":"Harta është ilustruese. Shtypni mbi një pin për detaje.",
     "cat.restaurants":"Restorante","cat.bars":"Bare","cat.beaches":"Plazhe",
     "price.mid":"$$","price.high":"$$$","price.free":"Falas",
     "rec.tavern.meta":"Peshk i freskët · 8 min në këmbë","rec.tavern.tip":"Kërkoni tavolinë në oborr në mbrëmje. Rezervoni nga ora 19:00 e tutje, mbushet shpejt.",
@@ -954,13 +954,13 @@ const translations = {
     "info.emergencyHeading":"Urgjenca",
     "em.reception.name":"Recepsioni (24 orë)","em.police.name":"Policia","em.ambulance.name":"Ambulanca",
     "em.pharmacy.name":"Farmacia më e afërt","em.pharmacy.val":"3 min në këmbë",
-    "info.faqHeading":"Pyetje të shpeshta",
+    "info.faqHeading":"Pyetje të shpeshta","faq.empty":"Ende pa pyetje të shpeshta për këtë hotel.",
     "faq.q1":"Si e ndez ujin e ngrohtë?","faq.a1":"Çelësi është pranë kokës së dushit, kthejeni majtas dhe prisni rreth 30 sekonda.",
     "faq.q2":"A ka parking falas?","faq.a2":"Po, parkimi i jashtëm është falas për mysafirët, pranë hyrjes anësore.",
     "faq.q3":"A pranoni kafshë shtëpiake?","faq.a3":"Pranohen kafshë të vogla me njoftim paraprak në recepsion, me tarifë shtesë.",
     "faq.q4":"Deri sa orë shërbehet mëngjesi?","faq.a4":"Mëngjesi shërbehet çdo ditë nga ora 07:30 deri në 10:30.",
     "chat.title":"Recepsioni","chat.subtitle":"Zakonisht përgjigjemi brenda pak minutash.",
-    "chat.first":"Mirë se erdhët në Hotel Bregu! Jam këtu për çdo gjë që ju nevojitet gjatë qëndrimit.",
+    "chat.firstTemplate":"Mirë se erdhët në {hotel}! Jam këtu për çdo gjë që ju nevojitet gjatë qëndrimit.",
     "chat.placeholder":"Shkruani mesazhin...",
     "tab.home":"Kryesore","tab.room":"Dhoma","tab.explore":"Zbulo","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Faleminderit! E kemi marrë mesazhin, dikush nga stafi do t'ju kontaktojë brenda pak minutash.","Sigurisht, po e rregullojmë menjëherë. A keni nevojë për ndonjë gjë tjetër?","Po e dërgojmë dikë në dhomën tuaj shpejt. Faleminderit për durimin."],
@@ -993,21 +993,21 @@ const translations = {
     "issue.photoPrompt.title":"Add a photo of the problem?","issue.photoPrompt.sub":"Helps the staff understand the issue faster. It's optional.","issue.photoPrompt.takePhoto":"Take / choose a photo","issue.photoPrompt.skip":"Continue without a photo",
     "tutorial.title":"Welcome!","tutorial.homeDesc":"a quick way to everything","tutorial.roomDesc":"wifi, amenities, requests, issues","tutorial.exploreDesc":"restaurants, bars, beaches with a map","tutorial.chatDesc":"message the front desk directly","tutorial.gotIt":"Got it",
     "req.sentPrefix":"Room request:","req.confirmToast":"Request sent to the front desk",
-    "room.amenitiesHeading":"Amenities",
+    "room.amenitiesHeading":"Amenities","amenities.empty":"No amenities added yet for this room.",
     "amenity.ac.name":"Air conditioning","amenity.ac.note":"Control panel by the bathroom door. 18-26°C.",
     "amenity.safe.name":"Safe","amenity.safe.note":"Inside the closet. Set a 4-digit code, locks automatically.",
     "amenity.minibar.name":"Minibar","amenity.minibar.note":"Water is free. Everything else is billed at check-out.",
     "amenity.dryer.name":"Hairdryer","amenity.dryer.note":"Top drawer of the vanity desk.",
-    "room.whereHeading":"Where to find things",
+    "room.whereHeading":"Where to find things","locations.empty":"No directions added yet for this hotel.",
     "loc.reception.name":"Front desk","loc.reception.desc":"Ground floor, at the main entrance.","loc.reception.time":"~1 min from your room",
     "loc.breakfast.name":"Breakfast","loc.breakfast.desc":"Terrace room, ground floor, next to the front desk. 7:30–10:30 am.","loc.breakfast.time":"~2 min from your room",
     "loc.pool.name":"Pool","loc.pool.desc":"First floor, exit the hallway past the elevator.","loc.pool.time":"~3 min from your room",
     "loc.elevator.name":"Elevator","loc.elevator.desc":"End of your hallway, to the left.","loc.elevator.time":"~30 sec from your room",
-    "roomservice.heading":"Room service","roomservice.add":"Add","roomservice.cartHeading":"Your order",
+    "roomservice.heading":"Room service","roomservice.add":"Add","roomservice.cartHeading":"Your order","roomservice.menuEmpty":"No items in the room service menu yet.",
     "roomservice.empty":"You haven't added anything yet.","roomservice.send":"Send order to the front desk","roomservice.sentToast":"Order sent to the front desk",
     "rs.club.name":"Club sandwich","rs.greek.name":"Greek salad","rs.water.name":"Water / soft drink","rs.wine.name":"House wine (glass)",
     "explore.title":"Explore the area","explore.subtitle":"Recommendations from our staff, not ads.","explore.empty":"No recommendations yet for this hotel.",
-    "map.note":"Map is illustrative, not precise GPS. 1 Molo Bar · 2 Taverna e Gjelbër · 3 Blue Beach · 4 Kanto Lounge",
+    "map.note":"The map is illustrative. Tap a pin for details.",
     "cat.restaurants":"Restaurants","cat.bars":"Bars","cat.beaches":"Beaches",
     "price.mid":"$$","price.high":"$$$","price.free":"Free",
     "rec.tavern.meta":"Fresh fish · 8 min walk","rec.tavern.tip":"Ask for a courtyard table in the evening. Book from 7pm onward, it fills up fast.",
@@ -1033,13 +1033,13 @@ const translations = {
     "info.emergencyHeading":"Emergency",
     "em.reception.name":"Front desk (24h)","em.police.name":"Police","em.ambulance.name":"Ambulance",
     "em.pharmacy.name":"Nearest pharmacy","em.pharmacy.val":"3 min walk",
-    "info.faqHeading":"Frequently asked",
+    "info.faqHeading":"Frequently asked","faq.empty":"No frequently asked questions yet for this hotel.",
     "faq.q1":"How do I turn on hot water?","faq.a1":"The valve is next to the showerhead, turn it left and wait about 30 seconds.",
     "faq.q2":"Is there free parking?","faq.a2":"Yes, outdoor parking is free for guests, next to the side entrance.",
     "faq.q3":"Do you allow pets?","faq.a3":"Small pets are allowed with advance notice to the front desk, for an extra fee.",
     "faq.q4":"Until what time is breakfast served?","faq.a4":"Breakfast is served daily from 7:30 to 10:30 am.",
     "chat.title":"Front desk","chat.subtitle":"We usually reply within a few minutes.",
-    "chat.first":"Welcome to Hotel Bregu! I'm here for anything you need during your stay.",
+    "chat.firstTemplate":"Welcome to {hotel}! I'm here for anything you need during your stay.",
     "chat.placeholder":"Type your message...",
     "tab.home":"Home","tab.room":"Room","tab.explore":"Explore","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Thank you! We've received your message, someone from staff will reach out shortly.","Of course, we'll sort that out right away. Anything else you need?","We're sending someone to your room shortly. Thanks for your patience."],
@@ -1072,21 +1072,21 @@ const translations = {
     "issue.photoPrompt.title":"Vuoi aggiungere una foto del problema?","issue.photoPrompt.sub":"Aiuta lo staff a capire il problema più in fretta. Non è obbligatorio.","issue.photoPrompt.takePhoto":"Scatta / scegli una foto","issue.photoPrompt.skip":"Continua senza foto",
     "tutorial.title":"Benvenuti!","tutorial.homeDesc":"accesso rapido a tutto","tutorial.roomDesc":"wifi, servizi, richieste, problemi","tutorial.exploreDesc":"ristoranti, bar, spiagge con mappa","tutorial.chatDesc":"scrivi direttamente alla reception","tutorial.gotIt":"Ho capito",
     "req.sentPrefix":"Richiesta dalla camera:","req.confirmToast":"Richiesta inviata alla reception",
-    "room.amenitiesHeading":"Servizi",
+    "room.amenitiesHeading":"Servizi","amenities.empty":"Ancora nessun servizio aggiunto per questa camera.",
     "amenity.ac.name":"Aria condizionata","amenity.ac.note":"Pannello vicino alla porta del bagno. 18-26°C.",
     "amenity.safe.name":"Cassaforte","amenity.safe.note":"Nell'armadio. Impostate un codice a 4 cifre, si blocca automaticamente.",
     "amenity.minibar.name":"Minibar","amenity.minibar.note":"L'acqua è gratuita. Il resto viene addebitato al check-out.",
     "amenity.dryer.name":"Asciugacapelli","amenity.dryer.note":"Primo cassetto della scrivania.",
-    "room.whereHeading":"Dove si trova",
+    "room.whereHeading":"Dove si trova","locations.empty":"Ancora nessuna indicazione aggiunta per questo hotel.",
     "loc.reception.name":"Reception","loc.reception.desc":"Piano terra, all'ingresso principale.","loc.reception.time":"~1 min dalla camera",
     "loc.breakfast.name":"Colazione","loc.breakfast.desc":"Sala con terrazza, piano terra, accanto alla reception. 7:30–10:30.","loc.breakfast.time":"~2 min dalla camera",
     "loc.pool.name":"Piscina","loc.pool.desc":"Primo piano, in fondo al corridoio dopo l'ascensore.","loc.pool.time":"~3 min dalla camera",
     "loc.elevator.name":"Ascensore","loc.elevator.desc":"In fondo al vostro corridoio, a sinistra.","loc.elevator.time":"~30 sec dalla camera",
-    "roomservice.heading":"Servizio in camera","roomservice.add":"Aggiungi","roomservice.cartHeading":"Il vostro ordine",
+    "roomservice.heading":"Servizio in camera","roomservice.add":"Aggiungi","roomservice.cartHeading":"Il vostro ordine","roomservice.menuEmpty":"Ancora nessun articolo nel menu del servizio in camera.",
     "roomservice.empty":"Non avete ancora aggiunto nulla.","roomservice.send":"Invia l'ordine alla reception","roomservice.sentToast":"Ordine inviato alla reception",
     "rs.club.name":"Club sandwich","rs.greek.name":"Insalata greca","rs.water.name":"Acqua / bibita","rs.wine.name":"Vino della casa (calice)",
     "explore.title":"Scopri la zona","explore.subtitle":"Consigli del nostro staff, non pubblicità.","explore.empty":"Ancora nessun consiglio per questo hotel.",
-    "map.note":"La mappa è illustrativa, non un GPS preciso. 1 Molo Bar · 2 Taverna e Gjelbër · 3 Spiaggia Blu · 4 Kanto Lounge",
+    "map.note":"La mappa è illustrativa. Toccate un pin per i dettagli.",
     "cat.restaurants":"Ristoranti","cat.bars":"Bar","cat.beaches":"Spiagge",
     "price.mid":"$$","price.high":"$$$","price.free":"Gratis",
     "rec.tavern.meta":"Pesce fresco · 8 min a piedi","rec.tavern.tip":"Chiedete un tavolo in cortile la sera. Prenotate dalle 19:00, si riempie in fretta.",
@@ -1112,13 +1112,13 @@ const translations = {
     "info.emergencyHeading":"Emergenze",
     "em.reception.name":"Reception (24 ore)","em.police.name":"Polizia","em.ambulance.name":"Ambulanza",
     "em.pharmacy.name":"Farmacia più vicina","em.pharmacy.val":"3 min a piedi",
-    "info.faqHeading":"Domande frequenti",
+    "info.faqHeading":"Domande frequenti","faq.empty":"Ancora nessuna domanda frequente per questo hotel.",
     "faq.q1":"Come si accende l'acqua calda?","faq.a1":"La valvola è accanto al soffione della doccia, giratela a sinistra e attendete circa 30 secondi.",
     "faq.q2":"C'è parcheggio gratuito?","faq.a2":"Sì, il parcheggio esterno è gratuito per gli ospiti, vicino all'ingresso laterale.",
     "faq.q3":"Accettate animali domestici?","faq.a3":"Gli animali di piccola taglia sono ammessi con preavviso alla reception, con supplemento.",
     "faq.q4":"Fino a che ora si serve la colazione?","faq.a4":"La colazione è servita ogni giorno dalle 7:30 alle 10:30.",
     "chat.title":"Reception","chat.subtitle":"Di solito rispondiamo entro pochi minuti.",
-    "chat.first":"Benvenuti all'Hotel Bregu! Sono qui per qualsiasi cosa vi serva durante il soggiorno.",
+    "chat.firstTemplate":"Benvenuti in {hotel}! Sono qui per qualsiasi cosa vi serva durante il soggiorno.",
     "chat.placeholder":"Scrivete il vostro messaggio...",
     "tab.home":"Home","tab.room":"Camera","tab.explore":"Scopri","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Grazie! Abbiamo ricevuto il vostro messaggio, un membro dello staff vi contatterà a breve.","Certo, sistemiamo subito. Vi serve altro?","Stiamo mandando qualcuno in camera vostra a breve. Grazie per la pazienza."],
@@ -1151,21 +1151,21 @@ const translations = {
     "issue.photoPrompt.title":"Möchten Sie ein Foto des Problems hinzufügen?","issue.photoPrompt.sub":"Hilft dem Personal, das Problem schneller zu verstehen. Optional.","issue.photoPrompt.takePhoto":"Foto aufnehmen / auswählen","issue.photoPrompt.skip":"Ohne Foto fortfahren",
     "tutorial.title":"Willkommen!","tutorial.homeDesc":"schneller Zugang zu allem","tutorial.roomDesc":"WLAN, Ausstattung, Anfragen, Probleme","tutorial.exploreDesc":"Restaurants, Bars, Strände mit Karte","tutorial.chatDesc":"direkt an die Rezeption schreiben","tutorial.gotIt":"Verstanden",
     "req.sentPrefix":"Anfrage aus dem Zimmer:","req.confirmToast":"Anfrage an die Rezeption gesendet",
-    "room.amenitiesHeading":"Ausstattung",
+    "room.amenitiesHeading":"Ausstattung","amenities.empty":"Noch keine Ausstattung für dieses Zimmer hinzugefügt.",
     "amenity.ac.name":"Klimaanlage","amenity.ac.note":"Bedienfeld neben der Badezimmertür. 18-26°C.",
     "amenity.safe.name":"Safe","amenity.safe.note":"Im Kleiderschrank. 4-stelligen Code einstellen, schließt automatisch.",
     "amenity.minibar.name":"Minibar","amenity.minibar.note":"Wasser ist kostenlos. Alles andere wird beim Check-out berechnet.",
     "amenity.dryer.name":"Haartrockner","amenity.dryer.note":"Oberste Schublade am Schminktisch.",
-    "room.whereHeading":"Wo sich alles befindet",
+    "room.whereHeading":"Wo sich alles befindet","locations.empty":"Noch keine Wegbeschreibungen für dieses Hotel hinzugefügt.",
     "loc.reception.name":"Rezeption","loc.reception.desc":"Erdgeschoss, am Haupteingang.","loc.reception.time":"~1 Min. vom Zimmer",
     "loc.breakfast.name":"Frühstück","loc.breakfast.desc":"Terrassenraum, Erdgeschoss, neben der Rezeption. 7:30–10:30 Uhr.","loc.breakfast.time":"~2 Min. vom Zimmer",
     "loc.pool.name":"Pool","loc.pool.desc":"Erster Stock, Ausgang am Ende des Flurs nach dem Aufzug.","loc.pool.time":"~3 Min. vom Zimmer",
     "loc.elevator.name":"Aufzug","loc.elevator.desc":"Am Ende Ihres Flurs, links.","loc.elevator.time":"~30 Sek. vom Zimmer",
-    "roomservice.heading":"Zimmerservice","roomservice.add":"Hinzufügen","roomservice.cartHeading":"Ihre Bestellung",
+    "roomservice.heading":"Zimmerservice","roomservice.add":"Hinzufügen","roomservice.cartHeading":"Ihre Bestellung","roomservice.menuEmpty":"Noch keine Artikel im Zimmerservice-Menü.",
     "roomservice.empty":"Sie haben noch nichts hinzugefügt.","roomservice.send":"Bestellung an die Rezeption senden","roomservice.sentToast":"Bestellung an die Rezeption gesendet",
     "rs.club.name":"Club Sandwich","rs.greek.name":"Griechischer Salat","rs.water.name":"Wasser / Softdrink","rs.wine.name":"Hauswein (Glas)",
     "explore.title":"Umgebung entdecken","explore.subtitle":"Empfehlungen unseres Teams, keine Werbung.","explore.empty":"Noch keine Empfehlungen für dieses Hotel.",
-    "map.note":"Die Karte ist illustrativ, kein präzises GPS. 1 Molo Bar · 2 Taverna e Gjelbër · 3 Blauer Strand · 4 Kanto Lounge",
+    "map.note":"Die Karte ist illustrativ. Tippen Sie auf einen Pin für Details.",
     "cat.restaurants":"Restaurants","cat.bars":"Bars","cat.beaches":"Strände",
     "price.mid":"$$","price.high":"$$$","price.free":"Kostenlos",
     "rec.tavern.meta":"Frischer Fisch · 8 Min. zu Fuß","rec.tavern.tip":"Bitten Sie abends um einen Tisch im Innenhof. Ab 19 Uhr reservieren, wird schnell voll.",
@@ -1191,13 +1191,13 @@ const translations = {
     "info.emergencyHeading":"Notfälle",
     "em.reception.name":"Rezeption (24 Std.)","em.police.name":"Polizei","em.ambulance.name":"Rettungsdienst",
     "em.pharmacy.name":"Nächste Apotheke","em.pharmacy.val":"3 Min. zu Fuß",
-    "info.faqHeading":"Häufige Fragen",
+    "info.faqHeading":"Häufige Fragen","faq.empty":"Noch keine häufigen Fragen für dieses Hotel.",
     "faq.q1":"Wie schalte ich das warme Wasser ein?","faq.a1":"Der Hebel befindet sich neben dem Duschkopf, nach links drehen und etwa 30 Sekunden warten.",
     "faq.q2":"Gibt es kostenlose Parkplätze?","faq.a2":"Ja, der Außenparkplatz ist für Gäste kostenlos, neben dem Seiteneingang.",
     "faq.q3":"Sind Haustiere erlaubt?","faq.a3":"Kleine Haustiere sind mit vorheriger Ankündigung an der Rezeption gegen Aufpreis erlaubt.",
     "faq.q4":"Bis wann wird Frühstück serviert?","faq.a4":"Frühstück wird täglich von 7:30 bis 10:30 Uhr serviert.",
     "chat.title":"Rezeption","chat.subtitle":"Wir antworten meist innerhalb weniger Minuten.",
-    "chat.first":"Willkommen im Hotel Bregu! Ich bin für alles da, was Sie während Ihres Aufenthalts brauchen.",
+    "chat.firstTemplate":"Willkommen bei {hotel}! Ich bin für alles da, was Sie während Ihres Aufenthalts brauchen.",
     "chat.placeholder":"Nachricht schreiben...",
     "tab.home":"Start","tab.room":"Zimmer","tab.explore":"Entdecken","tab.info":"Info","tab.chat":"Chat",
     "chat.replies":["Danke! Wir haben Ihre Nachricht erhalten, jemand vom Team meldet sich gleich bei Ihnen.","Natürlich, wir kümmern uns sofort darum. Brauchen Sie noch etwas?","Wir schicken gleich jemanden auf Ihr Zimmer. Danke für Ihre Geduld."],
@@ -1230,21 +1230,21 @@ const translations = {
     "issue.photoPrompt.title":"Voulez-vous ajouter une photo du problème ?","issue.photoPrompt.sub":"Cela aide le personnel à comprendre le problème plus rapidement. Facultatif.","issue.photoPrompt.takePhoto":"Prendre / choisir une photo","issue.photoPrompt.skip":"Continuer sans photo",
     "tutorial.title":"Bienvenue !","tutorial.homeDesc":"accès rapide à tout","tutorial.roomDesc":"wifi, équipements, demandes, problèmes","tutorial.exploreDesc":"restaurants, bars, plages avec carte","tutorial.chatDesc":"écrire directement à la réception","tutorial.gotIt":"Compris",
     "req.sentPrefix":"Demande depuis la chambre :","req.confirmToast":"Demande envoyée à la réception",
-    "room.amenitiesHeading":"Équipements",
+    "room.amenitiesHeading":"Équipements","amenities.empty":"Aucun équipement encore ajouté pour cette chambre.",
     "amenity.ac.name":"Climatisation","amenity.ac.note":"Panneau de commande à côté de la porte de la salle de bain. 18-26°C.",
     "amenity.safe.name":"Coffre-fort","amenity.safe.note":"Dans l'armoire. Définissez un code à 4 chiffres, se verrouille automatiquement.",
     "amenity.minibar.name":"Minibar","amenity.minibar.note":"L'eau est gratuite. Tout le reste est facturé au départ.",
     "amenity.dryer.name":"Sèche-cheveux","amenity.dryer.note":"Tiroir du haut de la coiffeuse.",
-    "room.whereHeading":"Où se trouve tout",
+    "room.whereHeading":"Où se trouve tout","locations.empty":"Aucune indication encore ajoutée pour cet hôtel.",
     "loc.reception.name":"Réception","loc.reception.desc":"Rez-de-chaussée, à l'entrée principale.","loc.reception.time":"~1 min de la chambre",
     "loc.breakfast.name":"Petit-déjeuner","loc.breakfast.desc":"Salle de la terrasse, rez-de-chaussée, à côté de la réception. 7h30–10h30.","loc.breakfast.time":"~2 min de la chambre",
     "loc.pool.name":"Piscine","loc.pool.desc":"Premier étage, sortie au bout du couloir après l'ascenseur.","loc.pool.time":"~3 min de la chambre",
     "loc.elevator.name":"Ascenseur","loc.elevator.desc":"Au bout de votre couloir, à gauche.","loc.elevator.time":"~30 sec de la chambre",
-    "roomservice.heading":"Service en chambre","roomservice.add":"Ajouter","roomservice.cartHeading":"Votre commande",
+    "roomservice.heading":"Service en chambre","roomservice.add":"Ajouter","roomservice.cartHeading":"Votre commande","roomservice.menuEmpty":"Aucun article dans le menu du service en chambre pour le moment.",
     "roomservice.empty":"Vous n'avez encore rien ajouté.","roomservice.send":"Envoyer la commande à la réception","roomservice.sentToast":"Commande envoyée à la réception",
     "rs.club.name":"Club sandwich","rs.greek.name":"Salade grecque","rs.water.name":"Eau / Boisson gazeuse","rs.wine.name":"Vin de la maison (verre)",
     "explore.title":"Découvrir les environs","explore.subtitle":"Recommandations de notre équipe, sans publicité.","explore.empty":"Pas encore de recommandations pour cet hôtel.",
-    "map.note":"La carte est illustrative, pas un GPS précis. 1 Molo Bar · 2 Taverna e Gjelbër · 3 Plage Bleue · 4 Kanto Lounge",
+    "map.note":"La carte est illustrative. Touchez un repère pour les détails.",
     "cat.restaurants":"Restaurants","cat.bars":"Bars","cat.beaches":"Plages",
     "price.mid":"$$","price.high":"$$$","price.free":"Gratuit",
     "rec.tavern.meta":"Poisson frais · 8 min à pied","rec.tavern.tip":"Demandez une table dans la cour le soir. Réservez à partir de 19h, se remplit vite.",
@@ -1270,13 +1270,13 @@ const translations = {
     "info.emergencyHeading":"Urgences",
     "em.reception.name":"Réception (24h/24)","em.police.name":"Police","em.ambulance.name":"Ambulance",
     "em.pharmacy.name":"Pharmacie la plus proche","em.pharmacy.val":"3 min à pied",
-    "info.faqHeading":"Questions fréquentes",
+    "info.faqHeading":"Questions fréquentes","faq.empty":"Pas encore de questions fréquentes pour cet hôtel.",
     "faq.q1":"Comment allumer l'eau chaude ?","faq.a1":"Le levier se trouve à côté du pommeau de douche, tournez-le vers la gauche et attendez environ 30 secondes.",
     "faq.q2":"Y a-t-il un parking gratuit ?","faq.a2":"Oui, le parking extérieur est gratuit pour les clients, à côté de l'entrée latérale.",
     "faq.q3":"Les animaux de compagnie sont-ils autorisés ?","faq.a3":"Les petits animaux sont autorisés avec un préavis à la réception, moyennant un supplément.",
     "faq.q4":"Jusqu'à quelle heure le petit-déjeuner est-il servi ?","faq.a4":"Le petit-déjeuner est servi tous les jours de 7h30 à 10h30.",
     "chat.title":"Réception","chat.subtitle":"Nous répondons généralement en quelques minutes.",
-    "chat.first":"Bienvenue à l'Hôtel Bregu ! Je suis là pour tout ce dont vous avez besoin pendant votre séjour.",
+    "chat.firstTemplate":"Bienvenue à {hotel} ! Je suis là pour tout ce dont vous avez besoin pendant votre séjour.",
     "chat.placeholder":"Écrire un message...",
     "tab.home":"Accueil","tab.room":"Chambre","tab.explore":"Découvrir","tab.info":"Infos","tab.chat":"Chat",
     "chat.replies":["Merci ! Nous avons bien reçu votre message, quelqu'un de l'équipe vous répondra sous peu.","Bien sûr, nous nous en occupons tout de suite. Avez-vous besoin d'autre chose ?","Nous envoyons quelqu'un dans votre chambre sous peu. Merci de votre patience."],
@@ -1298,6 +1298,7 @@ let dynamicRecs = [];
 let dynamicRoomService = [];
 let leafletMap = null;
 let isAdminPreview = false;
+let currentHotelName = 'Hotel';
 
 function escapeHtml(str){
   return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1340,15 +1341,10 @@ async function loadHotelContent(){
       const firstVisible = document.querySelector('.cat-tab:not([style*="display: none"])');
       if(firstVisible) firstVisible.click();
     }
-    renderDynamicRoom();
-    renderDynamicRecommendations();
-    renderDynamicFaq();
-    renderPracticalInfo();
-    initRealMap();
-    fetchWeather(dynamicContent.location?.lat, dynamicContent.location?.lng);
     try{
       const info = await infoRes.json();
       if(info?.name){
+        currentHotelName = info.name;
         const nameEl = document.getElementById('hotel-name-el');
         if(nameEl) nameEl.textContent = info.name;
         document.title = info.name + ' — Udhërrëfyesi i mysafirit';
@@ -1358,6 +1354,13 @@ async function loadHotelContent(){
         applyPresetColors();
       }
     }catch(e){}
+    renderDynamicRoom();
+    renderDynamicRecommendations();
+    renderDynamicFaq();
+    renderPracticalInfo();
+    renderChatWelcome();
+    initRealMap();
+    fetchWeather(dynamicContent.location?.lat, dynamicContent.location?.lng);
     if(isAdminPreview) enableAdminEditButtons();
   }catch(e){ console.warn('Could not load hotel content, using example content.', e); }
   loadRoomNote();
@@ -1616,34 +1619,54 @@ function renderDynamicRoom(){
     if(ssidEl && dynamicContent.wifi.ssid) ssidEl.textContent = dynamicContent.wifi.ssid;
     if(passEl && dynamicContent.wifi.password) passEl.textContent = dynamicContent.wifi.password;
   }
-  if(Array.isArray(dynamicContent.amenities) && dynamicContent.amenities.length){
-    document.getElementById('amenities-container').innerHTML = dynamicContent.amenities.map(a => `
-      <div class="amenity-item"><div>
-        <p class="amenity-name">${escapeHtml(a.name?.[currentLang] || a.name?.sq || '')}</p>
-        <p class="amenity-note">${escapeHtml(a.note?.[currentLang] || a.note?.sq || '')}</p>
-      </div></div>`).join('');
+  const amenitiesBox = document.getElementById('amenities-container');
+  if(amenitiesBox){
+    if(Array.isArray(dynamicContent.amenities) && dynamicContent.amenities.length){
+      amenitiesBox.innerHTML = dynamicContent.amenities.map(a => `
+        <div class="amenity-item"><div>
+          <p class="amenity-name">${escapeHtml(a.name?.[currentLang] || a.name?.sq || '')}</p>
+          <p class="amenity-note">${escapeHtml(a.note?.[currentLang] || a.note?.sq || '')}</p>
+        </div></div>`).join('');
+    } else {
+      // No amenities saved yet — don't show another hotel's room layout
+      // (AC panel location, safe position, etc.) as if it were this room's.
+      amenitiesBox.innerHTML = `<p class="rs-cart-empty" style="padding:4px 2px;">${escapeHtml(translations[currentLang]['amenities.empty'] || '—')}</p>`;
+    }
   }
-  if(Array.isArray(dynamicContent.locations) && dynamicContent.locations.length){
-    document.getElementById('locations-container').innerHTML = dynamicContent.locations.map(l => `
-      <div class="loc-item">
-        <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-4.6-7-10a7 7 0 0114 0c0 5.4-7 10-7 10z"/></svg></div>
-        <div>
-          <p class="loc-name">${escapeHtml(l.name?.[currentLang] || l.name?.sq || '')}</p>
-          <p class="loc-desc">${escapeHtml(l.desc?.[currentLang] || l.desc?.sq || '')}</p>
-          <span class="loc-time">${escapeHtml(l.time?.[currentLang] || l.time?.sq || '')}</span>
-        </div>
-      </div>`).join('');
+  const locationsBox = document.getElementById('locations-container');
+  if(locationsBox){
+    if(Array.isArray(dynamicContent.locations) && dynamicContent.locations.length){
+      locationsBox.innerHTML = dynamicContent.locations.map(l => `
+        <div class="loc-item">
+          <div class="loc-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-4.6-7-10a7 7 0 0114 0c0 5.4-7 10-7 10z"/></svg></div>
+          <div>
+            <p class="loc-name">${escapeHtml(l.name?.[currentLang] || l.name?.sq || '')}</p>
+            <p class="loc-desc">${escapeHtml(l.desc?.[currentLang] || l.desc?.sq || '')}</p>
+            <span class="loc-time">${escapeHtml(l.time?.[currentLang] || l.time?.sq || '')}</span>
+          </div>
+        </div>`).join('');
+    } else {
+      // No directions saved yet — don't show another hotel's layout
+      // (reception/breakfast/pool directions) as if it applied here.
+      locationsBox.innerHTML = `<p class="rs-cart-empty" style="padding:4px 2px;">${escapeHtml(translations[currentLang]['locations.empty'] || '—')}</p>`;
+    }
   }
-  if(Array.isArray(dynamicRoomService) && dynamicRoomService.length){
-    document.getElementById('roomservice-container').innerHTML = dynamicRoomService.map((item, idx) => `
-      <div class="rs-item" style="${item.image_url ? 'display:flex; align-items:center; gap:10px;' : ''}">
-        ${item.image_url ? `<img src="${escapeHtml(item.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">` : ''}
-        <div style="flex:1;">
-          <p class="rs-name">${escapeHtml(item.name?.[currentLang] || item.name?.sq || '')}</p>
-          <span class="rs-price">${item.price} L</span>
-        </div>
-        <button class="rs-add" onclick="addRoomServiceFromContent(${idx})">${escapeHtml(translations[currentLang]['roomservice.add'])}</button>
-      </div>`).join('');
+  const rsBox = document.getElementById('roomservice-container');
+  if(rsBox){
+    if(Array.isArray(dynamicRoomService) && dynamicRoomService.length){
+      rsBox.innerHTML = dynamicRoomService.map((item, idx) => `
+        <div class="rs-item" style="${item.image_url ? 'display:flex; align-items:center; gap:10px;' : ''}">
+          ${item.image_url ? `<img src="${escapeHtml(item.image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;" onerror="this.style.display='none'">` : ''}
+          <div style="flex:1;">
+            <p class="rs-name">${escapeHtml(item.name?.[currentLang] || item.name?.sq || '')}</p>
+            <span class="rs-price">${item.price} L</span>
+          </div>
+          <button class="rs-add" onclick="addRoomServiceFromContent(${idx})">${escapeHtml(translations[currentLang]['roomservice.add'])}</button>
+        </div>`).join('');
+    } else {
+      // No menu saved yet — don't show another hotel's dishes/prices.
+      rsBox.innerHTML = `<p class="rs-cart-empty" style="padding:4px 2px;">${escapeHtml(translations[currentLang]['roomservice.menuEmpty'] || '—')}</p>`;
+    }
   }
 }
 
@@ -1658,6 +1681,21 @@ function addRoomServiceFromContent(idx){
 // Each piece only overrides the generic default once the hotel's admin has
 // actually set it — a blank phone number hides its row/button instead of
 // showing a number that doesn't belong to this hotel.
+// The very first chat bubble — uses the hotel's own custom message if the
+// admin set one, otherwise a generic one built with the real hotel name
+// (never a hardcoded "Hotel Bregu" for every hotel on the platform).
+function renderChatWelcome(){
+  const el = document.getElementById('chat-first-msg');
+  if(!el) return;
+  const custom = dynamicContent?.chat_welcome?.[currentLang] || dynamicContent?.chat_welcome?.sq;
+  if(custom){
+    el.textContent = custom;
+  } else {
+    const template = translations[currentLang]['chat.firstTemplate'] || translations.sq['chat.firstTemplate'];
+    el.textContent = template.replace('{hotel}', currentHotelName);
+  }
+}
+
 function renderPracticalInfo(){
   if(!dynamicContent) return;
 
@@ -1721,9 +1759,16 @@ function renderDynamicFaq(){
       </details>`).join('');
     dynBox.style.display = 'block';
     defaultBox.style.display = 'none';
-  } else {
+  } else if(!dynamicContent){
+    // Haven't loaded real content yet — leave the static placeholder FAQ visible.
     dynBox.style.display = 'none';
     defaultBox.style.display = 'block';
+  } else {
+    // Hotel has no FAQ saved yet — show nothing rather than another hotel's
+    // example answers (breakfast times, pet policy, etc. that may not apply).
+    dynBox.innerHTML = `<p class="rs-cart-empty" style="padding:4px 2px;">${escapeHtml(translations[currentLang]['faq.empty'] || '—')}</p>`;
+    dynBox.style.display = 'block';
+    defaultBox.style.display = 'none';
   }
 }
 
@@ -1761,7 +1806,7 @@ function initRealMap(){
     className: '', html: '<div style="background:#CE9A42;width:16px;height:16px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #0E3A3D;"></div>',
     iconSize: [16,16], iconAnchor: [8,8]
   });
-  L.marker([lat, lng], { icon: hotelIcon }).addTo(leafletMap).bindPopup('<b>Hotel Bregu</b>');
+  L.marker([lat, lng], { icon: hotelIcon }).addTo(leafletMap).bindPopup('<b>' + escapeHtml(currentHotelName) + '</b>');
 
   dynamicRecs.forEach(rec => {
     if(typeof rec.lat === 'number' && typeof rec.lng === 'number'){
@@ -1803,6 +1848,7 @@ function setLang(lang){
   renderDynamicRecommendations();
   renderDynamicFaq();
   renderPracticalInfo();
+  renderChatWelcome();
   renderDndToggle();
   renderRoomNote();
   if(weatherCoords) fetchWeather();
