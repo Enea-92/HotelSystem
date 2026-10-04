@@ -129,7 +129,7 @@ body{ margin:0; font-family:'Work Sans',sans-serif; background:var(--sand-dim); 
       <div class="chat-thread" id="chat-thread"><p class="empty">Zgjidhni një dhomë për të parë bisedën.</p></div>
       <div class="reply-row">
         <input id="reply-input" placeholder="Përgjigju mysafirit..." onkeydown="if(event.key==='Enter')sendReply()">
-        <button onclick="sendReply()">Dërgo</button>
+        <button id="reply-send-btn" onclick="sendReply()">Dërgo</button>
       </div>
     </div>
   </div>
@@ -568,8 +568,27 @@ async function sendReply(){
   const input = document.getElementById('reply-input');
   const text = input.value.trim();
   if(!text || !activeRoom) return;
-  await fetch(apiUrl('/api/messages'), { method:'POST', headers: authHeaders(), body: JSON.stringify({room_number: activeRoom, sender:'staff', text, lang: staffLang}) });
-  input.value = '';
+  const sendBtn = document.getElementById('reply-send-btn');
+  if(sendBtn) sendBtn.disabled = true;
+  try{
+    const res = await fetch(apiUrl('/api/messages'), { method:'POST', headers: authHeaders(), body: JSON.stringify({room_number: activeRoom, sender:'staff', text, lang: staffLang}) });
+    if(!res.ok){
+      // Previously a failed send (wrong/expired staff password, hotel param
+      // missing, server briefly down, rate limit, etc.) cleared the input
+      // and looked exactly like a successful send — staff had no way to
+      // know the guest never got it. Now it's reported, and the typed text
+      // is kept in the box so nothing is lost and they can just retry.
+      let errMsg = 'gabim ' + res.status;
+      try{ const err = await res.json(); if(err?.error) errMsg = err.error; }catch(e){}
+      alert('Mesazhi NUK u dërgua: ' + errMsg + '. Provo përsëri.');
+      return;
+    }
+    input.value = '';
+  }catch(e){
+    alert('Mesazhi NUK u dërgua — kontrollo lidhjen e internetit dhe provo përsëri.');
+  }finally{
+    if(sendBtn) sendBtn.disabled = false;
+  }
 }
 
 function logout(){

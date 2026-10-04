@@ -471,11 +471,8 @@ async function autoTranslateAnnouncement(btn){
   for(const lang of ['en','it','de','fr']){
     const targetEl = document.getElementById('ann-'+lang);
     if(!targetEl || targetEl.value.trim()) continue;
-    try{
-      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(sqText)}&langpair=sq|${lang}`);
-      const data = await res.json();
-      if(data?.responseData?.translatedText) targetEl.value = data.responseData.translatedText;
-    }catch(e){ /* skip */ }
+    const translated = await autoTranslateText(sqText, lang);
+    if(translated) targetEl.value = translated;
   }
   btn.textContent = original;
   btn.disabled = false;
@@ -877,9 +874,38 @@ function switchLangTab(btn, prefix, lang){
   });
 }
 
-// Auto-translate every Albanian field in this block into EN/IT/DE, using the
-// free MyMemory API (no key needed). Only fills fields that are still empty,
-// so it never overwrites text you've already written or corrected by hand.
+// Auto-translates one piece of Albanian text into `lang`, using Google
+// Translate's free web endpoint (no API key — the same one translate.google.com
+// itself calls) for much better quality than a plain translation-memory
+// lookup, especially on short phrases. Falls back to MyMemory if Google's
+// endpoint is ever unreachable, and gives up silently otherwise so the admin
+// can always just type the field by hand.
+const adminTranslateCache = new Map();
+async function autoTranslateText(text, lang){
+  if(!text) return '';
+  const key = 'sq|' + lang + '|' + text;
+  if(adminTranslateCache.has(key)) return adminTranslateCache.get(key);
+  try{
+    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=sq&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`);
+    const data = await res.json();
+    const translated = Array.isArray(data?.[0]) ? data[0].map(part => part[0]).join('') : '';
+    if(!translated) throw new Error('empty translation');
+    adminTranslateCache.set(key, translated);
+    return translated;
+  }catch(e){
+    try{
+      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=sq|${lang}`);
+      const data = await res.json();
+      const translated = data?.responseData?.translatedText || '';
+      adminTranslateCache.set(key, translated);
+      return translated;
+    }catch(e2){ return ''; }
+  }
+}
+
+// Auto-translate every Albanian field in this block into EN/IT/DE/FR. Only
+// fills fields that are still empty, so it never overwrites text you've
+// already written or corrected by hand.
 async function autoTranslateFrom(btn){
   const block = btn.closest('.item-block') || btn.closest('.card');
   const sqFields = block.querySelectorAll('[data-lang="sq"]');
@@ -895,13 +921,8 @@ async function autoTranslateFrom(btn){
     for(const lang of ['en','it','de','fr']){
       const targetEl = block.querySelector(`[data-lang="${lang}"][data-field="${field}"]`);
       if(!targetEl || targetEl.value.trim()) continue; // don't overwrite existing text
-      try{
-        const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=sq|${lang}`);
-        const data = await res.json();
-        if(data?.responseData?.translatedText){
-          targetEl.value = data.responseData.translatedText;
-        }
-      }catch(e){ /* silently skip on failure, admin can still type manually */ }
+      const translated = await autoTranslateText(text, lang);
+      if(translated) targetEl.value = translated;
     }
   }
 

@@ -762,6 +762,11 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
       <h2 class="section-title" data-i18n="chat.title">Recepsioni</h2>
       <p class="section-sub" data-i18n="chat.subtitle">Zakonisht përgjigjemi brenda pak minutash.</p>
       <button id="push-optin-btn" onclick="enablePushNotifications()" style="display:none; margin-bottom:14px; border:0.5px solid var(--aqua-dark); background:var(--sand-dim); color:var(--aqua-dark); border-radius:20px; padding:8px 14px; font-size:12.5px; font-weight:500; cursor:pointer; font-family:inherit;" data-i18n="push.enable">🔔 Aktivo njoftimet në telefon</button>
+      <!-- iPhone/Safari can't do push notifications at all unless the page has
+           been added to the Home Screen first — showing the normal "Enable
+           notifications" button there would just fail silently when tapped,
+           so this explains the one extra step instead. -->
+      <p id="push-ios-hint" style="display:none; margin:0 0 14px; font-size:12px; line-height:1.5; color:var(--ink); opacity:0.75; background:var(--sand-dim); border-radius:10px; padding:10px 12px;" data-i18n="push.iosHint">📱 Për të marrë njoftime kur ju përgjigjemi, shtoni këtë faqe te Ekrani Bazë: Safari → butoni Share 📤 → 'Add to Home Screen'. Pastaj hapeni nga ikona atje.</p>
       <div class="chat-wrap">
         <div class="chat-log" id="chat-log">
           <div class="msg msg-in">
@@ -907,7 +912,7 @@ const translations = {
     "dnd.on":"Aktiv","dnd.off":"Joaktiv",
     "dnd.enabledToast":"'Mos shqetësoni' u aktivizua","dnd.disabledToast":"'Mos shqetësoni' u çaktivizua",
     "dnd.enabledMsg":"Mysafiri aktivizoi 'Mos shqetësoni'.","dnd.disabledMsg":"Mysafiri çaktivizoi 'Mos shqetësoni'.",
-    "push.enable":"🔔 Aktivo njoftimet në telefon","push.enabled":"Njoftimet u aktivizuan!","push.denied":"Leja për njoftime u refuzua.","push.unavailable":"Njoftimet s'janë të disponueshme tani.",
+    "push.enable":"🔔 Aktivo njoftimet në telefon","push.enabled":"Njoftimet u aktivizuan!","push.denied":"Leja për njoftime u refuzua.","push.unavailable":"Njoftimet s'janë të disponueshme tani.","push.iosHint":"📱 Për të marrë njoftime kur ju përgjigjemi, shtoni këtë faqe te Ekrani Bazë: Safari → butoni Share 📤 → 'Add to Home Screen'. Pastaj hapeni nga ikona atje.",
     "req.issue_ac":"Klima s'punon","req.issue_tv":"TV s'punon","req.issue_toilet":"Tualeti i prishur","req.issue_plumbing":"Problem hidraulik","req.issue_electric":"Problem elektrik",
     "issue.attachPhoto":"Bashkangjit foto te problemi (opsionale)","issue.removePhoto":"Hiq foton",
     "req.issue_other":"+ Problem tjetër","issue.otherPlaceholder":"Përshkruaj problemin...","issue.send":"Dërgo",
@@ -986,7 +991,7 @@ const translations = {
     "dnd.on":"On","dnd.off":"Off",
     "dnd.enabledToast":"Do Not Disturb turned on","dnd.disabledToast":"Do Not Disturb turned off",
     "dnd.enabledMsg":"The guest turned on Do Not Disturb.","dnd.disabledMsg":"The guest turned off Do Not Disturb.",
-    "push.enable":"🔔 Enable phone notifications","push.enabled":"Notifications enabled!","push.denied":"Notification permission was denied.","push.unavailable":"Notifications aren't available right now.",
+    "push.enable":"🔔 Enable phone notifications","push.enabled":"Notifications enabled!","push.denied":"Notification permission was denied.","push.unavailable":"Notifications aren't available right now.","push.iosHint":"📱 To get notifications when we reply, add this page to your Home Screen: Safari → Share 📤 → 'Add to Home Screen'. Then open it from that icon.",
     "req.issue_ac":"AC not working","req.issue_tv":"TV not working","req.issue_toilet":"Broken toilet","req.issue_plumbing":"Plumbing issue","req.issue_electric":"Electrical issue",
     "issue.attachPhoto":"Attach a photo of the problem (optional)","issue.removePhoto":"Remove photo",
     "req.issue_other":"+ Other problem","issue.otherPlaceholder":"Describe the problem...","issue.send":"Send",
@@ -1065,7 +1070,7 @@ const translations = {
     "dnd.on":"Attivo","dnd.off":"Non attivo",
     "dnd.enabledToast":"'Non disturbare' attivato","dnd.disabledToast":"'Non disturbare' disattivato",
     "dnd.enabledMsg":"L'ospite ha attivato 'Non disturbare'.","dnd.disabledMsg":"L'ospite ha disattivato 'Non disturbare'.",
-    "push.enable":"🔔 Attiva notifiche sul telefono","push.enabled":"Notifiche attivate!","push.denied":"Il permesso per le notifiche è stato negato.","push.unavailable":"Le notifiche non sono disponibili ora.",
+    "push.enable":"🔔 Attiva notifiche sul telefono","push.enabled":"Notifiche attivate!","push.denied":"Il permesso per le notifiche è stato negato.","push.unavailable":"Le notifiche non sono disponibili ora.","push.iosHint":"📱 Per ricevere notifiche quando rispondiamo, aggiungi questa pagina alla schermata Home: Safari → Condividi 📤 → 'Aggiungi a Home'. Poi aprila da quell'icona.",
     "req.issue_ac":"Aria condizionata non funziona","req.issue_tv":"TV non funziona","req.issue_toilet":"WC rotto","req.issue_plumbing":"Problema idraulico","req.issue_electric":"Problema elettrico",
     "issue.attachPhoto":"Allega una foto del problema (opzionale)","issue.removePhoto":"Rimuovi foto",
     "req.issue_other":"+ Altro problema","issue.otherPlaceholder":"Descrivi il problema...","issue.send":"Invia",
@@ -1144,7 +1149,7 @@ const translations = {
     "dnd.on":"Aktiv","dnd.off":"Inaktiv",
     "dnd.enabledToast":"'Bitte nicht stören' aktiviert","dnd.disabledToast":"'Bitte nicht stören' deaktiviert",
     "dnd.enabledMsg":"Der Gast hat 'Bitte nicht stören' aktiviert.","dnd.disabledMsg":"Der Gast hat 'Bitte nicht stören' deaktiviert.",
-    "push.enable":"🔔 Telefon-Benachrichtigungen aktivieren","push.enabled":"Benachrichtigungen aktiviert!","push.denied":"Die Berechtigung für Benachrichtigungen wurde verweigert.","push.unavailable":"Benachrichtigungen sind momentan nicht verfügbar.",
+    "push.enable":"🔔 Telefon-Benachrichtigungen aktivieren","push.enabled":"Benachrichtigungen aktiviert!","push.denied":"Die Berechtigung für Benachrichtigungen wurde verweigert.","push.unavailable":"Benachrichtigungen sind momentan nicht verfügbar.","push.iosHint":"📱 Um Benachrichtigungen zu erhalten, fügen Sie diese Seite zum Home-Bildschirm hinzu: Safari → Teilen 📤 → 'Zum Home-Bildschirm'. Öffnen Sie sie dann über dieses Symbol.",
     "req.issue_ac":"Klimaanlage funktioniert nicht","req.issue_tv":"TV funktioniert nicht","req.issue_toilet":"Toilette defekt","req.issue_plumbing":"Sanitärproblem","req.issue_electric":"Elektrisches Problem",
     "issue.attachPhoto":"Foto des Problems anhängen (optional)","issue.removePhoto":"Foto entfernen",
     "req.issue_other":"+ Anderes Problem","issue.otherPlaceholder":"Problem beschreiben...","issue.send":"Senden",
@@ -1223,7 +1228,7 @@ const translations = {
     "dnd.on":"Actif","dnd.off":"Inactif",
     "dnd.enabledToast":"« Ne pas déranger » activé","dnd.disabledToast":"« Ne pas déranger » désactivé",
     "dnd.enabledMsg":"Le client a activé « Ne pas déranger ».","dnd.disabledMsg":"Le client a désactivé « Ne pas déranger ».",
-    "push.enable":"🔔 Activer les notifications sur le téléphone","push.enabled":"Notifications activées !","push.denied":"L'autorisation pour les notifications a été refusée.","push.unavailable":"Les notifications ne sont pas disponibles pour le moment.",
+    "push.enable":"🔔 Activer les notifications sur le téléphone","push.enabled":"Notifications activées !","push.denied":"L'autorisation pour les notifications a été refusée.","push.unavailable":"Les notifications ne sont pas disponibles pour le moment.","push.iosHint":"📱 Pour recevoir des notifications, ajoutez cette page à l'écran d'accueil : Safari → Partager 📤 → 'Sur l'écran d'accueil'. Ouvrez-la ensuite depuis cette icône.",
     "req.issue_ac":"La climatisation ne fonctionne pas","req.issue_tv":"La télévision ne fonctionne pas","req.issue_toilet":"Toilettes en panne","req.issue_plumbing":"Problème de plomberie","req.issue_electric":"Problème électrique",
     "issue.attachPhoto":"Joindre une photo du problème (facultatif)","issue.removePhoto":"Retirer la photo",
     "req.issue_other":"+ Autre problème","issue.otherPlaceholder":"Décrivez le problème...","issue.send":"Envoyer",
@@ -1951,9 +1956,25 @@ async function initFromUrl(){
   if(!isAdminPreview) showTutorialIfNeeded();
 }
 
+// Many rooms share one device (a tablet left in the room) across many
+// different guests, not one device per guest — so a plain "seen it once"
+// flag would hide the welcome tutorial forever after the very first guest,
+// and every guest after them would never see it. Instead we key it to a
+// "stay day" that rolls over at checkout time (11:00): any time before
+// 11:00 still belongs to the previous day's stay, so the tutorial stays
+// dismissed overnight, but once a new day's checkout hour has passed, it's
+// treated as a new guest and the tutorial shows again.
+const TUTORIAL_CHECKOUT_HOUR = 11;
+function getStayDayKey(d){
+  const date = new Date(d);
+  if(date.getHours() < TUTORIAL_CHECKOUT_HOUR) date.setDate(date.getDate() - 1);
+  return date.toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
 function showTutorialIfNeeded(){
   try{
-    if(localStorage.getItem('bregu_tutorial_seen')) return;
+    const seenKey = localStorage.getItem('bregu_tutorial_seen_day');
+    if(seenKey && seenKey === getStayDayKey(new Date())) return;
   }catch(e){}
   const overlay = document.getElementById('tutorial-overlay');
   if(overlay) overlay.style.display = 'flex';
@@ -1962,7 +1983,7 @@ function showTutorialIfNeeded(){
 function closeTutorial(){
   const overlay = document.getElementById('tutorial-overlay');
   if(overlay) overlay.style.display = 'none';
-  try{ localStorage.setItem('bregu_tutorial_seen', '1'); }catch(e){}
+  try{ localStorage.setItem('bregu_tutorial_seen_day', getStayDayKey(new Date())); }catch(e){}
 }
 
 function showMissingHotel(){
@@ -2121,7 +2142,21 @@ function urlBase64ToUint8Array(base64String){
 
 async function checkPushOptInVisibility(){
   const btn = document.getElementById('push-optin-btn');
+  const iosHint = document.getElementById('push-ios-hint');
   if(!btn) return;
+  // iPhone/iPad Safari can only receive push notifications once the page has
+  // been added to the Home Screen (installed as a standalone PWA) — opened
+  // as a normal Safari tab, the Notifications API/PushManager isn't there at
+  // all, so the usual "Enable notifications" button would have nothing to
+  // do. Guide guests through that one extra step instead of just hiding it
+  // with no explanation.
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  if(isIOS && !isStandalone){
+    if(iosHint) iosHint.style.display = 'block';
+    return;
+  }
   if(!('serviceWorker' in navigator) || !('PushManager' in window) || !API_BASE) return;
   try{
     const reg = await navigator.serviceWorker.ready;
