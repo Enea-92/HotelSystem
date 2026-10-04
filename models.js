@@ -105,6 +105,13 @@ const hotelContentSchema = new mongoose.Schema({
   // Custom first chat message. Left blank, the guest app builds a generic
   // one using the hotel's real name instead of a hardcoded "Hotel Bregu".
   chat_welcome: langText,
+  // Link to the hotel's own Google Business Profile review form (the
+  // "Write a review" link Google gives the owner, or a g.page/r/... short
+  // link). Left blank, the post-feedback screen just says thanks with no
+  // review prompt. Guests who rate 4-5 stars in-app are invited to post the
+  // same rating publicly on Google; lower ratings stay private so the hotel
+  // can follow up directly instead.
+  google_review_url: { type: String, default: '' },
   // Hotel-specific practical info — editable so a real hotel's own numbers/
   // hours/transport options replace the generic placeholders.
   emergency: {

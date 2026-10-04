@@ -485,6 +485,37 @@ app.get('/api/hotel-info', requireHotel, async (req, res) => {
   res.json({ slug: req.hotel, name: hotel ? hotel.name : req.hotel, theme: hotel?.theme || 'teal' });
 });
 
+// Static files (hotel-system.html, manifest.json, icons) live on a separate
+// static host from this API, and manifest.json on that host is one shared
+// file for every hotel — it can't say "Seaview" for one guest and "Bregu"
+// for another. Serving the Web App Manifest from here instead, per hotel,
+// means iOS "Add to Home Screen" (which reads the manifest's name/short_name
+// for the Home Screen icon label on iOS 16.4+) shows the guest's own hotel
+// name instead of always showing whichever hotel the shared static file was
+// last written for. STATIC_SITE_URL must be set to the static host's base
+// URL (e.g. https://hotelsystem-1.onrender.com) so the icon paths below
+// resolve correctly from this different origin.
+const STATIC_SITE_URL = (process.env.STATIC_SITE_URL || '').replace(/\/$/, '');
+app.get('/api/manifest', async (req, res) => {
+  const slug = (req.query.hotel || '').toString().toLowerCase().trim();
+  const hotelDoc = slug ? await Hotel.findOne({ slug }) : null;
+  const name = hotelDoc ? hotelDoc.name : 'Udhërrëfyesi i Mysafirit';
+  const iconBase = STATIC_SITE_URL || '';
+  res.set('Content-Type', 'application/manifest+json');
+  res.json({
+    name: name + ' — Udhërrëfyesi i mysafirit',
+    short_name: name,
+    description: 'Wifi, pajisjet e dhomës, rekomandime lokale, dhe chat me recepsionin.',
+    display: 'standalone',
+    background_color: '#E7DEC8',
+    theme_color: '#0E3A3D',
+    icons: [
+      { src: iconBase + '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: iconBase + '/icon-512.png', sizes: '512x512', type: 'image/png' }
+    ]
+  });
+});
+
 // ============ AUTH (change admin/staff password) ============
 
 app.put('/api/auth/password', requireAdmin, async (req, res) => {

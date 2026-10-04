@@ -248,6 +248,17 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
     <button class="save-btn" style="margin-top:14px;" onclick="savePracticalInfo()">Ruaj info praktike</button>
   </div>
 
+  <div class="card" id="card-reviews">
+    <h2>Vlerësime në Google</h2>
+    <p class="hint">Kur një mysafir jep 4 ose 5 yje te vlerësimi brenda app-it, i shfaqet një buton për ta postuar të njëjtin vlerësim edhe në Google Maps (rrit numrin e vlerësimeve publike). Vlerësimet me 1-3 yje mbeten private këtu te paneli, në vend që t'i çohen Google-it — kështu i trajton vetë përpara se të bëhen publike.</p>
+    <div class="field-row">
+      <label>Linku "Shkruaj një vlerësim" nga Google Business Profile</label>
+      <input id="pi-google-review-url" placeholder="https://g.page/r/..../review ose https://search.google.com/local/writereview?placeid=...">
+    </div>
+    <p class="hint" style="margin-top:6px;">E gjen te <a href="https://business.google.com" target="_blank" rel="noopener">Google Business Profile</a> → "Merr më shumë vlerësime" → kopjo linkun. Lëre bosh nëse s'do ta përdorësh ende këtë veçori.</p>
+    <button class="save-btn" style="margin-top:14px;" onclick="savePracticalInfo()">Ruaj</button>
+  </div>
+
   <div class="card" id="card-faq">
     <h2>Pyetje të shpeshta (FAQ)</h2>
     <p class="hint">Shfaqen te "Info praktike" i mysafirit. Përdoren gjithashtu për t'u përgjigjur automatikisht në chat kur mesazhi i mysafirit përputhet me një pyetje këtu — para se stafi ta shohë fare.</p>
@@ -356,6 +367,7 @@ select{ border:0.5px solid var(--line); border-radius:7px; padding:8px 10px; fon
     <button class="jump-btn" onclick="jumpToSection('card-locations')">Ku ndodhet</button>
     <button class="jump-btn" onclick="jumpToSection('card-roomservice')">Shërbimi në dhomë</button>
     <button class="jump-btn" onclick="jumpToSection('card-practical')">Info praktike</button>
+    <button class="jump-btn" onclick="jumpToSection('card-reviews')">Vlerësime Google</button>
     <button class="jump-btn" onclick="jumpToSection('card-faq')">FAQ</button>
     <button class="jump-btn" onclick="jumpToSection('card-recommendations')">Rekomandime</button>
     <button class="jump-btn" onclick="jumpToSection('card-roomnotes')">Shënime dhome</button>
@@ -813,6 +825,7 @@ function renderAll(){
 // --- Info praktike (telefoni, urgjenca, oraret, transporti) ---
 function renderPracticalInfoForm(){
   document.getElementById('pi-call-phone').value = content.call_phone || '';
+  document.getElementById('pi-google-review-url').value = content.google_review_url || '';
   document.getElementById('pi-reception-phone').value = content.emergency?.reception_phone || '';
   document.getElementById('pi-police-phone').value = content.emergency?.police_phone || '';
   document.getElementById('pi-ambulance-phone').value = content.emergency?.ambulance_phone || '';
@@ -1188,6 +1201,7 @@ function collectContentFromForm(){
   content.faq = [...document.querySelectorAll('#faq-list .item-block')].map(block => collectLangItemsFromBlock(block, ['q','a']));
 
   content.call_phone = document.getElementById('pi-call-phone').value.trim();
+  content.google_review_url = document.getElementById('pi-google-review-url').value.trim();
   content.emergency = {
     reception_phone: document.getElementById('pi-reception-phone').value.trim(),
     police_phone: document.getElementById('pi-police-phone').value.trim(),

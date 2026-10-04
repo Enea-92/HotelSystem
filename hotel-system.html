@@ -4,7 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Bregu — Udhërrëfyesi i mysafirit</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" id="manifest-link" href="manifest.json">
+<meta name="apple-mobile-web-app-title" id="apple-title-meta" content="Udhërrëfyesi i Mysafirit">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script>
+// Runs before anything else on the page, so the Home Screen icon's label is
+// right from the very first paint instead of only after the hotel's data
+// finishes loading a second or two later — iOS reads this at the exact
+// moment "Add to Home Screen" is tapped, and many guests tap it almost
+// immediately after opening the link. Swaps the static manifest.json (one
+// shared file, stuck saying "Hotel Bregu" for every hotel) for a per-hotel
+// one from the backend, and sets a same-instant best-guess title from the
+// URL's own ?hotel= slug — corrected to the exact real name later in
+// loadHotelContent() once that finishes fetching it.
+(function(){
+  try{
+    const params = new URLSearchParams(window.location.search);
+    let hotel = (params.get('hotel') || '').toLowerCase().trim();
+    if(!hotel){ try{ hotel = (localStorage.getItem('bregu_hotel') || '').toLowerCase().trim(); }catch(e){} }
+    if(!hotel) return;
+    const API_BASE_EARLY = "https://hotelsystem-lzlm.onrender.com";
+    const link = document.getElementById('manifest-link');
+    if(link) link.href = API_BASE_EARLY + '/api/manifest?hotel=' + encodeURIComponent(hotel);
+    const guessName = hotel.charAt(0).toUpperCase() + hotel.slice(1);
+    const appleMeta = document.getElementById('apple-title-meta');
+    if(appleMeta) appleMeta.setAttribute('content', guessName);
+  }catch(e){}
+})();
+</script>
 <meta name="theme-color" content="#0E3A3D">
 <link rel="icon" href="icon-192.png">
 <style>
@@ -860,6 +887,19 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
       <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">🧭</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.explore">Zbulo</b> — <span data-i18n="tutorial.exploreDesc">restorante, bare, plazhe me hartë</span>.</span></div>
       <div style="display:flex; gap:10px; align-items:flex-start;"><span style="font-size:17px;">💬</span><span style="font-size:13px; line-height:1.5;"><b data-i18n="tab.chat">Chat</b> — <span data-i18n="tutorial.chatDesc">shkruaj drejt e te recepsioni</span>.</span></div>
     </div>
+    <!-- Only shown to iPhone/iPad guests opening the plain Safari link (not
+         yet added to Home Screen) — on iOS that's the only way push
+         notifications can work at all, so it's taught upfront instead of
+         guests never finding out they could get notified. -->
+    <div id="tutorial-ios-push" style="display:none; text-align:left; background:var(--sand-dim); border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:12.5px; line-height:1.6; color:var(--ink);">
+      <b data-i18n="tutorial.iosPush.title">📱 Që të merrni njoftime në iPhone:</b>
+      <ol style="margin:6px 0 0; padding-left:18px;">
+        <li data-i18n="tutorial.iosPush.step1">Prekni butonin Share (⬆️) poshtë në Safari</li>
+        <li data-i18n="tutorial.iosPush.step2">Zgjidhni "Add to Home Screen"</li>
+        <li data-i18n="tutorial.iosPush.step3">Hapeni aplikacionin nga ikona e re në ekranin bazë</li>
+        <li data-i18n="tutorial.iosPush.step4">Te skeda Chat, prekni "Aktivo njoftimet"</li>
+      </ol>
+    </div>
     <button type="button" onclick="closeTutorial()" style="width:100%; background:var(--sea); color:var(--on-sea); border:none; border-radius:10px; padding:12px; font-size:14px; font-weight:500; font-family:inherit; cursor:pointer;" data-i18n="tutorial.gotIt">E kuptova</button>
   </div>
 </div>
@@ -928,7 +968,7 @@ const translations = {
     "issue.attachPhoto":"Bashkangjit foto te problemi (opsionale)","issue.removePhoto":"Hiq foton",
     "req.issue_other":"+ Problem tjetër","issue.otherPlaceholder":"Përshkruaj problemin...","issue.send":"Dërgo",
     "issue.photoPrompt.title":"Do shtosh një foto të problemit?","issue.photoPrompt.sub":"Ndihmon stafin ta kuptojë problemin më shpejt. Nuk është e detyrueshme.","issue.photoPrompt.takePhoto":"Bëj / zgjidh foto","issue.photoPrompt.skip":"Vazhdo pa foto",
-    "tutorial.title":"Mirë se erdhët!","tutorial.homeDesc":"hyrje e shpejtë tek çdo gjë","tutorial.roomDesc":"wifi, pajisje, kërkesa, probleme","tutorial.exploreDesc":"restorante, bare, plazhe me hartë","tutorial.chatDesc":"shkruaj drejt e te recepsioni","tutorial.gotIt":"E kuptova",
+    "tutorial.title":"Mirë se erdhët!","tutorial.homeDesc":"hyrje e shpejtë tek çdo gjë","tutorial.roomDesc":"wifi, pajisje, kërkesa, probleme","tutorial.exploreDesc":"restorante, bare, plazhe me hartë","tutorial.chatDesc":"shkruaj drejt e te recepsioni","tutorial.gotIt":"E kuptova","tutorial.iosPush.title":"📱 Që të merrni njoftime në iPhone:","tutorial.iosPush.step1":"Prekni butonin Share (⬆️) poshtë në Safari","tutorial.iosPush.step2":"Zgjidhni \u201cAdd to Home Screen\u201d","tutorial.iosPush.step3":"Hapeni aplikacionin nga ikona e re në ekranin bazë","tutorial.iosPush.step4":"Te skeda Chat, prekni \u201cAktivo njoftimet\u201d",
     "req.sentPrefix":"Kërkesë nga dhoma:","req.confirmToast":"Kërkesa u dërgua te recepsioni",
     "room.amenitiesHeading":"Pajisjet","amenities.empty":"Ende pa pajisje të shtuara për këtë dhomë.",
     "amenity.ac.name":"Klima","amenity.ac.note":"Kontrolli në murin pranë derës së banjës. 18-26°C.",
@@ -1007,7 +1047,7 @@ const translations = {
     "issue.attachPhoto":"Attach a photo of the problem (optional)","issue.removePhoto":"Remove photo",
     "req.issue_other":"+ Other problem","issue.otherPlaceholder":"Describe the problem...","issue.send":"Send",
     "issue.photoPrompt.title":"Add a photo of the problem?","issue.photoPrompt.sub":"Helps the staff understand the issue faster. It's optional.","issue.photoPrompt.takePhoto":"Take / choose a photo","issue.photoPrompt.skip":"Continue without a photo",
-    "tutorial.title":"Welcome!","tutorial.homeDesc":"a quick way to everything","tutorial.roomDesc":"wifi, amenities, requests, issues","tutorial.exploreDesc":"restaurants, bars, beaches with a map","tutorial.chatDesc":"message the front desk directly","tutorial.gotIt":"Got it",
+    "tutorial.title":"Welcome!","tutorial.homeDesc":"a quick way to everything","tutorial.roomDesc":"wifi, amenities, requests, issues","tutorial.exploreDesc":"restaurants, bars, beaches with a map","tutorial.chatDesc":"message the front desk directly","tutorial.gotIt":"Got it","tutorial.iosPush.title":"📱 To get notifications on iPhone:","tutorial.iosPush.step1":"Tap the Share button (⬆️) at the bottom of Safari","tutorial.iosPush.step2":"Choose \u201cAdd to Home Screen\u201d","tutorial.iosPush.step3":"Open the app from the new icon on your Home Screen","tutorial.iosPush.step4":"On the Chat tab, tap \u201cEnable notifications\u201d",
     "req.sentPrefix":"Room request:","req.confirmToast":"Request sent to the front desk",
     "room.amenitiesHeading":"Amenities","amenities.empty":"No amenities added yet for this room.",
     "amenity.ac.name":"Air conditioning","amenity.ac.note":"Control panel by the bathroom door. 18-26°C.",
@@ -1086,7 +1126,7 @@ const translations = {
     "issue.attachPhoto":"Allega una foto del problema (opzionale)","issue.removePhoto":"Rimuovi foto",
     "req.issue_other":"+ Altro problema","issue.otherPlaceholder":"Descrivi il problema...","issue.send":"Invia",
     "issue.photoPrompt.title":"Vuoi aggiungere una foto del problema?","issue.photoPrompt.sub":"Aiuta lo staff a capire il problema più in fretta. Non è obbligatorio.","issue.photoPrompt.takePhoto":"Scatta / scegli una foto","issue.photoPrompt.skip":"Continua senza foto",
-    "tutorial.title":"Benvenuti!","tutorial.homeDesc":"accesso rapido a tutto","tutorial.roomDesc":"wifi, servizi, richieste, problemi","tutorial.exploreDesc":"ristoranti, bar, spiagge con mappa","tutorial.chatDesc":"scrivi direttamente alla reception","tutorial.gotIt":"Ho capito",
+    "tutorial.title":"Benvenuti!","tutorial.homeDesc":"accesso rapido a tutto","tutorial.roomDesc":"wifi, servizi, richieste, problemi","tutorial.exploreDesc":"ristoranti, bar, spiagge con mappa","tutorial.chatDesc":"scrivi direttamente alla reception","tutorial.gotIt":"Ho capito","tutorial.iosPush.title":"📱 Per ricevere notifiche su iPhone:","tutorial.iosPush.step1":"Tocca il pulsante Condividi (⬆️) in basso su Safari","tutorial.iosPush.step2":"Scegli \u201cAggiungi a Home\u201d","tutorial.iosPush.step3":"Apri l\u2019app dalla nuova icona sulla schermata Home","tutorial.iosPush.step4":"Nella scheda Chat, tocca \u201cAttiva notifiche\u201d",
     "req.sentPrefix":"Richiesta dalla camera:","req.confirmToast":"Richiesta inviata alla reception",
     "room.amenitiesHeading":"Servizi","amenities.empty":"Ancora nessun servizio aggiunto per questa camera.",
     "amenity.ac.name":"Aria condizionata","amenity.ac.note":"Pannello vicino alla porta del bagno. 18-26°C.",
@@ -1165,7 +1205,7 @@ const translations = {
     "issue.attachPhoto":"Foto des Problems anhängen (optional)","issue.removePhoto":"Foto entfernen",
     "req.issue_other":"+ Anderes Problem","issue.otherPlaceholder":"Problem beschreiben...","issue.send":"Senden",
     "issue.photoPrompt.title":"Möchten Sie ein Foto des Problems hinzufügen?","issue.photoPrompt.sub":"Hilft dem Personal, das Problem schneller zu verstehen. Optional.","issue.photoPrompt.takePhoto":"Foto aufnehmen / auswählen","issue.photoPrompt.skip":"Ohne Foto fortfahren",
-    "tutorial.title":"Willkommen!","tutorial.homeDesc":"schneller Zugang zu allem","tutorial.roomDesc":"WLAN, Ausstattung, Anfragen, Probleme","tutorial.exploreDesc":"Restaurants, Bars, Strände mit Karte","tutorial.chatDesc":"direkt an die Rezeption schreiben","tutorial.gotIt":"Verstanden",
+    "tutorial.title":"Willkommen!","tutorial.homeDesc":"schneller Zugang zu allem","tutorial.roomDesc":"WLAN, Ausstattung, Anfragen, Probleme","tutorial.exploreDesc":"Restaurants, Bars, Strände mit Karte","tutorial.chatDesc":"direkt an die Rezeption schreiben","tutorial.gotIt":"Verstanden","tutorial.iosPush.title":"📱 So erhalten Sie Benachrichtigungen auf dem iPhone:","tutorial.iosPush.step1":"Tippen Sie unten in Safari auf Teilen (⬆️)","tutorial.iosPush.step2":"Wählen Sie \u201cZum Home-Bildschirm\u201d","tutorial.iosPush.step3":"Öffnen Sie die App über das neue Symbol auf dem Home-Bildschirm","tutorial.iosPush.step4":"Tippen Sie im Chat-Tab auf \u201cBenachrichtigungen aktivieren\u201d",
     "req.sentPrefix":"Anfrage aus dem Zimmer:","req.confirmToast":"Anfrage an die Rezeption gesendet",
     "room.amenitiesHeading":"Ausstattung","amenities.empty":"Noch keine Ausstattung für dieses Zimmer hinzugefügt.",
     "amenity.ac.name":"Klimaanlage","amenity.ac.note":"Bedienfeld neben der Badezimmertür. 18-26°C.",
@@ -1244,7 +1284,7 @@ const translations = {
     "issue.attachPhoto":"Joindre une photo du problème (facultatif)","issue.removePhoto":"Retirer la photo",
     "req.issue_other":"+ Autre problème","issue.otherPlaceholder":"Décrivez le problème...","issue.send":"Envoyer",
     "issue.photoPrompt.title":"Voulez-vous ajouter une photo du problème ?","issue.photoPrompt.sub":"Cela aide le personnel à comprendre le problème plus rapidement. Facultatif.","issue.photoPrompt.takePhoto":"Prendre / choisir une photo","issue.photoPrompt.skip":"Continuer sans photo",
-    "tutorial.title":"Bienvenue !","tutorial.homeDesc":"accès rapide à tout","tutorial.roomDesc":"wifi, équipements, demandes, problèmes","tutorial.exploreDesc":"restaurants, bars, plages avec carte","tutorial.chatDesc":"écrire directement à la réception","tutorial.gotIt":"Compris",
+    "tutorial.title":"Bienvenue !","tutorial.homeDesc":"accès rapide à tout","tutorial.roomDesc":"wifi, équipements, demandes, problèmes","tutorial.exploreDesc":"restaurants, bars, plages avec carte","tutorial.chatDesc":"écrire directement à la réception","tutorial.gotIt":"Compris","tutorial.iosPush.title":"📱 Pour recevoir des notifications sur iPhone :","tutorial.iosPush.step1":"Appuyez sur le bouton Partager (⬆️) en bas de Safari","tutorial.iosPush.step2":"Choisissez \u201cSur l\u2019écran d\u2019accueil\u201d","tutorial.iosPush.step3":"Ouvrez l\u2019application depuis la nouvelle icône sur l\u2019écran d\u2019accueil","tutorial.iosPush.step4":"Dans l\u2019onglet Chat, appuyez sur \u201cActiver les notifications\u201d",
     "req.sentPrefix":"Demande depuis la chambre :","req.confirmToast":"Demande envoyée à la réception",
     "room.amenitiesHeading":"Équipements","amenities.empty":"Aucun équipement encore ajouté pour cette chambre.",
     "amenity.ac.name":"Climatisation","amenity.ac.note":"Panneau de commande à côté de la porte de la salle de bain. 18-26°C.",
@@ -1368,6 +1408,8 @@ async function loadHotelContent(){
         const nameEl = document.getElementById('hotel-name-el');
         if(nameEl) nameEl.textContent = info.name;
         document.title = info.name + ' — Udhërrëfyesi i mysafirit';
+        const appleMeta = document.getElementById('apple-title-meta');
+        if(appleMeta) appleMeta.setAttribute('content', info.name);
       }
       if(info?.theme){
         currentThemePreset = info.theme;
@@ -2033,6 +2075,8 @@ function showTutorialIfNeeded(){
   }catch(e){}
   const overlay = document.getElementById('tutorial-overlay');
   if(overlay) overlay.style.display = 'flex';
+  const iosPush = document.getElementById('tutorial-ios-push');
+  if(iosPush) iosPush.style.display = isIOSBrowserTab() ? 'block' : 'none';
 }
 
 function closeTutorial(){
@@ -2195,20 +2239,24 @@ function urlBase64ToUint8Array(base64String){
   return outputArray;
 }
 
+// iPhone/iPad Safari can only receive push notifications once the page has
+// been added to the Home Screen (installed as a standalone PWA) — opened as
+// a normal Safari tab, the Notifications API/PushManager isn't there at all.
+function isIOSBrowserTab(){
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  return isIOS && !isStandalone;
+}
+
 async function checkPushOptInVisibility(){
   const btn = document.getElementById('push-optin-btn');
   const iosHint = document.getElementById('push-ios-hint');
   if(!btn) return;
-  // iPhone/iPad Safari can only receive push notifications once the page has
-  // been added to the Home Screen (installed as a standalone PWA) — opened
-  // as a normal Safari tab, the Notifications API/PushManager isn't there at
-  // all, so the usual "Enable notifications" button would have nothing to
-  // do. Guide guests through that one extra step instead of just hiding it
+  // The usual "Enable notifications" button would have nothing to do here,
+  // so guide guests through that one extra step instead of just hiding it
   // with no explanation.
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-  const isStandalone = window.navigator.standalone === true ||
-    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-  if(isIOS && !isStandalone){
+  if(isIOSBrowserTab()){
     if(iosHint) iosHint.style.display = 'block';
     return;
   }
@@ -2514,13 +2562,19 @@ function renderCart(){
   let total = 0;
   box.innerHTML = rsCart.map(item=>{
     total += item.price;
-    return '<div class="rs-cart-line"><span>'+translations[currentLang][item.nameKey]+'</span><span>'+item.price+' L</span></div>';
+    // Items added from the hotel's own real menu (addRoomServiceFromContent)
+    // already carry a resolved `name` string — only the old built-in demo
+    // menu (addRoomService) uses a `nameKey` that needs translating. Without
+    // this fallback, every real hotel's cart showed "undefined" instead of
+    // the dish name, because translations[currentLang][undefined] is undefined.
+    const label = item.name || translations[currentLang][item.nameKey] || '';
+    return '<div class="rs-cart-line"><span>'+escapeHtml(label)+'</span><span>'+item.price+' L</span></div>';
   }).join('') + '<div class="rs-cart-line" style="font-weight:500; border-top:0.5px solid var(--line); padding-top:8px; margin-top:4px;"><span>Total</span><span>'+total+' L</span></div>';
 }
 
 function sendRoomService(){
   if(rsCart.length === 0) return;
-  const items = rsCart.map(item => ({ name: translations[currentLang][item.nameKey], price: item.price }));
+  const items = rsCart.map(item => ({ name: item.name || translations[currentLang][item.nameKey] || '', price: item.price }));
   const lines = items.map(i => i.name).join(', ');
   pushOutMsg((translations[currentLang]['roomservice.heading'])+': '+lines);
   showToast(translations[currentLang]['roomservice.sentToast']);
