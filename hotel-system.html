@@ -546,6 +546,18 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
 
   <div class="content">
 
+    <!-- NOTIFICATIONS BANNER — shown on every tab until the guest enables
+         notifications (or, on iPhone Safari, until the page is added to the
+         Home Screen), so they don't have to find the chat tab first. -->
+    <div id="push-banner" style="display:none; background:var(--sea); color:var(--on-sea); border-radius:14px; padding:14px 16px; margin-bottom:16px;">
+      <p id="push-banner-text" style="margin:0 0 10px; font-size:13px; line-height:1.5; font-weight:500;" data-i18n="push.banner">🔔 Enable notifications so you receive our messages on your phone.</p>
+      <button id="push-optin-btn" onclick="enablePushNotifications()" style="display:none; width:100%; border:none; background:var(--gold); color:var(--ink); border-radius:10px; padding:11px 14px; font-size:13.5px; font-weight:600; cursor:pointer; font-family:inherit;" data-i18n="push.enable">🔔 Aktivo njoftimet në telefon</button>
+      <!-- iPhone/Safari can't do push notifications at all unless the page has
+           been added to the Home Screen first — a normal "Enable" button there
+           would just fail silently, so this explains the extra step instead. -->
+      <p id="push-ios-hint" style="display:none; margin:0; font-size:12px; line-height:1.5; opacity:0.9;" data-i18n="push.iosHint">📱 Për të marrë njoftime kur ju përgjigjemi, shtoni këtë faqe te Ekrani Bazë: Safari → butoni Share 📤 → 'Add to Home Screen'. Pastaj hapeni nga ikona atje.</p>
+    </div>
+
     <!-- HOME -->
     <div class="view active" id="view-home">
       <h2 class="section-title" data-i18n="home.title">Mirë se erdhët</h2>
@@ -788,12 +800,6 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
     <div class="view" id="view-chat">
       <h2 class="section-title" data-i18n="chat.title">Recepsioni</h2>
       <p class="section-sub" data-i18n="chat.subtitle">Zakonisht përgjigjemi brenda pak minutash.</p>
-      <button id="push-optin-btn" onclick="enablePushNotifications()" style="display:none; margin-bottom:14px; border:0.5px solid var(--aqua-dark); background:var(--sand-dim); color:var(--aqua-dark); border-radius:20px; padding:8px 14px; font-size:12.5px; font-weight:500; cursor:pointer; font-family:inherit;" data-i18n="push.enable">🔔 Aktivo njoftimet në telefon</button>
-      <!-- iPhone/Safari can't do push notifications at all unless the page has
-           been added to the Home Screen first — showing the normal "Enable
-           notifications" button there would just fail silently when tapped,
-           so this explains the one extra step instead. -->
-      <p id="push-ios-hint" style="display:none; margin:0 0 14px; font-size:12px; line-height:1.5; color:var(--ink); opacity:0.75; background:var(--sand-dim); border-radius:10px; padding:10px 12px;" data-i18n="push.iosHint">📱 Për të marrë njoftime kur ju përgjigjemi, shtoni këtë faqe te Ekrani Bazë: Safari → butoni Share 📤 → 'Add to Home Screen'. Pastaj hapeni nga ikona atje.</p>
       <div class="chat-wrap">
         <div class="chat-log" id="chat-log">
           <div class="msg msg-in">
@@ -919,6 +925,37 @@ let socket = null;
 // receive. Track past-the-first connect so a later reconnect (as opposed to
 // the very first connect on load) triggers a catch-up refetch of the thread.
 let hasConnectedOnce = false;
+
+// --- Home Screen app icon badge (Badging API) ---------------------------
+// Shows the unread-message count on the installed Home Screen icon itself
+// (like a native app), separate from the in-chat message bubbles. Supported
+// on iOS 16.4+ once the app is added to the Home Screen, and on some
+// desktop browsers; feature-detected so it's a silent no-op elsewhere.
+let unreadBadgeCount = 0;
+try{ unreadBadgeCount = parseInt(localStorage.getItem('bregu_unread_badge') || '0', 10) || 0; }catch(e){}
+function isChatViewOpenAndVisible(){
+  const chatView = document.getElementById('view-chat');
+  return document.visibilityState === 'visible' && !!chatView && chatView.classList.contains('active');
+}
+function updateAppBadge(){
+  try{ localStorage.setItem('bregu_unread_badge', String(unreadBadgeCount)); }catch(e){}
+  if(!('setAppBadge' in navigator)) return;
+  try{
+    if(unreadBadgeCount > 0) navigator.setAppBadge(unreadBadgeCount).catch(()=>{});
+    else navigator.clearAppBadge().catch(()=>{});
+  }catch(e){}
+}
+function incrementAppBadge(){
+  unreadBadgeCount += 1;
+  updateAppBadge();
+}
+function clearAppBadge(){
+  if(unreadBadgeCount === 0) return;
+  unreadBadgeCount = 0;
+  updateAppBadge();
+}
+// Apply whatever was saved from a previous session as soon as the page loads.
+updateAppBadge();
 try {
   socket = io(API_BASE, { transports: ['websocket', 'polling'] });
   socket.on('connect', () => {
@@ -931,6 +968,7 @@ try {
       const wasTranslated = msg.lang && msg.lang !== currentLang;
       const text = wasTranslated ? await translateForGuest(msg.text, msg.lang) : msg.text;
       pushInMsg(text, undefined, wasTranslated ? msg.text : null, msg.lang);
+      if(!isChatViewOpenAndVisible()) incrementAppBadge();
     }
   });
   socket.on('content_updated', (payload) => { if (payload?.hotel === currentHotel && typeof loadHotelContent === 'function') loadHotelContent(); });
@@ -974,6 +1012,7 @@ const translations = {
     "dnd.on":"Aktiv","dnd.off":"Joaktiv",
     "dnd.enabledToast":"'Mos shqetësoni' u aktivizua","dnd.disabledToast":"'Mos shqetësoni' u çaktivizua",
     "dnd.enabledMsg":"Mysafiri aktivizoi 'Mos shqetësoni'.","dnd.disabledMsg":"Mysafiri çaktivizoi 'Mos shqetësoni'.",
+    "push.banner":"🔔 Aktivizoni njoftimet që t’ju vijnë mesazhet nga recepsioni në telefon.",
     "push.enable":"🔔 Aktivo njoftimet në telefon","push.enabled":"Njoftimet u aktivizuan!","push.denied":"Leja për njoftime u refuzua.","push.unavailable":"Njoftimet s'janë të disponueshme tani.","push.iosHint":"📱 Për të marrë njoftime kur ju përgjigjemi, shtoni këtë faqe te Ekrani Bazë: Safari → butoni Share 📤 → 'Add to Home Screen'. Pastaj hapeni nga ikona atje.",
     "req.issue_ac":"Klima s'punon","req.issue_tv":"TV s'punon","req.issue_toilet":"Tualeti i prishur","req.issue_plumbing":"Problem hidraulik","req.issue_electric":"Problem elektrik",
     "issue.attachPhoto":"Bashkangjit foto te problemi (opsionale)","issue.removePhoto":"Hiq foton",
@@ -1053,6 +1092,7 @@ const translations = {
     "dnd.on":"On","dnd.off":"Off",
     "dnd.enabledToast":"Do Not Disturb turned on","dnd.disabledToast":"Do Not Disturb turned off",
     "dnd.enabledMsg":"The guest turned on Do Not Disturb.","dnd.disabledMsg":"The guest turned off Do Not Disturb.",
+    "push.banner":"🔔 Enable notifications so you receive our messages on your phone.",
     "push.enable":"🔔 Enable phone notifications","push.enabled":"Notifications enabled!","push.denied":"Notification permission was denied.","push.unavailable":"Notifications aren't available right now.","push.iosHint":"📱 To get notifications when we reply, add this page to your Home Screen: Safari → Share 📤 → 'Add to Home Screen'. Then open it from that icon.",
     "req.issue_ac":"AC not working","req.issue_tv":"TV not working","req.issue_toilet":"Broken toilet","req.issue_plumbing":"Plumbing issue","req.issue_electric":"Electrical issue",
     "issue.attachPhoto":"Attach a photo of the problem (optional)","issue.removePhoto":"Remove photo",
@@ -1132,6 +1172,7 @@ const translations = {
     "dnd.on":"Attivo","dnd.off":"Non attivo",
     "dnd.enabledToast":"'Non disturbare' attivato","dnd.disabledToast":"'Non disturbare' disattivato",
     "dnd.enabledMsg":"L'ospite ha attivato 'Non disturbare'.","dnd.disabledMsg":"L'ospite ha disattivato 'Non disturbare'.",
+    "push.banner":"🔔 Attiva le notifiche per ricevere i nostri messaggi sul telefono.",
     "push.enable":"🔔 Attiva notifiche sul telefono","push.enabled":"Notifiche attivate!","push.denied":"Il permesso per le notifiche è stato negato.","push.unavailable":"Le notifiche non sono disponibili ora.","push.iosHint":"📱 Per ricevere notifiche quando rispondiamo, aggiungi questa pagina alla schermata Home: Safari → Condividi 📤 → 'Aggiungi a Home'. Poi aprila da quell'icona.",
     "req.issue_ac":"Aria condizionata non funziona","req.issue_tv":"TV non funziona","req.issue_toilet":"WC rotto","req.issue_plumbing":"Problema idraulico","req.issue_electric":"Problema elettrico",
     "issue.attachPhoto":"Allega una foto del problema (opzionale)","issue.removePhoto":"Rimuovi foto",
@@ -1211,6 +1252,7 @@ const translations = {
     "dnd.on":"Aktiv","dnd.off":"Inaktiv",
     "dnd.enabledToast":"'Bitte nicht stören' aktiviert","dnd.disabledToast":"'Bitte nicht stören' deaktiviert",
     "dnd.enabledMsg":"Der Gast hat 'Bitte nicht stören' aktiviert.","dnd.disabledMsg":"Der Gast hat 'Bitte nicht stören' deaktiviert.",
+    "push.banner":"🔔 Aktivieren Sie Benachrichtigungen, um unsere Nachrichten auf Ihrem Telefon zu erhalten.",
     "push.enable":"🔔 Telefon-Benachrichtigungen aktivieren","push.enabled":"Benachrichtigungen aktiviert!","push.denied":"Die Berechtigung für Benachrichtigungen wurde verweigert.","push.unavailable":"Benachrichtigungen sind momentan nicht verfügbar.","push.iosHint":"📱 Um Benachrichtigungen zu erhalten, fügen Sie diese Seite zum Home-Bildschirm hinzu: Safari → Teilen 📤 → 'Zum Home-Bildschirm'. Öffnen Sie sie dann über dieses Symbol.",
     "req.issue_ac":"Klimaanlage funktioniert nicht","req.issue_tv":"TV funktioniert nicht","req.issue_toilet":"Toilette defekt","req.issue_plumbing":"Sanitärproblem","req.issue_electric":"Elektrisches Problem",
     "issue.attachPhoto":"Foto des Problems anhängen (optional)","issue.removePhoto":"Foto entfernen",
@@ -1290,6 +1332,7 @@ const translations = {
     "dnd.on":"Actif","dnd.off":"Inactif",
     "dnd.enabledToast":"« Ne pas déranger » activé","dnd.disabledToast":"« Ne pas déranger » désactivé",
     "dnd.enabledMsg":"Le client a activé « Ne pas déranger ».","dnd.disabledMsg":"Le client a désactivé « Ne pas déranger ».",
+    "push.banner":"🔔 Activez les notifications pour recevoir nos messages sur votre téléphone.",
     "push.enable":"🔔 Activer les notifications sur le téléphone","push.enabled":"Notifications activées !","push.denied":"L'autorisation pour les notifications a été refusée.","push.unavailable":"Les notifications ne sont pas disponibles pour le moment.","push.iosHint":"📱 Pour recevoir des notifications, ajoutez cette page à l'écran d'accueil : Safari → Partager 📤 → 'Sur l'écran d'accueil'. Ouvrez-la ensuite depuis cette icône.",
     "req.issue_ac":"La climatisation ne fonctionne pas","req.issue_tv":"La télévision ne fonctionne pas","req.issue_toilet":"Toilettes en panne","req.issue_plumbing":"Problème de plomberie","req.issue_electric":"Problème électrique",
     "issue.attachPhoto":"Joindre une photo du problème (facultatif)","issue.removePhoto":"Retirer la photo",
@@ -2253,6 +2296,11 @@ document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'visible' && currentRoom && typeof loadChatHistory === 'function'){
     loadChatHistory();
   }
+  // If the guest comes back to the app while already sitting on the chat tab
+  // (e.g. unlocked the phone, or switched back from another app), the Home
+  // Screen icon badge no longer applies — clear it the same way opening the
+  // chat tab does.
+  if(isChatViewOpenAndVisible() && typeof clearAppBadge === 'function') clearAppBadge();
 });
 
 if ('serviceWorker' in navigator) {
@@ -2285,12 +2333,16 @@ function isIOSBrowserTab(){
 async function checkPushOptInVisibility(){
   const btn = document.getElementById('push-optin-btn');
   const iosHint = document.getElementById('push-ios-hint');
-  if(!btn) return;
-  // The usual "Enable notifications" button would have nothing to do here,
-  // so guide guests through that one extra step instead of just hiding it
-  // with no explanation.
+  const banner = document.getElementById('push-banner');
+  const bannerText = document.getElementById('push-banner-text');
+  if(!btn || !banner) return;
+  // The usual "Enable notifications" button would have nothing to do on an
+  // iPhone Safari tab, so guide guests through that one extra step instead of
+  // just hiding it with no explanation.
   if(isIOSBrowserTab()){
     if(iosHint) iosHint.style.display = 'block';
+    if(bannerText) bannerText.style.display = 'none';
+    banner.style.display = 'block';
     return;
   }
   if(!('serviceWorker' in navigator) || !('PushManager' in window) || !API_BASE) return;
@@ -2298,7 +2350,8 @@ async function checkPushOptInVisibility(){
     const reg = await navigator.serviceWorker.ready;
     const existing = await reg.pushManager.getSubscription();
     if(!existing && Notification.permission !== 'denied'){
-      btn.style.display = 'inline-block';
+      btn.style.display = 'block';
+      banner.style.display = 'block';
     }
   }catch(e){}
 }
@@ -2328,6 +2381,8 @@ async function enablePushNotifications(){
       body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, subscription: subscription.toJSON(), lang: currentLang })
     });
     if(btn) btn.style.display = 'none';
+    const banner = document.getElementById('push-banner');
+    if(banner) banner.style.display = 'none';
     showToast(translations[currentLang]['push.enabled']);
   }catch(e){
     console.warn('Push subscription failed', e);
@@ -2343,6 +2398,7 @@ function showView(name){
     const log = document.getElementById('chat-log');
     const lastMsg = log && log.lastElementChild;
     if(lastMsg) setTimeout(()=>lastMsg.scrollIntoView({ behavior:'auto', block:'end' }), 30);
+    if(typeof clearAppBadge === 'function') clearAppBadge();
   }
 }
 
