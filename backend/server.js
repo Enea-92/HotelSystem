@@ -213,17 +213,36 @@ function requireSuperAdmin(req, res, next) {
 }
 
 // ============ Rate limiting ============
-const writeLimiter = rateLimit({
+// Limits are counted PER ROOM (hotel + room number), not per IP address: every
+// guest on a hotel's shared Wi-Fi appears to the server as the same IP, so a
+// plain per-IP limit of 20/min would have capped a whole hotel at 20 messages
+// a minute. A per-room cap still stops one phone spamming, and a much higher
+// per-IP backstop (below) still stops a single machine flooding the server.
+const { ipKeyGenerator } = require('express-rate-limit');
+const roomWriteLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'GET', // reading history/lists isn't a write
+  keyGenerator: (req) => {
+    const hotel = String((req.body && req.body.hotel) || req.query.hotel || '').toLowerCase();
+    const room = String((req.body && req.body.room_number) || '');
+    return hotel && room ? 'room:' + hotel + ':' + room : 'ip:' + ipKeyGenerator(req.ip);
+  },
   message: { error: 'Shumë kërkesa njëherësh, provo përsëri pas pak.' }
 });
-app.use('/api/messages', writeLimiter);
-app.use('/api/quick-requests', writeLimiter);
-app.use('/api/room-service', writeLimiter);
-app.use('/api/feedback', writeLimiter);
+const ipBackstopLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 1500, // a whole hotel's Wi-Fi at a busy peak, but not a flood
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => 'ip:' + ipKeyGenerator(req.ip),
+  message: { error: 'Shumë kërkesa nga ky rrjet, provo përsëri pas pak.' }
+});
+for (const path of ['/api/messages', '/api/quick-requests', '/api/room-service', '/api/feedback']) {
+  app.use(path, ipBackstopLimiter, roomWriteLimiter);
+}
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
@@ -289,7 +308,18 @@ async function matchFaq(hotel, lang, text) {
 
 // ============ CHAT ============
 
-app.post('/api/messages', requireHotel, verifyGuestSession, async (req, res) => {
+// Only guests may post as 'guest' without a password. Posting as 'staff'
+// requires the hotel's staff (or admin) password — otherwise anyone who knew
+// a hotel's slug could write messages that look like they come from reception.
+// 'bot' messages are created by the server itself, never accepted from clients.
+function guestOrStaffSender(req, res, next) {
+  const sender = req.body.sender;
+  if (sender === 'guest') return next();
+  if (sender === 'staff') return requireStaff(req, res, next);
+  return res.status(400).json({ error: "sender must be 'guest' or 'staff'" });
+}
+
+app.post('/api/messages', requireHotel, guestOrStaffSender, verifyGuestSession, async (req, res) => {
   const { room_number, sender, text, lang } = req.body;
   if (!room_number || !sender || !text) return res.status(400).json({ error: 'room_number, sender, text required' });
   const doc = await Message.create({ hotel: req.hotel, room_number, sender, text, lang: lang || '' });
@@ -483,6 +513,37 @@ app.delete('/api/announcement', requireAdmin, async (req, res) => {
 app.get('/api/hotel-info', requireHotel, async (req, res) => {
   const hotel = await Hotel.findOne({ slug: req.hotel });
   res.json({ slug: req.hotel, name: hotel ? hotel.name : req.hotel, theme: hotel?.theme || 'teal' });
+});
+
+// Static files (hotel-system.html, manifest.json, icons) live on a separate
+// static host from this API, and manifest.json on that host is one shared
+// file for every hotel — it can't say "Seaview" for one guest and "Bregu"
+// for another. Serving the Web App Manifest from here instead, per hotel,
+// means iOS "Add to Home Screen" (which reads the manifest's name/short_name
+// for the Home Screen icon label on iOS 16.4+) shows the guest's own hotel
+// name instead of always showing whichever hotel the shared static file was
+// last written for. STATIC_SITE_URL must be set to the static host's base
+// URL (e.g. https://hotelsystem-1.onrender.com) so the icon paths below
+// resolve correctly from this different origin.
+const STATIC_SITE_URL = (process.env.STATIC_SITE_URL || '').replace(/\/$/, '');
+app.get('/api/manifest', async (req, res) => {
+  const slug = (req.query.hotel || '').toString().toLowerCase().trim();
+  const hotelDoc = slug ? await Hotel.findOne({ slug }) : null;
+  const name = hotelDoc ? hotelDoc.name : 'Udhërrëfyesi i Mysafirit';
+  const iconBase = STATIC_SITE_URL || '';
+  res.set('Content-Type', 'application/manifest+json');
+  res.json({
+    name: name + ' — Udhërrëfyesi i mysafirit',
+    short_name: name,
+    description: 'Wifi, pajisjet e dhomës, rekomandime lokale, dhe chat me recepsionin.',
+    display: 'standalone',
+    background_color: '#E7DEC8',
+    theme_color: '#0E3A3D',
+    icons: [
+      { src: iconBase + '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: iconBase + '/icon-512.png', sizes: '512x512', type: 'image/png' }
+    ]
+  });
 });
 
 // ============ AUTH (change admin/staff password) ============
