@@ -198,16 +198,19 @@ function apiUrl(path){
   return apiBase + path + sep + 'hotel=' + encodeURIComponent(currentHotel);
 }
 
-// Soft two-note "ding-dong" chime via Web Audio API (about 1 second, gentle
-// volume) — short enough not to be annoying on a busy desk. Overdue-response
-// escalations pass urgent=true for a slightly longer three-note version so
-// they still stand out. No external sound file needed.
-function playBeep(urgent){
-  if(!soundOn) return;
+// Staff alert sound: plays notification.mp3 (the "cute twinkle" chime, which
+// must sit next to this page on the static host). If the file can't load or
+// the browser blocks autoplay, falls back to a short synthesized two-note chime
+// so staff are never left without any sound. Overdue-response escalations
+// (urgent=true) play the sound twice so they stand out.
+const notificationAudio = new Audio('notification.mp3');
+notificationAudio.preload = 'auto';
+notificationAudio.volume = 0.8;
+
+function playSynthChime(urgent){
   try{
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const now = ctx.currentTime;
-
     function tone(freq, startOffset, duration, peakGain){
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -218,16 +221,29 @@ function playBeep(urgent){
       const t1 = t0 + duration;
       gain.gain.setValueAtTime(0, t0);
       gain.gain.linearRampToValueAtTime(peakGain, t0 + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t1); // natural fade-out, like a bell
+      gain.gain.exponentialRampToValueAtTime(0.0001, t1);
       osc.start(t0);
       osc.stop(t1 + 0.02);
     }
-
     const notes = urgent ? [659, 784, 988] : [784, 988];
     notes.forEach((f, i) => tone(f, i * 0.28, 0.6, 0.18));
-
     setTimeout(()=>ctx.close(), 2000);
   }catch(e){}
+}
+
+function playBeep(urgent){
+  if(!soundOn) return;
+  try{
+    const a = notificationAudio;
+    a.currentTime = 0;
+    const p = a.play();
+    if(p && typeof p.catch === 'function') p.catch(() => playSynthChime(urgent));
+    if(urgent){
+      setTimeout(() => { try{ a.currentTime = 0; a.play().catch(()=>{}); }catch(e){} }, 1900);
+    }
+  }catch(e){
+    playSynthChime(urgent);
+  }
 }
 
 // Browser notification — shows a system-level popup even while this tab is
