@@ -2,7 +2,7 @@
 <html lang="sq">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Bregu — Udhërrëfyesi i mysafirit</title>
 <link rel="manifest" id="manifest-link" href="manifest.json">
 <meta name="apple-mobile-web-app-title" id="apple-title-meta" content="Udhërrëfyesi i Mysafirit">
@@ -453,6 +453,11 @@ details.faq p{ font-size:12.5px; opacity:0.65; margin:8px 0 0; line-height:1.6; 
   z-index:20; max-width:90%; text-align:center;
 }
 .toast.show{ opacity:1; }
+
+/* iOS Safari auto-zooms the whole page whenever a text field under 16px gets
+   focus, which pushed the chat's Send button off-screen. Keeping every field
+   at 16px stops that zoom (maximum-scale in the viewport tag is a second guard). */
+input, textarea, select{ font-size:16px !important; }
 
 .chat-wrap{ display:block; }
 .chat-log{ padding-bottom:8px; }

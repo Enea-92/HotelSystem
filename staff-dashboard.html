@@ -198,9 +198,11 @@ function apiUrl(path){
   return apiBase + path + sep + 'hotel=' + encodeURIComponent(currentHotel);
 }
 
-// Repeating chime via Web Audio API — runs about 5 seconds so it's hard to miss,
-// even with the tab in the background. No external sound file needed.
-function playBeep(){
+// Soft two-note "ding-dong" chime via Web Audio API (about 1 second, gentle
+// volume) — short enough not to be annoying on a busy desk. Overdue-response
+// escalations pass urgent=true for a slightly longer three-note version so
+// they still stand out. No external sound file needed.
+function playBeep(urgent){
   if(!soundOn) return;
   try{
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -216,19 +218,15 @@ function playBeep(){
       const t1 = t0 + duration;
       gain.gain.setValueAtTime(0, t0);
       gain.gain.linearRampToValueAtTime(peakGain, t0 + 0.02);
-      gain.gain.setValueAtTime(peakGain, t1 - 0.05);
-      gain.gain.linearRampToValueAtTime(0, t1);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t1); // natural fade-out, like a bell
       osc.start(t0);
       osc.stop(t1 + 0.02);
     }
 
-    const pulses = 7; // ~5 seconds total at 0.75s spacing
-    for(let i = 0; i < pulses; i++){
-      const freq = i % 2 === 0 ? 880 : 1175;
-      tone(freq, i * 0.75, 0.5, 0.5);
-    }
+    const notes = urgent ? [659, 784, 988] : [784, 988];
+    notes.forEach((f, i) => tone(f, i * 0.28, 0.6, 0.18));
 
-    setTimeout(()=>ctx.close(), 5300);
+    setTimeout(()=>ctx.close(), 2000);
   }catch(e){}
 }
 
@@ -343,7 +341,7 @@ async function connect(){
   socket.on('escalation_alert', (payload) => {
     escalations.push(payload);
     renderEscalationBanner();
-    playBeep();
+    playBeep(true);
     const typeLabel = { message:'mesazh', request:'kërkesë', issue:'problem', order:'porosi' }[payload.type] || payload.type;
     showBrowserNotification('⏰ Vonesë (' + typeLabel + ') — Dhoma ' + payload.room_number, payload.text);
   });
