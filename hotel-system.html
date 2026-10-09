@@ -1440,13 +1440,10 @@ async function translateForGuest(text, fromLang){
     guestTranslateCache.set(key, translated);
     return translated;
   }catch(e){
-    try{
-      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${currentLang}`);
-      const data = await res.json();
-      const translated = data?.responseData?.translatedText || text;
-      guestTranslateCache.set(key, translated);
-      return translated;
-    }catch(e2){ return text; }
+    // Deliberately no MyMemory fallback: when its free quota runs out it returns
+    // a "MYMEMORY WARNING..." sentence as the "translation". Showing the
+    // original message is better than showing that.
+    return text;
   }
 }
 

@@ -97,13 +97,13 @@ async function translateServerText(text, fromLang, toLang) {
     serverTranslateCache.set(key, translated);
     return translated;
   } catch (e) {
-    try {
-      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`);
-      const data = await res.json();
-      const translated = data?.responseData?.translatedText || text;
-      serverTranslateCache.set(key, translated);
-      return translated;
-    } catch (e2) { return text; }
+    // No second-opinion service: MyMemory used to be the fallback, but when its
+    // free daily quota runs out it returns a "MYMEMORY WARNING: you used all
+    // available free translations" sentence as if it were the translation —
+    // which ended up in guests' notifications. Better to deliver the original
+    // text untranslated than that (and failures are not cached, so the next
+    // message tries Google again).
+    return text;
   }
 }
 

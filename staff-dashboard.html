@@ -183,13 +183,9 @@ async function translateForStaff(text, fromLang){
     translateCache.set(key, translated);
     return translated;
   }catch(e){
-    try{
-      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${staffLang}`);
-      const data = await res.json();
-      const translated = data?.responseData?.translatedText || text;
-      translateCache.set(key, translated);
-      return translated;
-    }catch(e2){ return text; }
+    // No MyMemory fallback (its quota-exceeded warning text used to come back
+    // as if it were the translation) — return the original instead.
+    return text;
   }
 }
 
@@ -430,15 +426,53 @@ async function loadRequests(){
       <div class="card-btns"><button class="card-btn" onclick="markRequestDone('${r.id}')">Shëno si zgjidhur</button></div>
     </div>`).join('');
 
-  // Translate anything the guest wrote in a different language than staffLang,
-  // updating each card's text in place once the translation comes back.
-  [...requests, ...issues].forEach(async (r) => {
+  // Nothing is translated automatically. For anything written in a different
+  // language than staffLang, a small "Përkthe" link is added under the card's
+  // text; clicking it translates that one request (and flips back again).
+  [...requests, ...issues].forEach((r) => {
     if(!r.lang || r.lang === staffLang) return;
-    const prefix = r.category === 'issue' ? '🔧 ' : '';
-    const translated = await translateForStaff(r.request_type, r.lang);
+    requestById[r.id] = r;
     const el = document.getElementById('req-text-' + r.id);
-    if(el) el.innerHTML = prefix + escapeHtmlStaff(translated) + ` <span style="opacity:0.4; font-size:10.5px;">(${r.lang.toUpperCase()}→${staffLang.toUpperCase()})</span>`;
+    if(!el || el.parentElement.querySelector('.req-translate')) return;
+    const link = document.createElement('span');
+    link.className = 'req-translate';
+    link.id = 'req-translate-' + r.id;
+    link.style.cssText = 'display:block; margin-top:3px; font-size:10.5px; opacity:0.7; text-decoration:underline; cursor:pointer;';
+    link.textContent = `Përkthe (${r.lang.toUpperCase()})`;
+    link.onclick = () => translateRequest(r.id);
+    el.insertAdjacentElement('afterend', link);
   });
+}
+
+const requestById = {};
+async function translateRequest(id){
+  const r = requestById[id];
+  const el = document.getElementById('req-text-' + id);
+  const link = document.getElementById('req-translate-' + id);
+  if(!r || !el || !link) return;
+  const prefix = r.category === 'issue' ? '🔧 ' : '';
+  const langLabel = r.lang.toUpperCase();
+  if(link.dataset.showing === 'translated'){
+    el.innerHTML = prefix + escapeHtmlStaff(r.request_type);
+    link.textContent = `Përkthe (${langLabel})`;
+    link.dataset.showing = 'original';
+    return;
+  }
+  if(!link.dataset.translated){
+    link.textContent = 'Duke përkthyer…';
+    link.style.pointerEvents = 'none';
+    let translated = '';
+    try{ translated = await translateForStaff(r.request_type, r.lang); }catch(e){}
+    link.style.pointerEvents = '';
+    if(!translated || translated === r.request_type){
+      link.textContent = 'Përkthimi dështoi — provo përsëri';
+      return;
+    }
+    link.dataset.translated = translated;
+  }
+  el.innerHTML = prefix + escapeHtmlStaff(link.dataset.translated);
+  link.textContent = `Shfaq origjinalin (${langLabel})`;
+  link.dataset.showing = 'translated';
 }
 
 // Keeps the pending workload visible even when the staff member has switched
@@ -522,60 +556,78 @@ async function openRoom(room){
   unreadCounts[room] = 0;
   renderRoomList();
   socket.emit('join_room', { hotel: currentHotel, room });
-  const res = await fetch(apiUrl('/api/messages/' + room));
-  allMessages = await res.json();
-  renderThread();
+  const box = document.getElementById('chat-thread');
+  try{
+    const res = await fetch(apiUrl('/api/messages/' + encodeURIComponent(room)));
+    const data = await res.json().catch(() => null);
+    if(!res.ok || !Array.isArray(data)){
+      // Show the real reason (e.g. "too many requests") instead of leaving the
+      // pane empty and silent.
+      const reason = (data && data.error) ? data.error : ('gabim ' + res.status);
+      allMessages = [];
+      box.innerHTML = '<p class="empty">Nuk u ngarkua biseda: ' + escapeHtmlStaff(reason) + '</p>';
+      return;
+    }
+    allMessages = data;
+    if(!allMessages.length){
+      box.innerHTML = '<p class="empty">Nuk ka mesazhe në këtë dhomë ende.</p>';
+      return;
+    }
+    renderThread();
+  }catch(e){
+    box.innerHTML = '<p class="empty">Nuk u ngarkua biseda — kontrollo lidhjen e internetit.</p>';
+  }
 }
 
 function renderThread(){
   const box = document.getElementById('chat-thread');
-  box.innerHTML = allMessages.map((m, idx) => `<div class="msg ${m.sender}" id="msg-${idx}"><span id="msg-text-${idx}">${m.sender === 'bot' ? '🤖 <em>Automatik:</em> ' : ''}${escapeHtmlStaff(m.text)}</span></div>`).join('');
-  box.scrollTop = box.scrollHeight;
-
-  allMessages.forEach(async (m, idx) => {
-    if((m.sender !== 'guest' && m.sender !== 'bot') || !m.lang || m.lang === staffLang) return;
-    const translated = await translateForStaff(m.text, m.lang);
-    const el = document.getElementById('msg-' + idx);
-    const textEl = document.getElementById('msg-text-' + idx);
-    if(!el || !textEl) return;
+  // Nothing is translated automatically: guest messages show exactly as the
+  // guest wrote them. When a message is in a different language than the
+  // staff member's, a small "Përkthe" link appears under it; clicking it
+  // translates just that message (and can flip back to the original).
+  box.innerHTML = allMessages.map((m, idx) => {
     const prefix = m.sender === 'bot' ? '🤖 <em>Automatik:</em> ' : '';
-    // Keep both versions on the element itself so the toggle below can
-    // switch between them without re-fetching or re-translating.
-    el.dataset.original = m.text;
-    el.dataset.translated = translated;
-    el.dataset.prefix = prefix;
-    el.dataset.lang = m.lang;
-    el.dataset.showing = 'translated';
-    textEl.innerHTML = prefix + escapeHtmlStaff(translated);
-    if(!el.querySelector('.msg-toggle')){
-      const toggle = document.createElement('span');
-      toggle.className = 'msg-toggle';
-      toggle.style.cssText = 'display:block; margin-top:3px; font-size:10.5px; opacity:0.6; text-decoration:underline; cursor:pointer;';
-      toggle.textContent = `Shfaq origjinalin (${m.lang.toUpperCase()})`;
-      toggle.onclick = () => toggleMsgOriginal(idx);
-      el.appendChild(toggle);
-    }
-  });
+    const canTranslate = (m.sender === 'guest' || m.sender === 'bot') && m.lang && m.lang !== staffLang;
+    const link = canTranslate
+      ? `<span class="msg-toggle" id="msg-toggle-${idx}" style="display:block; margin-top:3px; font-size:10.5px; opacity:0.7; text-decoration:underline; cursor:pointer;" onclick="translateMsg(${idx})">Përkthe (${escapeHtmlStaff(m.lang.toUpperCase())})</span>`
+      : '';
+    return `<div class="msg ${m.sender}" id="msg-${idx}" data-prefix="${prefix.replace(/"/g, '&quot;')}"><span id="msg-text-${idx}">${prefix}${escapeHtmlStaff(m.text)}</span>${link}</div>`;
+  }).join('');
+  box.scrollTop = box.scrollHeight;
 }
 
-// Lets staff flip a translated guest message back to exactly what the guest
-// typed, in case the auto-translation reads oddly or they just want to see
-// the original wording — then back to the translation with the same click.
-function toggleMsgOriginal(idx){
+// Translates one guest message on demand, and toggles back to the original.
+async function translateMsg(idx){
+  const m = allMessages[idx];
   const el = document.getElementById('msg-' + idx);
   const textEl = document.getElementById('msg-text-' + idx);
-  const toggle = el && el.querySelector('.msg-toggle');
-  if(!el || !textEl || !toggle) return;
+  const toggle = document.getElementById('msg-toggle-' + idx);
+  if(!m || !el || !textEl || !toggle) return;
   const prefix = el.dataset.prefix || '';
+  const langLabel = (m.lang || '').toUpperCase();
+
   if(el.dataset.showing === 'translated'){
-    textEl.innerHTML = prefix + escapeHtmlStaff(el.dataset.original);
-    toggle.textContent = 'Shfaq përkthimin';
+    textEl.innerHTML = prefix + escapeHtmlStaff(m.text);
+    toggle.textContent = `Përkthe (${langLabel})`;
     el.dataset.showing = 'original';
-  } else {
-    textEl.innerHTML = prefix + escapeHtmlStaff(el.dataset.translated);
-    toggle.textContent = `Shfaq origjinalin (${(el.dataset.lang || '').toUpperCase()})`;
-    el.dataset.showing = 'translated';
+    return;
   }
+
+  if(!el.dataset.translated){
+    toggle.textContent = 'Duke përkthyer…';
+    toggle.style.pointerEvents = 'none';
+    let translated = '';
+    try{ translated = await translateForStaff(m.text, m.lang); }catch(e){}
+    toggle.style.pointerEvents = '';
+    if(!translated || translated === m.text){
+      toggle.textContent = 'Përkthimi dështoi — provo përsëri';
+      return;
+    }
+    el.dataset.translated = translated;
+  }
+  textEl.innerHTML = prefix + escapeHtmlStaff(el.dataset.translated);
+  toggle.textContent = `Shfaq origjinalin (${langLabel})`;
+  el.dataset.showing = 'translated';
 }
 
 async function sendReply(){

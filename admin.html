@@ -906,13 +906,10 @@ async function autoTranslateText(text, lang){
     adminTranslateCache.set(key, translated);
     return translated;
   }catch(e){
-    try{
-      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=sq|${lang}`);
-      const data = await res.json();
-      const translated = data?.responseData?.translatedText || '';
-      adminTranslateCache.set(key, translated);
-      return translated;
-    }catch(e2){ return ''; }
+    // No MyMemory fallback (its quota-exceeded warning text used to come back
+    // as if it were the translation). An empty result leaves the field blank
+    // for the admin to fill in or retry.
+    return '';
   }
 }
 

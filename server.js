@@ -97,13 +97,13 @@ async function translateServerText(text, fromLang, toLang) {
     serverTranslateCache.set(key, translated);
     return translated;
   } catch (e) {
-    try {
-      const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`);
-      const data = await res.json();
-      const translated = data?.responseData?.translatedText || text;
-      serverTranslateCache.set(key, translated);
-      return translated;
-    } catch (e2) { return text; }
+    // No second-opinion service: MyMemory used to be the fallback, but when its
+    // free daily quota runs out it returns a "MYMEMORY WARNING: you used all
+    // available free translations" sentence as if it were the translation —
+    // which ended up in guests' notifications. Better to deliver the original
+    // text untranslated than that (and failures are not cached, so the next
+    // message tries Google again).
+    return text;
   }
 }
 
@@ -213,17 +213,36 @@ function requireSuperAdmin(req, res, next) {
 }
 
 // ============ Rate limiting ============
-const writeLimiter = rateLimit({
+// Limits are counted PER ROOM (hotel + room number), not per IP address: every
+// guest on a hotel's shared Wi-Fi appears to the server as the same IP, so a
+// plain per-IP limit of 20/min would have capped a whole hotel at 20 messages
+// a minute. A per-room cap still stops one phone spamming, and a much higher
+// per-IP backstop (below) still stops a single machine flooding the server.
+const { ipKeyGenerator } = require('express-rate-limit');
+const roomWriteLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'GET', // reading history/lists isn't a write
+  keyGenerator: (req) => {
+    const hotel = String((req.body && req.body.hotel) || req.query.hotel || '').toLowerCase();
+    const room = String((req.body && req.body.room_number) || '');
+    return hotel && room ? 'room:' + hotel + ':' + room : 'ip:' + ipKeyGenerator(req.ip);
+  },
   message: { error: 'Shumë kërkesa njëherësh, provo përsëri pas pak.' }
 });
-app.use('/api/messages', writeLimiter);
-app.use('/api/quick-requests', writeLimiter);
-app.use('/api/room-service', writeLimiter);
-app.use('/api/feedback', writeLimiter);
+const ipBackstopLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 1500, // a whole hotel's Wi-Fi at a busy peak, but not a flood
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => 'ip:' + ipKeyGenerator(req.ip),
+  message: { error: 'Shumë kërkesa nga ky rrjet, provo përsëri pas pak.' }
+});
+for (const path of ['/api/messages', '/api/quick-requests', '/api/room-service', '/api/feedback']) {
+  app.use(path, ipBackstopLimiter, roomWriteLimiter);
+}
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
@@ -289,7 +308,18 @@ async function matchFaq(hotel, lang, text) {
 
 // ============ CHAT ============
 
-app.post('/api/messages', requireHotel, verifyGuestSession, async (req, res) => {
+// Only guests may post as 'guest' without a password. Posting as 'staff'
+// requires the hotel's staff (or admin) password — otherwise anyone who knew
+// a hotel's slug could write messages that look like they come from reception.
+// 'bot' messages are created by the server itself, never accepted from clients.
+function guestOrStaffSender(req, res, next) {
+  const sender = req.body.sender;
+  if (sender === 'guest') return next();
+  if (sender === 'staff') return requireStaff(req, res, next);
+  return res.status(400).json({ error: "sender must be 'guest' or 'staff'" });
+}
+
+app.post('/api/messages', requireHotel, guestOrStaffSender, verifyGuestSession, async (req, res) => {
   const { room_number, sender, text, lang } = req.body;
   if (!room_number || !sender || !text) return res.status(400).json({ error: 'room_number, sender, text required' });
   const doc = await Message.create({ hotel: req.hotel, room_number, sender, text, lang: lang || '' });
