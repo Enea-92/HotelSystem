@@ -81,30 +81,65 @@ async function sendPushToRoomLocalized(hotel, room_number, resolve) {
 }
 
 // Translates free text (e.g. whatever staff just typed) server-side using
-// Google Translate's free web endpoint (no API key), with an in-memory
-// cache and a MyMemory fallback — same approach used client-side in the
-// admin panel and staff dashboard, so quality/behavior stays consistent.
+// ============ Translation ============
+// Preferred engine: the official Google Cloud Translation API (set
+// GOOGLE_TRANSLATE_API_KEY on Render — a key restricted to the Cloud
+// Translation API only). It is a paid, supported service with predictable
+// quality and no surprise blocking. Without a key the server falls back to
+// Google's free, unofficial web endpoint, which works today but can be
+// rate-limited or blocked without notice. If both fail the original text is
+// returned unchanged (never a made-up or error-sentence "translation").
+// The key stays on the server; browsers call POST /api/translate below.
+const GOOGLE_TRANSLATE_API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY || '';
+const TRANSLATE_LANGS = ['sq', 'en', 'it', 'de', 'fr'];
 const serverTranslateCache = new Map();
-async function translateServerText(text, fromLang, toLang) {
-  if (!text || !toLang || !fromLang || fromLang === toLang) return text;
+function cacheTranslation(key, value) {
+  if (serverTranslateCache.size >= 5000) serverTranslateCache.delete(serverTranslateCache.keys().next().value);
+  serverTranslateCache.set(key, value);
+}
+
+async function googleCloudTranslate(text, fromLang, toLang) {
+  const res = await fetch('https://translation.googleapis.com/language/translate/v2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': GOOGLE_TRANSLATE_API_KEY },
+    body: JSON.stringify({ q: text, source: fromLang, target: toLang, format: 'text' })
+  });
+  if (!res.ok) throw new Error('Cloud Translation HTTP ' + res.status);
+  const data = await res.json();
+  const translated = data && data.data && data.data.translations && data.data.translations[0] && data.data.translations[0].translatedText;
+  if (!translated) throw new Error('Cloud Translation returned no text');
+  return translated;
+}
+
+async function googleFreeTranslate(text, fromLang, toLang) {
+  const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${toLang}&dt=t&q=${encodeURIComponent(text)}`);
+  const data = await res.json();
+  const translated = Array.isArray(data && data[0]) ? data[0].map((part) => part[0]).join('') : '';
+  if (!translated) throw new Error('empty translation');
+  return translated;
+}
+
+// Returns { text, translated }. translated=false means the engines failed
+// (or nothing needed translating) and `text` is the original, unchanged.
+async function translateDetailed(text, fromLang, toLang) {
+  if (!text || !toLang || !fromLang || fromLang === toLang) return { text, translated: false };
   const key = fromLang + '|' + toLang + '|' + text;
-  if (serverTranslateCache.has(key)) return serverTranslateCache.get(key);
-  try {
-    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${toLang}&dt=t&q=${encodeURIComponent(text)}`);
-    const data = await res.json();
-    const translated = Array.isArray(data?.[0]) ? data[0].map((part) => part[0]).join('') : '';
-    if (!translated) throw new Error('empty translation');
-    serverTranslateCache.set(key, translated);
-    return translated;
-  } catch (e) {
-    // No second-opinion service: MyMemory used to be the fallback, but when its
-    // free daily quota runs out it returns a "MYMEMORY WARNING: you used all
-    // available free translations" sentence as if it were the translation —
-    // which ended up in guests' notifications. Better to deliver the original
-    // text untranslated than that (and failures are not cached, so the next
-    // message tries Google again).
-    return text;
+  if (serverTranslateCache.has(key)) return { text: serverTranslateCache.get(key), translated: true };
+  const engines = GOOGLE_TRANSLATE_API_KEY ? [googleCloudTranslate, googleFreeTranslate] : [googleFreeTranslate];
+  for (const engine of engines) {
+    try {
+      const out = await engine(text, fromLang, toLang);
+      cacheTranslation(key, out);
+      return { text: out, translated: true };
+    } catch (e) {
+      console.warn('Translation engine failed (' + engine.name + '):', e.message);
+    }
   }
+  return { text, translated: false };
+}
+
+async function translateServerText(text, fromLang, toLang) {
+  return (await translateDetailed(text, fromLang, toLang)).text;
 }
 
 // Fixed, hand-translated notification titles/bodies — used instead of a
@@ -145,6 +180,37 @@ function verifySessionToken(token) {
     if (payload.exp && Date.now() > payload.exp) return null;
     return payload;
   } catch (e) { return null; }
+}
+
+// ============ Guest access control (room keys) ============
+// Every QR code carries a permanent, unguessable "room key" for that exact
+// hotel + room, signed with SESSION_SECRET. Reading a room's chat, sending
+// messages/requests/orders, subscribing to its push notifications, and
+// listening on its live socket channel all require either that key or a
+// valid expiring session token for the same room. Knowing a hotel's slug and
+// guessing a room number (101, 102...) is no longer enough to see anyone's
+// conversation. Set REQUIRE_GUEST_AUTH=false on Render to switch this off
+// temporarily (e.g. while old printed QR codes are being replaced).
+// NOTE: keys are derived from SESSION_SECRET — changing that secret later
+// invalidates every printed QR code, so set it once and keep it.
+const REQUIRE_GUEST_AUTH = process.env.REQUIRE_GUEST_AUTH !== 'false';
+
+function roomKey(hotel, room) {
+  return base64url(crypto.createHmac('sha256', SESSION_SECRET).update('room-key:' + hotel + ':' + room).digest()).slice(0, 24);
+}
+function safeEqualStr(a, b) {
+  const x = Buffer.from(String(a || ''));
+  const y = Buffer.from(String(b || ''));
+  return x.length === y.length && x.length > 0 && crypto.timingSafeEqual(x, y);
+}
+function guestHasAccess(hotel, room, token, key) {
+  if (!hotel || !room) return false;
+  if (token) {
+    const payload = verifySessionToken(token);
+    if (payload && String(payload.hotel) === String(hotel) && String(payload.room) === String(room)) return true;
+  }
+  if (key && safeEqualStr(key, roomKey(hotel, room))) return true;
+  return false;
 }
 
 // ============ Auth middleware (per-hotel) ============
@@ -250,23 +316,97 @@ const io = new Server(server, { cors: { origin: '*' } });
 function roomChannel(hotel, room) { return hotel + ':room:' + room; }
 function staffChannel(hotel) { return hotel + ':staff'; }
 
+// Staff (or admin) password check shared by HTTP and socket code.
+async function isStaffPassword(hotel, password) {
+  if (!hotel || !password) return false;
+  const settings = await getAuthSettings(String(hotel).toLowerCase().trim());
+  if (!settings) return false;
+  const okStaff = await bcrypt.compare(String(password), settings.staff_password_hash);
+  if (okStaff) return true;
+  return bcrypt.compare(String(password), settings.admin_password_hash);
+}
+
 io.on('connection', (socket) => {
-  socket.on('join_room', ({ hotel, room }) => { if (hotel && room) socket.join(roomChannel(hotel, room)); });
-  socket.on('join_staff', (hotel) => { if (hotel) socket.join(staffChannel(hotel)); });
+  // A guest device joins its own room's channel — needs that room's key or a
+  // valid session token. A staff dashboard may also join a room channel with
+  // the staff password.
+  socket.on('join_room', async (payload) => {
+    try {
+      const { hotel, room, key, token, password } = payload || {};
+      if (!hotel || !room) return;
+      const h = String(hotel).toLowerCase().trim();
+      const r = String(room);
+      if (!REQUIRE_GUEST_AUTH || guestHasAccess(h, r, token, key) || await isStaffPassword(h, password)) {
+        socket.join(roomChannel(h, r));
+      }
+    } catch (e) { /* ignore malformed join */ }
+  });
+  // The staff channel receives every guest message, request and order in the
+  // hotel, so it requires the staff (or admin) password.
+  socket.on('join_staff', async (arg) => {
+    try {
+      const hotel = typeof arg === 'string' ? arg : arg && arg.hotel;
+      const password = typeof arg === 'object' && arg ? arg.password : '';
+      if (!hotel) return;
+      const h = String(hotel).toLowerCase().trim();
+      if (!REQUIRE_GUEST_AUTH || await isStaffPassword(h, password)) socket.join(staffChannel(h));
+    } catch (e) { /* ignore malformed join */ }
+  });
 });
 
-// Optional enforcement for guest actions: if the request includes a
-// session_token, it must be valid and match the room being acted on.
+// Guest-side authorization for any route that acts on, or reads, one room's
+// data. Runs after requireHotel (which sets req.hotel). Accepts the room key
+// (x-room-key header or room_key field) or an expiring session token
+// (x-session-token header or session_token field) for exactly this room.
+// Requests already authenticated as staff skip it.
 function verifyGuestSession(req, res, next) {
-  const token = req.body.session_token;
-  if (!token) return next();
-  const payload = verifySessionToken(token);
-  if (!payload) return res.status(401).json({ error: 'Sesioni ka skaduar, skano përsëri kodin QR.' });
-  if (String(payload.room) !== String(req.body.room_number)) {
-    return res.status(401).json({ error: 'Token i pavlefshëm për këtë dhomë.' });
+  if (req.staffAuthed || !REQUIRE_GUEST_AUTH) return next();
+  const room = (req.body && req.body.room_number) || req.params.room || req.query.room || '';
+  if (!room) return res.status(400).json({ error: 'room required' });
+  const token = req.headers['x-session-token'] || (req.body && req.body.session_token) || '';
+  const key = req.headers['x-room-key'] || (req.body && req.body.room_key) || '';
+  if (!guestHasAccess(req.hotel, String(room), token, key)) {
+    return res.status(401).json({ error: 'Sesioni nuk është i vlefshëm — skano përsëri kodin QR në dhomë.' });
   }
   next();
 }
+
+// Routes shared by staff dashboards and guests (e.g. reading one room's chat):
+// staff send their password, guests send their room key/token.
+function guestOrStaffAccess(req, res, next) {
+  if (req.headers['x-staff-password']) {
+    return requireStaff(req, res, () => { req.staffAuthed = true; next(); });
+  }
+  return verifyGuestSession(req, res, next);
+}
+
+// Browsers (guest app, staff dashboard, admin panel) translate through the
+// server so the Cloud Translation key never reaches a browser. Because every
+// call can cost money, it requires real credentials — a guest's room key /
+// session token, or the staff or admin password — and is rate limited.
+const translateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Shumë kërkesa përkthimi, provo përsëri pas pak.' }
+});
+function translateAccess(req, res, next) {
+  if (req.headers['x-admin-password']) return requireAdmin(req, res, () => { req.staffAuthed = true; next(); });
+  if (req.headers['x-staff-password']) return requireStaff(req, res, () => { req.staffAuthed = true; next(); });
+  return verifyGuestSession(req, res, next);
+}
+app.post('/api/translate', translateLimiter, requireHotel, translateAccess, async (req, res) => {
+  const { text, from, to } = req.body || {};
+  if (typeof text !== 'string' || !text.trim() || text.length > 2000) {
+    return res.status(400).json({ error: 'text required (max 2000 characters)' });
+  }
+  if (!TRANSLATE_LANGS.includes(from) || !TRANSLATE_LANGS.includes(to)) {
+    return res.status(400).json({ error: 'unsupported language' });
+  }
+  const out = await translateDetailed(text, from, to);
+  res.json({ translation: out.text, translated: out.translated });
+});
 
 // ============ FAQ instant auto-reply ============
 // Very small, dependency-free keyword matcher: normalizes both the guest's
@@ -315,7 +455,7 @@ async function matchFaq(hotel, lang, text) {
 function guestOrStaffSender(req, res, next) {
   const sender = req.body.sender;
   if (sender === 'guest') return next();
-  if (sender === 'staff') return requireStaff(req, res, next);
+  if (sender === 'staff') return requireStaff(req, res, () => { req.staffAuthed = true; next(); });
   return res.status(400).json({ error: "sender must be 'guest' or 'staff'" });
 }
 
@@ -357,7 +497,7 @@ const WELCOME_TEMPLATES = {
   de: (hotel) => `Willkommen im ${hotel}! Ich bin für alles da, was Sie während Ihres Aufenthalts brauchen.`
 };
 
-app.post('/api/messages/welcome', requireHotel, async (req, res) => {
+app.post('/api/messages/welcome', requireHotel, verifyGuestSession, async (req, res) => {
   const { room_number, lang } = req.body;
   if (!room_number) return res.status(400).json({ error: 'room_number required' });
   const existingCount = await Message.countDocuments({ hotel: req.hotel, room_number });
@@ -375,7 +515,7 @@ app.post('/api/messages/welcome', requireHotel, async (req, res) => {
   res.status(201).json({ sent: true, message });
 });
 
-app.get('/api/messages/:room', requireHotel, async (req, res) => {
+app.get('/api/messages/:room', requireHotel, guestOrStaffAccess, async (req, res) => {
   const docs = await Message.find({ hotel: req.hotel, room_number: req.params.room }).sort({ created_at: 1 });
   res.json(docs.map(toDTO));
 });
@@ -443,7 +583,7 @@ app.get('/api/room-service', requireStaff, async (req, res) => {
 // Lets the guest's own app look up their most recent active order, so a
 // status tracker can be shown/restored (e.g. after a page reload) without
 // needing any staff-level access — scoped to their own hotel+room only.
-app.get('/api/room-service/mine', requireHotel, async (req, res) => {
+app.get('/api/room-service/mine', requireHotel, verifyGuestSession, async (req, res) => {
   const room_number = (req.query.room || '').toString();
   if (!room_number) return res.status(400).json({ error: 'room required' });
   const doc = await RoomServiceOrder.findOne({ hotel: req.hotel, room_number, status: { $ne: 'delivered' } }).sort({ created_at: -1 });
@@ -725,7 +865,7 @@ app.get('/api/admin/places-photo', requireAdmin, async (req, res) => {
 
 // ============ ROOM NOTES (per-room instructions, editable for 1 or many rooms at once) ============
 
-app.get('/api/room-notes/:room', requireHotel, async (req, res) => {
+app.get('/api/room-notes/:room', requireHotel, guestOrStaffAccess, async (req, res) => {
   const doc = await RoomNote.findOne({ hotel: req.hotel, room_number: req.params.room });
   res.json(doc ? toDTO(doc) : null);
 });
@@ -830,7 +970,7 @@ app.get('/api/push/vapid-public-key', (req, res) => {
   res.json({ publicKey: pushEnabled ? VAPID_PUBLIC_KEY : null });
 });
 
-app.post('/api/push/subscribe', requireHotel, async (req, res) => {
+app.post('/api/push/subscribe', requireHotel, verifyGuestSession, async (req, res) => {
   const { room_number, subscription, lang } = req.body;
   if (!room_number || !subscription || !subscription.endpoint || !subscription.keys) {
     return res.status(400).json({ error: 'room_number and subscription required' });
@@ -872,7 +1012,17 @@ app.post('/api/qr-codes/bulk', requireAdmin, async (req, res) => {
 
 app.get('/api/qr-codes', requireAdmin, async (req, res) => {
   const docs = await GeneratedQr.find({ hotel: req.hotel }).sort({ room_number: 1 });
-  res.json(docs.map(toDTO));
+  // Each code's link must carry that room's key, which only the server can compute.
+  res.json(docs.map((d) => ({ ...toDTO(d), key: roomKey(req.hotel, d.room_number) })));
+});
+
+// Returns the room key for each requested room, so the admin panel can build
+// QR links (and the admin preview) that carry it. Admin password required.
+app.post('/api/room-keys', requireAdmin, (req, res) => {
+  const rooms = Array.isArray(req.body.rooms) ? req.body.rooms.slice(0, 2000) : [];
+  const keys = {};
+  rooms.forEach((r) => { keys[String(r)] = roomKey(req.hotel, String(r)); });
+  res.json({ keys });
 });
 
 app.delete('/api/qr-codes/:room', requireAdmin, async (req, res) => {

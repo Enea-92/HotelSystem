@@ -964,7 +964,7 @@ updateAppBadge();
 try {
   socket = io(API_BASE, { transports: ['websocket', 'polling'] });
   socket.on('connect', () => {
-    if(currentHotel) socket.emit('join_room', { hotel: currentHotel, room: currentRoom });
+    if(currentHotel && currentRoom) socket.emit('join_room', { hotel: currentHotel, room: currentRoom, key: roomKey, token: sessionToken });
     if(hasConnectedOnce && currentRoom && typeof loadChatHistory === 'function') loadChatHistory();
     hasConnectedOnce = true;
   });
@@ -1428,21 +1428,26 @@ function escapeHtml(str){
 // an in-memory cache — same approach used in the admin panel and staff
 // dashboard, for consistent quality everywhere in the app.
 const guestTranslateCache = new Map();
+// Translation goes through the backend (/api/translate), which uses the
+// hotel platform's Google Cloud Translation key — so no key lives in the
+// browser and quality/availability is the server's responsibility. If the
+// translation can't be done, the original text is shown unchanged.
 async function translateForGuest(text, fromLang){
   if(!text || !fromLang || fromLang === currentLang) return text;
   const key = fromLang + '|' + currentLang + '|' + text;
   if(guestTranslateCache.has(key)) return guestTranslateCache.get(key);
   try{
-    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${currentLang}&dt=t&q=${encodeURIComponent(text)}`);
+    const res = await fetch(API_BASE + '/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...guestAuthHeaders() },
+      body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, text, from: fromLang, to: currentLang, room_key: roomKey, session_token: sessionToken })
+    });
+    if(!res.ok) return text;
     const data = await res.json();
-    const translated = Array.isArray(data?.[0]) ? data[0].map(part => part[0]).join('') : '';
-    if(!translated) throw new Error('empty translation');
-    guestTranslateCache.set(key, translated);
-    return translated;
+    if(!data || !data.translated || !data.translation) return text;
+    guestTranslateCache.set(key, data.translation);
+    return data.translation;
   }catch(e){
-    // Deliberately no MyMemory fallback: when its free quota runs out it returns
-    // a "MYMEMORY WARNING..." sentence as the "translation". Showing the
-    // original message is better than showing that.
     return text;
   }
 }
@@ -1545,7 +1550,7 @@ const ORDER_STEPS = ['pending','preparing','on_the_way','delivered'];
 async function loadMyRoomServiceOrder(){
   if(!API_BASE || !currentHotel || !currentRoom) return;
   try{
-    const res = await fetch(API_BASE + '/api/room-service/mine?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(currentRoom));
+    const res = await fetch(API_BASE + '/api/room-service/mine?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(currentRoom), { headers: guestAuthHeaders() });
     const order = await res.json();
     if(order && order.id){
       currentRoomServiceOrderId = order.id;
@@ -1594,7 +1599,7 @@ let currentRoomNote = null;
 async function loadRoomNote(){
   if(!API_BASE || !currentRoom || !currentHotel) return;
   try{
-    const res = await fetch(API_BASE + '/api/room-notes/' + encodeURIComponent(currentRoom) + '?hotel=' + encodeURIComponent(currentHotel));
+    const res = await fetch(API_BASE + '/api/room-notes/' + encodeURIComponent(currentRoom) + '?hotel=' + encodeURIComponent(currentHotel), { headers: guestAuthHeaders() });
     currentRoomNote = await res.json();
     renderRoomNote();
   }catch(e){ console.warn('Could not load room note.', e); }
@@ -2020,7 +2025,7 @@ async function syncPushLang(){
     await fetch(API_BASE + '/api/push/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, subscription: existing.toJSON(), lang: currentLang })
+      body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, subscription: existing.toJSON(), lang: currentLang, room_key: roomKey, session_token: sessionToken })
     });
   }catch(e){ /* best-effort — next enable/relaunch will still pick it up */ }
 }
@@ -2031,6 +2036,16 @@ function updateRoomChip(){
 }
 
 let sessionToken = null;
+// Permanent per-room key carried in the QR code's link (?k=...). Together with
+// the optional expiring session token it proves this device really scanned
+// THIS room's QR — the server refuses chat reads/writes without it.
+let roomKey = '';
+function guestAuthHeaders(){
+  const h = {};
+  if(roomKey) h['x-room-key'] = roomKey;
+  if(sessionToken) h['x-session-token'] = sessionToken;
+  return h;
+}
 
 // A "hotel day" runs from 11:00 to 11:00 (Europe/Tirane) — the same moment
 // messages get wiped daily. A session scanned during one hotel day stops
@@ -2053,6 +2068,7 @@ async function initFromUrl(){
   const urlToken = params.get('token');
   const urlRoom = params.get('room');
   const urlFloor = params.get('floor');
+  const urlKey = params.get('k');
   isAdminPreview = params.get('preview') === '1';
   let sessionValid = false;
 
@@ -2089,7 +2105,16 @@ async function initFromUrl(){
     // is only valid for the current hotel day (until the next 11:00 wipe).
     currentRoom = urlRoom;
     currentFloor = urlFloor || currentFloor;
-    try{ localStorage.setItem('bregu_session', JSON.stringify({ room: currentRoom, floor: currentFloor, hotelDay: getHotelDay() })); }catch(e){}
+    roomKey = urlKey || '';
+    if(!roomKey){
+      // A link without a key (e.g. an old printed QR) can still reuse the key
+      // this device saved from an earlier proper scan of the same room.
+      try{
+        const prev = JSON.parse(localStorage.getItem('bregu_session') || 'null');
+        if(prev && prev.key && String(prev.room) === String(urlRoom)) roomKey = prev.key;
+      }catch(e){}
+    }
+    try{ localStorage.setItem('bregu_session', JSON.stringify({ room: currentRoom, floor: currentFloor, hotelDay: getHotelDay(), key: roomKey })); }catch(e){}
     sessionValid = true;
   } else {
     try{
@@ -2102,6 +2127,7 @@ async function initFromUrl(){
       } else if(stored && stored.room && !stored.token && stored.hotelDay === getHotelDay()){
         currentRoom = stored.room;
         currentFloor = stored.floor || currentFloor;
+        roomKey = stored.key || '';
         sessionValid = true;
       }
     }catch(e){}
@@ -2116,7 +2142,7 @@ async function initFromUrl(){
   loadChatHistory();
   loadHotelContent();
   loadDndState();
-  if(socket) socket.emit('join_room', { hotel: currentHotel, room: currentRoom });
+  if(socket) socket.emit('join_room', { hotel: currentHotel, room: currentRoom, key: roomKey, token: sessionToken });
   if(!isAdminPreview) showTutorialIfNeeded();
 }
 
@@ -2175,14 +2201,16 @@ function showHotelDeactivated(){
   document.body.appendChild(overlay);
 }
 
-function showSessionLocked(){
+function showSessionLocked(reason){
   const overlay = document.createElement('div');
   overlay.id = 'session-locked-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:#0E3A3D;color:#F3ECDC;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;z-index:9999;font-family:"Work Sans",sans-serif;';
   overlay.innerHTML = `
     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#CE9A42" stroke-width="1.6" style="margin-bottom:18px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z"/></svg>
     <h1 style="font-family:'Fraunces',serif;font-weight:500;font-size:20px;margin:0 0 10px;">Skano përsëri kodin QR</h1>
-    <p style="font-size:14px;opacity:0.75;max-width:320px;line-height:1.6;margin:0;">Çdo ditë në orën 11:00 (check-out) duhet të skanosh sërish kodin QR në dhomën tuaj për të vazhduar.</p>
+    <p style="font-size:14px;opacity:0.75;max-width:320px;line-height:1.6;margin:0;">${reason === 'invalid'
+      ? 'Ky link nuk është i vlefshëm për këtë dhomë. Skano kodin QR që ndodhet në dhomën tuaj për të vazhduar.'
+      : 'Çdo ditë në orën 11:00 (check-out) duhet të skanosh sërish kodin QR në dhomën tuaj për të vazhduar.'}</p>
   `;
   document.body.appendChild(overlay);
 }
@@ -2380,7 +2408,7 @@ async function enablePushNotifications(){
     await fetch(API_BASE + '/api/push/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, subscription: subscription.toJSON(), lang: currentLang })
+      body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, subscription: subscription.toJSON(), lang: currentLang, room_key: roomKey, session_token: sessionToken })
     });
     if(btn) btn.style.display = 'none';
     const banner = document.getElementById('push-banner');
@@ -2435,6 +2463,7 @@ function apiPost(path, body){
   if(!API_BASE) return Promise.resolve(null);
   const fullBody = { ...body, hotel: currentHotel, lang: currentLang };
   if(sessionToken) fullBody.session_token = sessionToken;
+  if(roomKey) fullBody.room_key = roomKey;
   return fetch(API_BASE + path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -2506,7 +2535,14 @@ function pushOutMsg(text, scrollBehavior){
 async function loadChatHistory(){
   if(!API_BASE || !currentHotel) return;
   try{
-    const res = await fetch(API_BASE + '/api/messages/' + encodeURIComponent(currentRoom) + '?hotel=' + encodeURIComponent(currentHotel));
+    const res = await fetch(API_BASE + '/api/messages/' + encodeURIComponent(currentRoom) + '?hotel=' + encodeURIComponent(currentHotel), { headers: guestAuthHeaders() });
+    if(res.status === 401){
+      // This device has no valid key for this room (old/forged link, or the
+      // QR code was not scanned) — ask for a proper scan instead of showing
+      // an empty chat that silently can't send anything.
+      if(!document.getElementById('session-locked-overlay')) showSessionLocked('invalid');
+      return;
+    }
     const msgs = await res.json();
 
     if(msgs.length === 0){
@@ -2516,7 +2552,7 @@ async function loadChatHistory(){
       try{
         const wRes = await fetch(API_BASE + '/api/messages/welcome', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, lang: currentLang })
+          body: JSON.stringify({ hotel: currentHotel, room_number: currentRoom, lang: currentLang, room_key: roomKey, session_token: sessionToken })
         });
         const wData = await wRes.json();
         if(wData?.sent && wData.message) pushInMsg(wData.message.text, 'auto');

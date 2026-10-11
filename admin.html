@@ -566,13 +566,14 @@ function jumpToSection(id){
 // admin sees exactly what a guest would see. The guest app itself listens for
 // "content_updated" over socket.io, so most saves (content, recommendations,
 // room notes) refresh the preview live — this button is a manual fallback.
-function reloadPreview(){
+async function reloadPreview(){
   const appUrl = (document.getElementById('qr-app-url')?.value || '').trim().replace(/\/$/, '');
   const room = document.getElementById('preview-room').value.trim() || '101';
   const floor = document.getElementById('preview-floor').value.trim() || '1';
   const frame = document.getElementById('preview-iframe');
   if(!appUrl || !currentHotel || !frame) return;
-  frame.src = appUrl + '?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(room) + '&floor=' + encodeURIComponent(floor) + '&preview=1';
+  try{ await fetchRoomKeys([room]); }catch(e){ showToast('Parapamja nuk u hap: ' + e.message, true); return; }
+  frame.src = roomLink(appUrl, room, floor) + '&preview=1';
 }
 
 // The guest app, when loaded here with &preview=1, overlays a small "Edit"
@@ -644,14 +645,40 @@ function expandQrQueue(){
   return rooms;
 }
 
+// Every room link carries a server-signed key (&k=...) that proves the QR was
+// really issued for that room — without it the guest app can't read or send
+// anything. Only the server can compute keys, so they are fetched here.
+const roomKeyCache = {};
+async function fetchRoomKeys(rooms){
+  const missing = [...new Set(rooms.map(String))].filter(r => !roomKeyCache[r]);
+  for(let i = 0; i < missing.length; i += 500){
+    const chunk = missing.slice(i, i + 500);
+    const res = await fetch(apiUrl('/api/room-keys'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ rooms: chunk })
+    });
+    if(!res.ok) throw new Error('Nuk u morën çelësat e dhomave (' + res.status + ')');
+    const data = await res.json();
+    Object.assign(roomKeyCache, data.keys || {});
+  }
+}
+function roomLink(appUrl, room, floor){
+  const base = String(appUrl || '').replace(/\/$/, '');
+  return base + '?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(room) +
+    (floor ? '&floor=' + encodeURIComponent(floor) : '') +
+    (roomKeyCache[String(room)] ? '&k=' + encodeURIComponent(roomKeyCache[String(room)]) : '');
+}
+
 async function generateQrBatch(){
   if(qrQueue.length === 0){ showToast('Shto të paktën një dhomë ose grup dhomash në listë.', true); return; }
   const appUrl = document.getElementById('qr-app-url').value.trim().replace(/\/$/, '');
   qrRooms = expandQrQueue();
+  await fetchRoomKeys(qrRooms.map(r => r.room));
 
   const grid = document.getElementById('qr-grid');
   grid.innerHTML = qrRooms.map(r => {
-    const fullUrl = appUrl + '?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(r.room) + '&floor=' + encodeURIComponent(r.floor);
+    const fullUrl = roomLink(appUrl, r.room, r.floor);
     const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(fullUrl);
     return `<div class="qr-card">
       <img src="${qrSrc}" alt="QR dhoma ${r.room}">
@@ -682,7 +709,8 @@ async function loadPersistedQrCodes(){
     if(!box) return;
     if(codes.length === 0){ box.innerHTML = '<p class="hint" style="margin:0;">Ende pa kode QR të gjeneruara.</p>'; return; }
     box.innerHTML = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px;">' + codes.map(c => {
-      const fullUrl = c.app_url + '?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(c.room_number) + (c.floor ? '&floor=' + encodeURIComponent(c.floor) : '');
+      roomKeyCache[c.room_number] = c.key || roomKeyCache[c.room_number] || '';
+      const fullUrl = roomLink(c.app_url, c.room_number, c.floor);
       const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(fullUrl);
       return `<div class="qr-card">
         <img src="${qrSrc}" alt="QR dhoma ${c.room_number}">
@@ -709,7 +737,7 @@ async function downloadQrZip(){
     const appUrl = document.getElementById('qr-app-url').value.trim().replace(/\/$/, '');
     const zip = new JSZip();
     await Promise.all(qrRooms.map(async r => {
-      const fullUrl = appUrl + '?hotel=' + encodeURIComponent(currentHotel) + '&room=' + encodeURIComponent(r.room) + '&floor=' + encodeURIComponent(r.floor);
+      const fullUrl = roomLink(appUrl, r.room, r.floor);
       const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(fullUrl);
       const res = await fetch(qrSrc);
       const blob = await res.blob();
@@ -899,16 +927,19 @@ async function autoTranslateText(text, lang){
   const key = 'sq|' + lang + '|' + text;
   if(adminTranslateCache.has(key)) return adminTranslateCache.get(key);
   try{
-    const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=sq&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`);
+    // Translated by the backend (Google Cloud Translation when configured).
+    // An empty result leaves the field blank for the admin to fill in or retry.
+    const res = await fetch(apiUrl('/api/translate'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ hotel: currentHotel, text, from: 'sq', to: lang })
+    });
+    if(!res.ok) return '';
     const data = await res.json();
-    const translated = Array.isArray(data?.[0]) ? data[0].map(part => part[0]).join('') : '';
-    if(!translated) throw new Error('empty translation');
-    adminTranslateCache.set(key, translated);
-    return translated;
+    if(!data || !data.translated || !data.translation) return '';
+    adminTranslateCache.set(key, data.translation);
+    return data.translation;
   }catch(e){
-    // No MyMemory fallback (its quota-exceeded warning text used to come back
-    // as if it were the translation). An empty result leaves the field blank
-    // for the admin to fill in or retry.
     return '';
   }
 }
